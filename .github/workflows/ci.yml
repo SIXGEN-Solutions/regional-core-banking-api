@@ -1,0 +1,53 @@
+name: Regional Core Banking API CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'feat/**'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Contract approval guard
+        shell: bash
+        run: |
+          grep -q "approvalStatus: APPROVED" contracts/openapi/regional-core-banking-api-v1.yaml
+          grep -q "codeGenerationAllowed: true" contracts/openapi/regional-core-banking-api-v1.yaml
+
+      - name: Maven verify
+        run: ./mvnw --batch-mode --no-transfer-progress verify
+
+      - name: Docker build
+        run: docker build -t regional-core-banking-api:ci .
+
+      - name: Docker Compose config
+        run: docker compose config
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4

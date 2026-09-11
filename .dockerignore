@@ -1,4 +1,5 @@
-target/
+target/*
+!target/regional-core-banking-api-*.jar
 .git/
 .idea/
 .vscode/
