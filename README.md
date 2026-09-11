@@ -18,18 +18,21 @@ Canonical workspace:
 
 Current R1 status:
 
-- `lifecycleStatus: DRAFT`
-- `approvalStatus: PENDING_APPROVAL`
-- `generationPolicy: REFERENCE_ONLY`
-- `codeGenerationAllowed: false`
+- `lifecycleStatus: APPROVED`
+- `approvalStatus: APPROVED`
+- `generationPolicy: ACTIVE`
+- `codeGenerationAllowed: true`
 
-The contract must not be marked `APPROVED` until all blocking Regional banking evidence is available and explicit human approval is recorded.
+The Regional V1 transport contract has received explicit human approval.
+R1 itself performs no Spring/OpenAPI generation; generation belongs to the later contract-generation lot.
 
 SIXPAY contracts, clients, DTOs and tests are compatibility evidence only. They are not the canonical Regional server model.
 
-## Blocking R1 evidence
+## R1 approval
 
-The Payment Event provider payload still depends on the approved La Régionale mapping for the reduced `bkeve` / `bkmvti` fields and code tables. This evidence must be supplied/validated before the corresponding schema can be frozen and the complete Regional V1 can be approved.
+The minimum Payment Event provider field set, account-reference format,
+direction mapping, atomic execution semantics and UNKNOWN/recovery semantics
+have been explicitly approved for Regional V1.
 
 See `documentation/contracts/R1_COMPATIBILITY_MATRIX.md`.
 

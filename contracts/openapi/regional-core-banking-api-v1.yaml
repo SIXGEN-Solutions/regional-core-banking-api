@@ -2,31 +2,33 @@ openapi: 3.1.0
 
 info:
   title: La Régionale - Core Banking API
-  version: 1.0.0-rc1
-  summary: Regional-owned Core Banking API V1 contract candidate.
+  version: 1.0.0
+  summary: Approved Regional-owned Core Banking API V1 contract.
   description: |
     Contract candidate for the autonomous La Régionale Core Banking API.
 
     This contract is owned by the Regional repository. SIXPAY is one consumer
     among others and its contracts/clients are compatibility evidence only.
 
-    R1 has consolidated the operation surfaces already present in the Regional
-    draft against the available SIXPAY reference contracts. The complete V1
-    remains pending Regional approval because the Payment Event provider payload
-    still requires approved La Régionale banking mapping evidence.
+    R1 consolidated the operation surfaces already present in the Regional
+    draft against available SIXPAY compatibility references and explicit
+    Regional decisions. The V1 contract has received explicit human approval.
+    No Spring/OpenAPI generation is executed by R1 itself.
 
   x-regional-contract:
-    lifecycleStatus: DRAFT
-    approvalStatus: PENDING_APPROVAL
-    generationPolicy: REFERENCE_ONLY
-    codeGenerationAllowed: false
+    lifecycleStatus: APPROVED
+    approvalStatus: APPROVED
+    generationPolicy: ACTIVE
+    codeGenerationAllowed: true
     owner: REGIONAL_CORE_BANKING_API
     sourceOfTruth: THIS_REPOSITORY_AFTER_APPROVAL
     sixpayRole: COMPATIBILITY_CONSUMER
     sixpayModelsAreSourceOfTruth: false
-    r1Status: BLOCKED_BANK_EVIDENCE
-    blockingEvidence:
-      - PAYMENT_EVENT_PROVIDER_MAPPING
+    r1Status: APPROVED
+    approvalBasis:
+      - EXPLICIT_REGIONAL_HUMAN_APPROVAL
+      - SIXPAY_WIRE_COMPATIBILITY_EVIDENCE
+      - REGIONAL_PAYMENT_EVENT_MAPPING_DECISIONS
 
 servers:
   - url: https://regional-core-banking-api.example
@@ -49,7 +51,7 @@ paths:
       tags: [Customers]
       operationId: searchCustomers
       summary: Search banking customers
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeQuery'
@@ -79,7 +81,7 @@ paths:
       tags: [Customers]
       operationId: getCustomer
       summary: Get banking customer identity/KYC information
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/CustomerReference'
@@ -103,7 +105,7 @@ paths:
       tags: [Customers]
       operationId: getCustomerAccounts
       summary: Find accounts for a banking customer
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/CustomerReference'
@@ -139,7 +141,7 @@ paths:
       tags: [Customers]
       operationId: verifyCustomer
       summary: Execute a composite banking customer/account verification
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
       requestBody:
@@ -166,7 +168,7 @@ paths:
       tags: [Payment confirmation]
       operationId: createPaymentConfirmationChallenge
       summary: Create and send a bank-owned confirmation challenge
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
@@ -195,7 +197,7 @@ paths:
     post:
       tags: [Payment confirmation]
       operationId: verifyPaymentConfirmationChallenge
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
@@ -226,7 +228,7 @@ paths:
     post:
       tags: [Payment confirmation]
       operationId: replacePaymentConfirmationChallenge
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
@@ -257,7 +259,7 @@ paths:
     get:
       tags: [Payment confirmation]
       operationId: getPaymentConfirmationChallenge
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
@@ -279,7 +281,7 @@ paths:
     get:
       tags: [Payment confirmation]
       operationId: recoverPaymentConfirmationByIdempotencyKey
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
@@ -301,7 +303,7 @@ paths:
     post:
       tags: [Payment confirmation]
       operationId: revokePaymentConfirmationChallenge
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
@@ -332,7 +334,7 @@ paths:
     post:
       tags: [Payment execution]
       operationId: executePaymentEvent
-      x-regional-review-status: BLOCKED_BANK_EVIDENCE
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
@@ -364,7 +366,7 @@ paths:
     get:
       tags: [Payment execution]
       operationId: getPaymentEventByPaymentReference
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
@@ -382,7 +384,7 @@ paths:
     get:
       tags: [Payment execution]
       operationId: getPaymentEventByIdempotencyKey
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
@@ -400,7 +402,7 @@ paths:
     post:
       tags: [Accounting]
       operationId: submitAccountingEntries
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
@@ -434,7 +436,7 @@ paths:
     get:
       tags: [Accounting]
       operationId: getAccountingBatch
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
@@ -454,7 +456,7 @@ paths:
     get:
       tags: [Accounting]
       operationId: getAccountingBatchByIdempotencyKey
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
@@ -474,7 +476,7 @@ paths:
     get:
       tags: [End of day]
       operationId: findEndOfDayConfirmation
-      x-regional-review-status: READY_FOR_REGIONAL_REVIEW
+      x-regional-review-status: APPROVED
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
         - $ref: '#/components/parameters/FinancialInstitutionCodeQuery'
@@ -662,65 +664,332 @@ components:
           items: { type: string, minLength: 1, maxLength: 64 }
         requestedAt: { type: string, format: date-time }
 
+    VerificationCheck:
+      type: object
+      additionalProperties: false
+      required: [type, result]
+      properties:
+        type:
+          type: string
+          enum:
+            - CUSTOMER_EXISTS
+            - FINANCIAL_INSTITUTION_MATCHES
+            - NIU_MATCHES
+            - IDENTITY_MATCHES
+            - ACCOUNT_EXISTS
+            - ACCOUNT_BELONGS_TO_CUSTOMER
+            - ACCOUNT_IS_ACTIVE
+            - ACCOUNT_NOT_BLOCKED
+            - ACCOUNT_NOT_OPPOSED
+            - REQUIRED_KYC_PRESENT
+            - REQUIRED_KYC_VERIFIED
+        result:
+          type: string
+          enum: [PASS, FAIL, UNKNOWN]
+        reasonCode:
+          type: [string, 'null']
+          maxLength: 50
+        checkedAt:
+          type: [string, 'null']
+          format: date-time
+
     CustomerVerificationResult:
       type: object
-      additionalProperties: true
-      description: Compatibility shape to be reviewed against the Regional customer-verification semantics before final approval.
+      additionalProperties: false
+      required: [verificationId, verifiedAt, source, outcome, checks]
+      properties:
+        verificationId:
+          type: string
+          format: uuid
+        verifiedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          const: AMPLITUDE
+        outcome:
+          type: string
+          enum: [VERIFIED, REJECTED, INDETERMINATE]
+          description: |
+            VERIFIED requires every applicable mandatory check to pass.
+            REJECTED is a conclusive negative banking result.
+            INDETERMINATE never authorizes progression.
+        customerReference:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 100
+        accountReference:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 100
+        checks:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/VerificationCheck'
+        identity:
+          oneOf:
+            - $ref: '#/components/schemas/CustomerIdentity'
+            - type: 'null'
+        account:
+          oneOf:
+            - $ref: '#/components/schemas/AccountSummary'
+            - type: 'null'
+
+    CustomerReference:
+      type: string
+      minLength: 1
+      maxLength: 100
+      description: Opaque canonical banking customer reference.
+
+    AccountReference:
+      type: string
+      minLength: 1
+      maxLength: 100
+      description: Opaque canonical debtor-account reference.
+
+    Money:
+      type: object
+      additionalProperties: false
+      required: [amount, currency]
+      properties:
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
 
     CreatePaymentConfirmationChallengeRequest:
       type: object
-      additionalProperties: true
-      description: Shape carried from approved SIXPAY compatibility evidence; requires explicit Regional approval.
+      additionalProperties: false
+      required: [paymentReference, customerReference, debtorAccountReference, amount]
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        customerReference:
+          $ref: '#/components/schemas/CustomerReference'
+        debtorAccountReference:
+          $ref: '#/components/schemas/AccountReference'
+        amount:
+          $ref: '#/components/schemas/Money'
 
     VerifyPaymentConfirmationChallengeRequest:
       type: object
-      additionalProperties: true
-      description: Contains the transient OTP value; OTP must never be persisted or logged.
+      additionalProperties: false
+      required: [paymentReference, otp]
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        otp:
+          type: string
+          minLength: 1
+          writeOnly: true
+          description: Transient OTP. It must never be persisted or logged.
 
     ReplacePaymentConfirmationChallengeRequest:
       type: object
-      additionalProperties: true
+      additionalProperties: false
+      required: [paymentReference]
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
 
     RevokePaymentConfirmationChallengeRequest:
       type: object
-      additionalProperties: true
+      additionalProperties: false
+      required: [paymentReference, reasonCode]
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        reasonCode:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: '^[A-Z][A-Z0-9_]{0,63}$'
+
+    BankChallengeStatus:
+      type: string
+      enum: [ACTIVE, VERIFIED, EXPIRED, LOCKED, REPLACED, REVOKED]
+
+    BankConfirmationBusinessCode:
+      type: string
+      enum:
+        - CHALLENGE_ACTIVE
+        - OTP_VERIFIED
+        - OTP_INVALID
+        - CHALLENGE_EXPIRED
+        - CHALLENGE_LOCKED
+        - CHALLENGE_REPLACED
+        - CHALLENGE_REVOKED
+        - RESEND_NOT_ALLOWED
+        - CONFIRMATION_NOT_AVAILABLE
+        - DEPENDENCY_RESULT_UNKNOWN
+        - DELIVERY_FAILED
+
+    DeliveryChannel:
+      type: string
+      enum: [SMS, EMAIL]
 
     PaymentConfirmationChallengeResult:
       type: object
-      additionalProperties: true
-      description: Approved SIXPAY compatibility semantics exist; exact Regional-owned schema requires explicit Regional review.
+      additionalProperties: false
+      required: [paymentReference, challengeReference, challengeStatus, businessCode]
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        challengeReference:
+          type: string
+          minLength: 1
+          maxLength: 128
+        challengeStatus:
+          $ref: '#/components/schemas/BankChallengeStatus'
+        businessCode:
+          $ref: '#/components/schemas/BankConfirmationBusinessCode'
+        deliveryChannel:
+          $ref: '#/components/schemas/DeliveryChannel'
+        sentAt:
+          type: [string, 'null']
+          format: date-time
+        expiresAt:
+          type: [string, 'null']
+          format: date-time
+        verifiedAt:
+          type: [string, 'null']
+          format: date-time
 
     PaymentConfirmationVerificationResult:
+      allOf:
+        - $ref: '#/components/schemas/PaymentConfirmationChallengeResult'
+      description: Positive or negative verification. Success does not prove funds or posting.
+
+    CoreBankingAccountReferenceString:
+      type: string
+      minLength: 5
+      maxLength: 20
+      description: |
+        Core Banking account reference in `age-ncp-clc` format.
+        The three components are respectively agency (`age`), account number (`ncp`)
+        and key (`clc`).
+
+    PaymentProviderEvent:
       type: object
-      additionalProperties: true
+      additionalProperties: false
+      description: |
+        Minimum Regional provider-event payload required to create the Core Banking
+        event. These fields are based on the currently consumed SIXPAY wire shape
+        and explicit Regional approval. Additional provider fields may be introduced
+        only through a future approved contract evolution.
+      required:
+        - paymentReference
+        - operationCode
+        - eventNumber
+        - currency
+        - nature
+        - accountingDate
+        - technicalUser
+        - debtorAccountReference
+        - creditorAccountReference
+        - amount
+        - label
+        - nightMode
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        operationCode:
+          type: string
+          minLength: 1
+          maxLength: 3
+          description: |
+            Value supplied/configured by the calling application. Core Banking
+            validates it against the Amplitude reference table.
+        eventNumber:
+          type: integer
+          format: int64
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+        nature:
+          type: string
+          minLength: 1
+          description: Value supplied/configured by the calling application.
+        accountingDate:
+          type: string
+          format: date
+        technicalUser:
+          type: string
+          minLength: 1
+        debtorAccountReference:
+          $ref: '#/components/schemas/CoreBankingAccountReferenceString'
+        creditorAccountReference:
+          $ref: '#/components/schemas/CoreBankingAccountReferenceString'
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        label:
+          type: string
+          minLength: 1
+        nightMode:
+          type: boolean
+
+    PaymentProviderEntry:
+      type: object
+      additionalProperties: false
+      description: |
+        Minimum Regional `bkmvti`-equivalent entry. A Payment Event contains
+        exactly two entries and they are persisted atomically with the event.
+      required: [sequence, direction, accountReference, amount, currency, paymentReference]
+      properties:
+        sequence:
+          type: integer
+          minimum: 1
+        direction:
+          type: string
+          enum: [D, C]
+          description: D means debit; C means credit.
+        accountReference:
+          $ref: '#/components/schemas/CoreBankingAccountReferenceString'
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
 
     PaymentEventEnvelope:
       type: object
       additionalProperties: false
       required: [paymentReference, snapshotVersion, providerEvent, providerEntries, requestedAt]
+      description: |
+        Receipt of this request directly triggers Core Banking execution.
+        Core Banking performs the applicable execution-time controls before write,
+        then writes the `bkeve`-equivalent event and exactly two `bkmvti`-equivalent
+        entries atomically. A bank reference is returned only after successful
+        execution. An uncertain transport/execution outcome must never be blindly
+        replayed; the authoritative lookup endpoints are used before any retry.
       properties:
-        paymentReference: { $ref: '#/components/schemas/PaymentReference' }
-        snapshotVersion: { type: string, minLength: 1, maxLength: 32 }
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        snapshotVersion:
+          type: string
+          minLength: 1
+          maxLength: 32
         providerEvent:
-          type: object
-          additionalProperties: true
-          x-regional-blocking-evidence: PAYMENT_EVENT_PROVIDER_MAPPING
-          description: |
-            Reduced provider event payload. Exact fields, code tables, requiredness
-            and mapping semantics must come from approved La Régionale banking evidence.
-            SIXPAY DTOs are compatibility evidence only and are not sufficient to
-            make this the canonical Regional schema.
+          $ref: '#/components/schemas/PaymentProviderEvent'
         providerEntries:
           type: array
-          minItems: 1
+          minItems: 2
+          maxItems: 2
           items:
-            type: object
-            additionalProperties: true
-            x-regional-blocking-evidence: PAYMENT_EVENT_PROVIDER_MAPPING
-          description: |
-            Reduced provider accounting entries. Exact fields/code tables require
-            approved La Régionale banking evidence.
-        requestedAt: { type: string, format: date-time }
+            $ref: '#/components/schemas/PaymentProviderEntry'
+        requestedAt:
+          type: string
+          format: date-time
 
     PaymentExecutionCheck:
       type: object
@@ -746,12 +1015,19 @@ components:
         outcome:
           type: string
           enum: [COMPLETED, REJECTED, UNKNOWN]
+          description: |
+            UNKNOWN means the caller cannot conclude whether Core Banking
+            committed the financial event. The caller must use the authoritative
+            paymentReference or idempotency-key lookup before any retry.
         checks:
           type: array
           minItems: 8
           maxItems: 8
           items: { $ref: '#/components/schemas/PaymentExecutionCheck' }
-        bankReference: { type: [string, 'null'], maxLength: 128 }
+        bankReference:
+          type: [string, 'null']
+          maxLength: 128
+          description: Present only after successful Core Banking execution.
         reasonCode: { type: [string, 'null'], maxLength: 64 }
         observedAt: { type: string, format: date-time }
 
