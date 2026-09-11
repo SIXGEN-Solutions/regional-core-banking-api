@@ -4,22 +4,34 @@ Autonomous Core Banking integration API of **La Régionale**, intended for SIXPA
 
 ## Current lot
 
-**R0 — Repository Bootstrap / Starter Pack Import**
+**R1 — Regional Contract Baseline**
 
-R0 establishes repository governance, architecture documentation, the Regional OpenAPI draft workspace, and classified SIXPAY compatibility references. It deliberately contains **no Spring Boot implementation** and performs **no OpenAPI/code generation**.
+R1 consolidates the Regional-owned OpenAPI V1 from approved Regional/bank evidence and SIXPAY compatibility evidence.
+
+No Spring/OpenAPI generation is authorized in this lot.
 
 ## Contract governance
 
-The Regional contract workspace is `contracts/openapi/regional-core-banking-api-v1.yaml`. During R0 it remains:
+Canonical workspace:
+
+`contracts/openapi/regional-core-banking-api-v1.yaml`
+
+Current R1 status:
 
 - `lifecycleStatus: DRAFT`
 - `approvalStatus: PENDING_APPROVAL`
 - `generationPolicy: REFERENCE_ONLY`
 - `codeGenerationAllowed: false`
 
-No API boundary code may be generated until explicit human approval.
+The contract must not be marked `APPROVED` until all blocking Regional banking evidence is available and explicit human approval is recorded.
 
-SIXPAY contracts, documentation and implementation evidence are compatibility references only. SIXPAY Java DTOs/models are not the canonical Regional model.
+SIXPAY contracts, clients, DTOs and tests are compatibility evidence only. They are not the canonical Regional server model.
+
+## Blocking R1 evidence
+
+The Payment Event provider payload still depends on the approved La Régionale mapping for the reduced `bkeve` / `bkmvti` fields and code tables. This evidence must be supplied/validated before the corresponding schema can be frozen and the complete Regional V1 can be approved.
+
+See `documentation/contracts/R1_COMPATIBILITY_MATRIX.md`.
 
 ## Architecture
 
@@ -27,11 +39,9 @@ Target dependency direction:
 
 `api -> application -> domain <- infrastructure`
 
-Amplitude/Informix details belong only in `infrastructure/amplitude`. Regional transport models, Regional application/domain models, Amplitude anti-corruption models, Informix/JDBC representations, and SIXPAY consumer-side models remain separate.
+Amplitude/Informix details belong only in `infrastructure/amplitude`.
 
 ## Source baselines
 
-- Regional bootstrap starting revision: `main @ 0187d957fe3ed885146ced3e670f540a89c26891`
+- Regional R1 starting revision: `main @ 857e440b415fc778cb4dddd5953e09e4958a6717`
 - SIXPAY compatibility starter baseline: `main @ b6da7db33432cb81997cc293b21080dd46fdcc14`
-
-See `documentation/SOURCE_MANIFEST.md` and `documentation/SOURCE_CLASSIFICATION.md`.
