@@ -1,50 +1,114 @@
 # Regional Core Banking API
 
-Autonomous Core Banking integration API of **La Régionale**, intended for SIXPAY CONNECT and other explicitly authorized Regional applications.
+Autonomous Core Banking integration API of **La Régionale**, reusable by SIXPAY CONNECT and other explicitly authorized Regional applications.
 
 ## Current lot
 
-**R1 — Regional Contract Baseline**
+**R2 — Spring Boot Bootstrap**
 
-R1 consolidates the Regional-owned OpenAPI V1 from approved Regional/bank evidence and SIXPAY compatibility evidence.
+R2 initializes the deployable Java 21 / Spring Boot application shell, Maven build, hexagonal package boundaries, runtime configuration skeleton, foundational tests and containerization.
 
-No Spring/OpenAPI generation is authorized in this lot.
+R2 introduces **no banking endpoint implementation** and performs **no OpenAPI generation**.
 
 ## Contract governance
 
-Canonical workspace:
+Canonical approved contract:
 
 `contracts/openapi/regional-core-banking-api-v1.yaml`
 
-Current R1 status:
+Current contract status:
 
 - `lifecycleStatus: APPROVED`
 - `approvalStatus: APPROVED`
 - `generationPolicy: ACTIVE`
 - `codeGenerationAllowed: true`
 
-The Regional V1 transport contract has received explicit human approval.
-R1 itself performs no Spring/OpenAPI generation; generation belongs to the later contract-generation lot.
+OpenAPI generation is intentionally deferred to **R3 — Contract generation and CI**.
 
-SIXPAY contracts, clients, DTOs and tests are compatibility evidence only. They are not the canonical Regional server model.
+## Runtime baseline
 
-## R1 approval
-
-The minimum Payment Event provider field set, account-reference format,
-direction mapping, atomic execution semantics and UNKNOWN/recovery semantics
-have been explicitly approved for Regional V1.
-
-See `documentation/contracts/R1_COMPATIBILITY_MATRIX.md`.
+- Java 21
+- Spring Boot
+- Maven
+- single deployable application
+- Actuator health/info
+- graceful shutdown
+- Docker image
+- Docker Compose local skeleton
 
 ## Architecture
 
-Target dependency direction:
+Dependency direction:
 
 `api -> application -> domain <- infrastructure`
 
-Amplitude/Informix details belong only in `infrastructure/amplitude`.
+Each banking capability owns:
+
+```text
+<capability>/
+├─ api/
+├─ application/
+│  ├─ port/in/
+│  ├─ port/out/
+│  └─ service/
+├─ domain/
+└─ infrastructure/
+   └─ amplitude/
+```
+
+Capabilities currently scaffolded:
+
+- customer
+- confirmation
+- payment
+- accounting
+- tfj
+
+Supporting packages:
+
+- security
+- audit
+- common
+- configuration
+
+No Informix schema, SQL, stored procedure, banking mapping or SIXPAY Java model is introduced by R2.
+
+## Build
+
+```bash
+./mvnw verify
+```
+
+or, if the Maven Wrapper has not yet been generated locally:
+
+```bash
+mvn verify
+```
+
+## Run
+
+```bash
+mvn spring-boot:run
+```
+
+Health endpoint:
+
+```text
+GET /actuator/health
+```
+
+## Container
+
+Build the application first:
+
+```bash
+mvn clean package
+docker compose up --build
+```
+
+Environment-specific credentials, URLs, OAuth2 parameters, certificates and trust material must stay outside the repository.
 
 ## Source baselines
 
-- Regional R1 starting revision: `main @ 857e440b415fc778cb4dddd5953e09e4958a6717`
+- Regional R2 starting revision: `main @ 92162217faae3d63ff51e9f40af8daf6a7f38986`
 - SIXPAY compatibility starter baseline: `main @ b6da7db33432cb81997cc293b21080dd46fdcc14`

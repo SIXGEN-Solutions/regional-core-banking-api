@@ -1,0 +1,6 @@
+# Local profile skeleton only.
+# Do not commit credentials, endpoints, certificates or trust material here.
+
+logging:
+  level:
+    com.regional.corebanking: INFO

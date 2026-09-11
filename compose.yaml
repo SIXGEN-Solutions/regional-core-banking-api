@@ -1,0 +1,15 @@
+services:
+  regional-core-banking-api:
+    build:
+      context: .
+    image: regional-core-banking-api:local
+    ports:
+      - "${REGIONAL_API_PORT:-8080}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: "${SPRING_PROFILES_ACTIVE:-local}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
