@@ -1,0 +1,365 @@
+openapi: 3.1.0
+info:
+  title: La Régionale - Core Banking API
+  version: 0.1.0-draft
+  summary: Canonical server API contract workspace for regional-core-banking-api.
+  description: |
+    Draft workspace for the autonomous Regional Core Banking API.
+
+    This contract is NOT derived from SIXPAY Java DTOs/models. SIXPAY is one
+    consumer among others. Existing SIXPAY Core Banking clients are used only
+    as compatibility evidence for retained V1 operations.
+
+    This draft intentionally does not authorize code generation until each
+    operation/schema is reviewed against approved Regional banking evidence and
+    consumer compatibility requirements.
+  x-regional-contract:
+    lifecycleStatus: DRAFT
+    approvalStatus: PENDING_APPROVAL
+    generationPolicy: REFERENCE_ONLY
+    codeGenerationAllowed: false
+    owner: REGIONAL_CORE_BANKING_API
+    sourceOfTruth: THIS_REPOSITORY_AFTER_APPROVAL
+    sixpayRole: COMPATIBILITY_CONSUMER
+    sixpayModelsAreSourceOfTruth: false
+
+servers:
+  - url: https://regional-core-banking-api.example
+    description: Environment-specific placeholder.
+
+tags:
+  - name: Customers
+  - name: Payment confirmation
+  - name: Payment execution
+  - name: Accounting
+  - name: End of day
+
+paths:
+  /api/v1/customers:
+    get:
+      tags: [Customers]
+      operationId: searchCustomers
+      summary: Search banking customers
+      x-regional-review-status: TO_CONFIRM
+      responses:
+        '200':
+          description: Successful lookup
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerSearchResult'
+
+  /api/v1/customers/{customerReference}:
+    get:
+      tags: [Customers]
+      operationId: getCustomer
+      summary: Get banking customer identity/KYC information
+      x-regional-review-status: TO_CONFIRM
+      parameters:
+        - name: customerReference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerIdentity'
+
+  /api/v1/customers/{customerReference}/accounts:
+    get:
+      tags: [Customers]
+      operationId: getCustomerAccounts
+      summary: Find accounts for a banking customer
+      x-regional-review-status: TO_CONFIRM
+      parameters:
+        - name: customerReference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Accounts found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountSearchResult'
+
+  /api/v1/customer-verifications:
+    post:
+      tags: [Customers]
+      operationId: verifyCustomer
+      summary: Execute a composite banking customer/account verification
+      x-regional-review-status: TO_CONFIRM
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerVerificationRequest'
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerVerificationResult'
+
+  /api/v1/payment-confirmation-challenges:
+    post:
+      tags: [Payment confirmation]
+      operationId: createPaymentConfirmationChallenge
+      summary: Create and send a bank-owned confirmation challenge
+      x-regional-review-status: TO_CONFIRM
+      responses:
+        '200':
+          description: Challenge result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentConfirmationChallengeResult'
+
+  /api/v1/payment-confirmation-challenges/{challengeReference}/verifications:
+    post:
+      tags: [Payment confirmation]
+      operationId: verifyPaymentConfirmationChallenge
+      x-regional-review-status: TO_CONFIRM
+      parameters:
+        - name: challengeReference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentConfirmationVerificationResult'
+
+  /api/v1/payment-confirmation-challenges/{challengeReference}/replacements:
+    post:
+      tags: [Payment confirmation]
+      operationId: replacePaymentConfirmationChallenge
+      x-regional-review-status: TO_CONFIRM
+      parameters:
+        - name: challengeReference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Replacement result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentConfirmationChallengeResult'
+
+  /api/v1/payment-confirmation-challenges/{challengeReference}:
+    get:
+      tags: [Payment confirmation]
+      operationId: getPaymentConfirmationChallenge
+      x-regional-review-status: TO_CONFIRM
+      parameters:
+        - name: challengeReference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Challenge status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentConfirmationChallengeResult'
+
+  /api/v1/payment-confirmation-challenge-lookups/{idempotencyKey}:
+    get:
+      tags: [Payment confirmation]
+      operationId: recoverPaymentConfirmationByIdempotencyKey
+      x-regional-review-status: TO_CONFIRM
+      parameters:
+        - name: idempotencyKey
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Recovered challenge result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentConfirmationChallengeResult'
+
+  /api/v1/payment-confirmation-challenges/{challengeReference}/revocations:
+    post:
+      tags: [Payment confirmation]
+      operationId: revokePaymentConfirmationChallenge
+      x-regional-review-status: TO_CONFIRM
+      parameters:
+        - name: challengeReference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Revocation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentConfirmationChallengeResult'
+
+  /api/v1/payment-events:
+    post:
+      tags: [Payment execution]
+      operationId: executePaymentEvent
+      x-regional-review-status: TO_CONFIRM
+      responses:
+        '200':
+          description: Conclusive result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentEventResult'
+        '202':
+          description: Accepted with non-conclusive result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentEventResult'
+
+  /api/v1/payment-events/{paymentReference}:
+    get:
+      tags: [Payment execution]
+      operationId: getPaymentEventByPaymentReference
+      x-regional-review-status: TO_CONFIRM
+      parameters:
+        - name: paymentReference
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentEventResult'
+
+  /api/v1/payment-events/idempotency/{idempotencyKey}:
+    get:
+      tags: [Payment execution]
+      operationId: getPaymentEventByIdempotencyKey
+      x-regional-review-status: TO_CONFIRM
+      parameters:
+        - name: idempotencyKey
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Authoritative result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentEventResult'
+
+  /api/v1/accounting-entries:
+    post:
+      tags: [Accounting]
+      operationId: submitAccountingEntries
+      x-regional-review-status: TO_CONFIRM
+      responses:
+        '200':
+          description: Conclusive batch result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountingEntriesBatchResult'
+        '202':
+          description: Accepted for asynchronous processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountingEntriesBatchResult'
+
+  /api/v1/accounting-entries/batches/{batchId}:
+    get:
+      tags: [Accounting]
+      operationId: getAccountingBatch
+      x-regional-review-status: TO_CONFIRM
+      parameters:
+        - name: batchId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Batch result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountingEntriesBatchResult'
+
+  /api/v1/accounting-entries/idempotency/{idempotencyKey}:
+    get:
+      tags: [Accounting]
+      operationId: getAccountingBatchByIdempotencyKey
+      x-regional-review-status: TO_CONFIRM
+      parameters:
+        - name: idempotencyKey
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Batch result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountingEntriesBatchResult'
+
+  /api/v1/end-of-day-confirmations:
+    get:
+      tags: [End of day]
+      operationId: findEndOfDayConfirmation
+      x-regional-review-status: TO_CONFIRM
+      responses:
+        '200':
+          description: Authoritative TFJ result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndOfDayConfirmation'
+
+components:
+  schemas:
+    PendingRegionalSchema:
+      type: object
+      additionalProperties: true
+      description: |
+        Placeholder while the Regional-owned schema is being defined and approved.
+        Do not generate production code from this draft.
+
+    CustomerSearchResult:
+      $ref: '#/components/schemas/PendingRegionalSchema'
+    CustomerIdentity:
+      $ref: '#/components/schemas/PendingRegionalSchema'
+    AccountSearchResult:
+      $ref: '#/components/schemas/PendingRegionalSchema'
+    CustomerVerificationRequest:
+      $ref: '#/components/schemas/PendingRegionalSchema'
+    CustomerVerificationResult:
+      $ref: '#/components/schemas/PendingRegionalSchema'
+    PaymentConfirmationChallengeResult:
+      $ref: '#/components/schemas/PendingRegionalSchema'
+    PaymentConfirmationVerificationResult:
+      $ref: '#/components/schemas/PendingRegionalSchema'
+    PaymentEventResult:
+      $ref: '#/components/schemas/PendingRegionalSchema'
+    AccountingEntriesBatchResult:
+      $ref: '#/components/schemas/PendingRegionalSchema'
+    EndOfDayConfirmation:
+      $ref: '#/components/schemas/PendingRegionalSchema'

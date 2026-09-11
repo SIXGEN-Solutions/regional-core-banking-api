@@ -1,0 +1,73 @@
+# REGIONAL_CORE_BANKING_API — IMPLEMENTATION STARTER PACK MANIFEST
+# Target repository: SIXGEN-Solutions/regional-core-banking-api
+# Source repository: SIXGEN-Solutions/sixpay-connect
+# Observed SIXPAY source revision: main @ b6da7db33432cb81997cc293b21080dd46fdcc14
+# Purpose: autonomous ChatGPT project + separate GitHub repository bootstrap
+#
+# IMPORTANT CONTRACT RULE
+# - The Regional OpenAPI contract is owned by regional-core-banking-api.
+# - It is NOT derived from SIXPAY Java models/DTOs and SIXPAY models are NOT its source of truth.
+# - Existing SIXPAY Core Banking clients remain consumers to preserve at the wire/protocol level.
+# - Initial Regional V1 must be checked for compatibility with the requests/responses actually used by SIXPAY.
+# - Compatibility does not mean reusing SIXPAY Java classes/packages/naming internally.
+
+[A] STARTER GOVERNANCE / HANDOFF
+HANDOFF_REGIONAL_CORE_BANKING_API.md
+HANDOFF_REGIONAL_CORE_BANKING_API.docx
+REGIONAL_CORE_BANKING_API_PROJECT_INSTRUCTIONS.md
+REGIONAL_CORE_BANKING_API_ARCHITECTURE.md
+REGIONAL_CORE_BANKING_API_IMPLEMENTATION_PLAN.md
+REGIONAL_CORE_BANKING_API_STARTER_MANIFEST.txt
+
+[B] REGIONAL CONTRACT WORKSPACE
+contracts/openapi/regional-core-banking-api-v1.yaml
+contracts/reference/sixpay/amplitude-customer-verification-api-v1.yaml
+contracts/reference/sixpay/amplitude-payment-confirmation-api-v1.yaml
+contracts/reference/sixpay/amplitude-payment-posting-api-v1.yaml
+contracts/reference/sixpay/amplitude-accounting-entries-api-v1.yaml
+contracts/reference/sixpay/amplitude-end-of-day-confirmation-api-v1.yaml
+contracts/reference/sixpay/CONTRACT_REGISTRY.yaml
+
+[C] SIXPAY REFERENCE DOCUMENTATION TO COPY
+reference/sixpay/architecture/core-banking-api-baseline.md
+reference/sixpay/architecture/core-banking-client-consolidation.md
+reference/sixpay/architecture/amplitude-customer-verification.md
+reference/sixpay/architecture/payment-amplitude-account-funds.md
+reference/sixpay/architecture/payment-amplitude-posting.md
+reference/sixpay/architecture/synchronous-integration-flows.md
+reference/sixpay/architecture/asynchronous-integration-flows.md
+reference/sixpay/architecture/integration-landscape.md
+reference/sixpay/architecture/transverse-integration-foundation.md
+reference/sixpay/architecture/accounting-batch-api-client.md
+reference/sixpay/architecture/accounting-batch-reconciliation.md
+
+[D] SIXPAY RUNBOOK REFERENCES TO COPY
+reference/sixpay/runbooks/AMPLITUDE_CUSTOMER_VERIFICATION_SANDBOX.md
+reference/sixpay/runbooks/AMPLITUDE_PAYMENT_ACCOUNT_FUNDS_SANDBOX.md
+reference/sixpay/runbooks/AMPLITUDE_PAYMENT_POSTING_SANDBOX.md
+reference/sixpay/runbooks/AMPLITUDE_PAYMENT_STATUS_RECONCILIATION.md
+reference/sixpay/runbooks/AMPLITUDE_PAYMENT_COMPENSATION_SANDBOX.md
+reference/sixpay/runbooks/ACCOUNTING_TFJ_RECONCILIATION.md
+
+[E] OPTIONAL / CLASSIFY BEFORE ACTIVE USE
+reference/sixpay/runbooks/AMPLITUDE_FUNDS_RESERVATION_SANDBOX.md
+# This remains reference-only unless an approved Regional capability requires it.
+# Do not create a standalone MVP funds-reservation API solely from this document.
+
+[F] IMPLEMENTATION EVIDENCE TO EXTRACT FROM SIXPAY FOR COMPATIBILITY TESTING
+# Do not copy the whole SIXPAY codebase into the new project.
+# Export only the actual Core Banking client surfaces needed to prove wire compatibility:
+# - RestAmplitude*Client classes
+# - related request/response DTOs
+# - provider mappers/validators
+# - client configuration relevant to paths/headers/security
+# - MockRestServiceServer/client tests and JSON fixtures
+# These are REFERENCE/COMPATIBILITY evidence, not Regional domain/server models.
+
+[EXCLUSIONS]
+- No TRESOR PAY contract is part of the Regional Core Banking server API.
+- No HISTORICAL SIXPAY document is active implementation input.
+- No DEFERRED_FUTURE contract is an implementation input.
+- No SIXPAY internal business API is copied as a Regional server contract.
+- No assumption about Informix tables, columns, stored procedures or transactions without bank evidence.
+- Do not edit SIXPAY DTOs/models/ports/adapters/clients in this project.

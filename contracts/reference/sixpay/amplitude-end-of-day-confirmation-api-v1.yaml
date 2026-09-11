@@ -1,0 +1,491 @@
+# REGIONAL CLASSIFICATION: SIXPAY_REFERENCE / REFERENCE_ONLY
+# sourceRepository: SIXGEN-Solutions/sixpay-connect
+# sourceRevision: main @ b6da7db33432cb81997cc293b21080dd46fdcc14
+# sourcePath: documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml
+# NOTE: any SIXPAY approval/code-generation metadata below applies only to SIXPAY.
+# It does NOT approve this material as a Regional canonical contract.
+
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - Amplitude End-of-Day Confirmation API
+  version: 1.0.0
+  description: |
+    End-of-day Accounting/TFJ result and reconciliation contract between Amplitude and SIXPAY. Under
+    D00-CB-OWNERSHIP the Core Banking team implements the agreed
+    result/reconciliation surface.
+
+    This contract does not describe Accounting batch submission.
+
+    SIXPAY owns generation and durable freezing of the reduced accounting lines
+    derived from its T0 Payment financial-event snapshots. The future T1
+    Accounting submission reuses those immutable lines. Core Banking owns
+    validation, acceptance and effective accounting posting of the submitted
+    lines.
+
+    The authenticated callback is the primary ingestion path; the read-only lookup is the controlled fallback.
+
+    Amplitude is the sole source of TFJ truth. SIXPAY changes a Payment only
+    after an authenticated result is durably persisted and uniquely matched on
+    financial institution, business date, Payment reference and bank posting
+    reference. An unmatched, ambiguous or conflicting confirmation is
+    quarantined, alerted and never changes Payment.
+  license:
+    name: SIXGEN Solutions Proprietary
+    url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
+  x-sixpay-contract:
+    registryId: "amplitude-end-of-day-confirmation-api-v1"
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.6"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    governanceDecision: "D00-CB-OWNERSHIP"
+    domain: "integration"
+    businessOwner: "accounting"
+    lifecycleConsumer: "payment"
+    capability: "END_OF_DAY_TREASURY_CONFIRMATION"
+    primaryDirection: "AMPLITUDE_TO_SIXPAY"
+    fallbackDirection: "SIXPAY_TO_AMPLITUDE"
+    systemOfRecord: "AMPLITUDE"
+    decisions:
+      - "IA0R-D08"
+    matchingKeys:
+      - "financialInstitutionCode"
+      - "businessDate"
+      - "paymentReference"
+      - "bankPostingReference"
+    idempotencyKey: "financialInstitutionCode + businessDate + bankPostingReference + tfjStatus"
+    unmatchedPolicy: "QUARANTINE_ALERT_MANUAL_RECONCILIATION_NO_PAYMENT_UPDATE"
+    limitations:
+      - "NO_TREASURY_FINALITY_WITHOUT_MATCHED_AMPLITUDE_RESULT"
+      - "NO_AUTOMATIC_REVERSAL_ON_DELAY"
+      - "NO_BLIND_FINANCIAL_REPLAY"
+
+servers:
+  - url: https://amplitude-api.example
+    description: Default Amplitude server; each operation declares its authoritative server
+
+tags:
+  - name: TFJ callback
+    description: Primary asynchronous Amplitude-to-SIXPAY confirmation.
+  - name: TFJ reconciliation
+    description: Scheduled SIXPAY-to-Amplitude read-only fallback.
+
+paths:
+  /webhooks/v1/amplitude/end-of-day-confirmations:
+    servers:
+      - url: https://sixpay-api.example
+        description: SIXPAY callback endpoint allow-listed for Amplitude
+    post:
+      x-sixpay-bank-approval: APPROVED
+      tags: [TFJ callback]
+      operationId: receiveAmplitudeEndOfDayConfirmation
+      summary: Receive an Amplitude TFJ confirmation
+      description: |
+        HTTP 202 means the confirmation was durably accepted for matching, was
+        quarantined for controlled reconciliation, or was an identical replay.
+        It does not by itself prove that Payment changed state.
+
+        A same-key/different-payload conflict returns HTTP 409 and is
+        quarantined. Amplitude retries transient failures with the same payload
+        and business idempotency key.
+      security:
+        - mutualTLS: []
+          amplitudeSignature: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/ConfirmationIdempotencyKey'
+        - $ref: '#/components/parameters/SignatureKeyId'
+        - $ref: '#/components/parameters/SignatureTimestamp'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndOfDayConfirmation'
+      responses:
+        '202':
+          description: Confirmation durably accepted, quarantined, or identically replayed
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmationAcknowledgement'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/ConfirmationConflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/end-of-day-confirmations:
+    servers:
+      - url: https://amplitude-api.example
+        description: Environment-specific Amplitude integration endpoint
+    get:
+      x-sixpay-bank-approval: APPROVED
+      tags: [TFJ reconciliation]
+      operationId: findAmplitudeEndOfDayConfirmation
+      summary: Find the authoritative TFJ result for one posting
+      description: |
+        Read-only fallback used after the business cutoff or for controlled
+        incident recovery. A successful lookup is processed through the exact
+        same matching, idempotency and quarantine rules as a callback.
+      security:
+        - sixpayToAmplitudeOauth2:
+            - amplitude.tfj.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/BusinessDate'
+        - $ref: '#/components/parameters/PaymentReference'
+        - $ref: '#/components/parameters/BankPostingReference'
+      responses:
+        '200':
+          description: Authoritative TFJ result found
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndOfDayConfirmation'
+        '404':
+          $ref: '#/components/responses/ResultNotAvailable'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+components:
+  securitySchemes:
+    amplitudeSignature:
+      type: apiKey
+      in: header
+      name: X-Amplitude-Signature
+      description: |
+        `v1=<base64url-signature>` computed with HMAC-SHA256 over
+        `timestamp + "." + HTTP_METHOD + "." + request_target + "." +
+        base64url(SHA-256(raw_request_body))`.
+    sixpayToAmplitudeOauth2:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://identity.amplitude.example/oauth2/token
+          scopes:
+            amplitude.tfj.read: Read an authoritative Amplitude TFJ result
+    mutualTLS:
+      type: mutualTLS
+
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ConfirmationIdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        Stable key derived from financialInstitutionCode, businessDate,
+        bankPostingReference and tfjStatus. It must be reused unchanged on retry.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 200
+        pattern: '^[A-Za-z0-9._:-]+$'
+    SignatureKeyId:
+      name: X-Amplitude-Signature-Key-ID
+      in: header
+      required: true
+      description: Identifier of the active HMAC secret, supporting rotation.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+        pattern: '^[A-Za-z0-9._-]+$'
+    SignatureTimestamp:
+      name: X-Amplitude-Signature-Timestamp
+      in: header
+      required: true
+      description: Unix epoch seconds accepted only within a five-minute window.
+      schema:
+        type: string
+        pattern: '^[0-9]{10}$'
+    FinancialInstitutionCode:
+      name: financialInstitutionCode
+      in: query
+      required: true
+      schema:
+        type: string
+        minLength: 2
+        maxLength: 35
+        pattern: '^[A-Z0-9._-]+$'
+    BusinessDate:
+      name: businessDate
+      in: query
+      required: true
+      schema:
+        type: string
+        format: date
+    PaymentReference:
+      name: paymentReference
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/PaymentReference'
+    BankPostingReference:
+      name: bankPostingReference
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/BankPostingReference'
+
+  headers:
+    CorrelationId:
+      required: true
+      description: End-to-end correlation identifier.
+      schema:
+        type: string
+        format: uuid
+    RetryAfter:
+      description: Delay in seconds before the next bounded retry.
+      schema:
+        type: integer
+        minimum: 1
+
+  schemas:
+    EndOfDayConfirmation:
+      type: object
+      additionalProperties: false
+      required:
+        - schemaVersion
+        - confirmationId
+        - financialInstitutionCode
+        - businessDate
+        - paymentReference
+        - bankPostingReference
+        - tfjStatus
+        - confirmedAt
+      properties:
+        schemaVersion:
+          type: string
+          const: "1.0"
+        confirmationId:
+          type: string
+          format: uuid
+          description: Immutable identifier assigned by Amplitude.
+        financialInstitutionCode:
+          type: string
+          minLength: 2
+          maxLength: 35
+          pattern: '^[A-Z0-9._-]+$'
+        businessDate:
+          type: string
+          format: date
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        bankPostingReference:
+          $ref: '#/components/schemas/BankPostingReference'
+        tfjBatchReference:
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: '^[A-Za-z0-9._:/-]+$'
+        tfjStatus:
+          type: string
+          enum:
+            - PENDING
+            - INTEGRATED
+            - FAILED
+        confirmedAt:
+          type: string
+          format: date-time
+        failure:
+          oneOf:
+            - $ref: '#/components/schemas/TfjFailure'
+            - type: "null"
+      allOf:
+        - if:
+            properties:
+              tfjStatus:
+                const: FAILED
+          then:
+            required: [failure]
+            properties:
+              failure:
+                $ref: '#/components/schemas/TfjFailure'
+          else:
+            properties:
+              failure:
+                type: "null"
+
+    TfjFailure:
+      type: object
+      additionalProperties: false
+      required: [code, description, recoveryAction]
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 50
+          pattern: '^[A-Z0-9_]+$'
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+        recoveryAction:
+          type: string
+          enum:
+            - MANUAL_RECONCILIATION
+            - REVERSAL_REVIEW
+            - REVERSAL_REQUIRED
+
+    ConfirmationAcknowledgement:
+      type: object
+      additionalProperties: false
+      required:
+        - confirmationId
+        - correlationId
+        - receiptStatus
+        - receivedAt
+      properties:
+        confirmationId:
+          type: string
+          format: uuid
+        correlationId:
+          type: string
+          format: uuid
+        receiptStatus:
+          type: string
+          enum:
+            - ACCEPTED_FOR_MATCHING
+            - IDENTICAL_REPLAY
+            - QUARANTINED
+        receivedAt:
+          type: string
+          format: date-time
+
+    PaymentReference:
+      type: string
+      minLength: 1
+      maxLength: 100
+      pattern: '^[A-Za-z0-9._:/-]+$'
+
+    BankPostingReference:
+      type: string
+      minLength: 1
+      maxLength: 100
+      pattern: '^[A-Za-z0-9._:/-]+$'
+
+    Problem:
+      type: object
+      additionalProperties: true
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        code:
+          type: string
+        correlationId:
+          type: string
+          format: uuid
+
+  responses:
+    BadRequest:
+      description: Malformed request
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Authentication failed
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: Caller is authenticated but not authorized
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ConfirmationConflict:
+      description: Same TFJ idempotency key was already received with a different payload
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnprocessableEntity:
+      description: Semantically invalid confirmation
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ResultNotAvailable:
+      description: No authoritative TFJ result is available for the supplied keys
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    TooManyRequests:
+      description: Rate limit reached
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalServerError:
+      description: Internal processing failure
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    ServiceUnavailable:
+      description: Service temporarily unavailable
+      headers:
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
