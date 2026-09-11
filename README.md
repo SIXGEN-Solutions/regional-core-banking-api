@@ -114,3 +114,22 @@ Environment-specific endpoints, credentials, certificates, private keys and trus
 
 - Regional R3 starting revision: `feat/contract-generation-ci @ bf886255254724dd857301274cb2942b98e7044a`
 - SIXPAY compatibility starter baseline: `main @ b6da7db33432cb81997cc293b21080dd46fdcc14`
+
+## Current lot — R4
+
+**R4 — Customer / Account Verification**
+
+R4 implements the Regional customer/account domain and application verification
+orchestration behind the already approved V1 contract.
+
+No OpenAPI generation is executed by the R4 patch.
+
+The real Amplitude/Informix infrastructure adapter remains fail-closed until
+approved La Régionale evidence defines the access mechanism, tables/views or
+procedures, mappings and transaction semantics. No banking schema or SQL is
+invented.
+
+R4 starting revision:
+
+`feat/customer-account-verification @ c79d748c8078528d2074fa31911f345c79d65f09`
+
