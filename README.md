@@ -56,6 +56,15 @@ target/generated-sources/openapi/
 
 It is not committed to the repository.
 
+
+## Known generator limitation
+
+OpenAPI Generator `7.15.0` currently reports `Unknown type mutualTLS` while
+processing the approved OpenAPI 3.1 mTLS security scheme.
+
+This does **not** change the Regional contract. OAuth2 Client Credentials + mTLS
+remain governed by the canonical OpenAPI contract and approved security decisions.
+
 ## Architecture
 
 Target dependency direction:

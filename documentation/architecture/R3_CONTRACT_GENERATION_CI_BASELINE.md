@@ -63,6 +63,27 @@ GitHub Actions is configured for:
 - Docker Compose config;
 - pull-request dependency review.
 
+
+## Known toolchain limitation — OpenAPI 3.1 mutualTLS
+
+OpenAPI Generator `7.15.0` emits messages such as:
+
+`Unknown type mutualTLS found in the security definition`
+
+when processing the approved OpenAPI 3.1 `mutualTLS` security scheme.
+
+This is treated as a generator/toolchain limitation, not as authorization to
+change the Regional security contract.
+
+R3 therefore preserves the approved contract semantics:
+
+- OAuth2 Client Credentials;
+- mTLS where defined by the approved Regional contract;
+- no invented scopes or trust relationships.
+
+The generated Java HTTP boundary must not be treated as the source of truth for
+transport security semantics. The canonical OpenAPI contract remains authoritative.
+
 ## Safety
 
 No endpoint, schema, banking mapping, Informix structure, OAuth2 scope or trust relationship is introduced by R3.
