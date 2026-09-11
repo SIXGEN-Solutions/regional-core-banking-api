@@ -1,0 +1,1027 @@
+schemaVersion: "1.0"
+registry:
+  id: "sixpay-contract-registry"
+  baseline: "REPOSITORY_BASELINE_CONSOLIDATION"
+  gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
+  step: "FS-2.1.0_CONTRACT_REGISTRY_NORMALIZATION"
+  repository: "SIXGEN-Solutions/sixpay-connect"
+  classificationDate: "2026-08-23"
+  gateSemantics: "GLOBAL_REGISTRY_GOVERNANCE"
+  historicalContractGatesPreserved: true
+  description: >-
+    Canonical cross-domain SIXPAY contract registry for the repository baseline.
+    The registry-level gate identifies the current repository consolidation
+    activity only. Contract-level gate and phaseStep fields preserve the
+    historical delivery gate under which each capability was defined or
+    approved and remain authoritative for contract traceability.
+
+classificationModel:
+  domains:
+    payment: "Payment bounded capability."
+    customer: "Customer and observed-customer capabilities."
+    accounting: "Accounting bounded capability."
+    reporting: "Reporting and privileged audit capabilities."
+    administration: "Operational administration capabilities."
+    security: "Security, identity and authorization capabilities."
+    notification: "Operational notification capabilities."
+    integration: "External integration contracts and integration-facing capabilities."
+    subscription: "Subscription lifecycle capabilities."
+    partner: "Partner bounded capability."
+
+  ownershipValues:
+    payment: "Payment domain owner."
+    customer: "Customer domain owner."
+    accounting: "Accounting domain owner."
+    reporting: "Reporting domain owner."
+    administration: "Administration domain owner."
+    security: "Security domain owner."
+    notification: "Notification domain owner."
+    integration: "Integration delivery/transport owner."
+    subscription: "Subscription domain owner."
+    partner: "Partner domain owner."
+    bootstrap: "Composition/bootstrap delivery owner."
+
+  systems:
+    SIXPAY: "SIXPAY CONNECT."
+    TRESOR_PAY: "TRESOR PAY."
+    AMPLITUDE: "Amplitude Core Banking."
+    EMAIL_PROVIDER: "Configured operational email provider."
+
+  directionEndpoints:
+    SIXPAY: "SIXPAY CONNECT."
+    TRESOR_PAY: "TRESOR PAY."
+    AMPLITUDE: "Amplitude Core Banking."
+    INTERNAL_CLIENT: "Authenticated internal API client."
+    INTERNAL_DOMAIN: "A SIXPAY bounded domain producing an internal semantic fact."
+    NOTIFICATION: "SIXPAY Notification capability."
+    EMAIL_PROVIDER: "Configured email provider."
+    PARTNER: "External SIXPAY partner."
+
+  dataClassifications:
+    PUBLIC: "Public data."
+    INTERNAL: "Internal operational data."
+    CONFIDENTIAL: "Confidential business/customer data."
+    RESTRICTED: "Restricted privileged or audit data."
+
+  paginationModes:
+    STABLE_CURSOR: "Stable cursor pagination."
+    OFFSET_PAGE: "Offset/page pagination."
+    NOT_REQUIRED: "Bounded response; pagination not required."
+
+  lifecycleStatuses:
+    ACTIVE_MVP:
+      description: "Contract applicable to the current MVP delivery."
+    REFERENCE_MVP:
+      description: "Reusable reference contract for the MVP, not sufficient alone to implement the end-to-end flow."
+    DEFERRED_FUTURE:
+      description: "Contract preserved for an explicitly deferred evolution."
+    SUPERSEDED:
+      description: "Contract retained for traceability but replaced by another version."
+
+  approvalStatuses:
+    DRAFT: "Not approved for implementation."
+    PENDING_APPROVAL: "Technically prepared and awaiting formal approval."
+    PENDING_BANK_APPROVAL: "SIXPAY baseline prepared; authoritative bank/provider approval is still required."
+    APPROVED: "Approved by the required authorities."
+
+  generationPolicy:
+    ACTIVE: "May be used for generation when approved and when all dependencies are available."
+    REFERENCE_ONLY: "May inform another contract but cannot independently trigger code generation."
+    EXCLUDED: "Must not be used to generate the current MVP."
+
+  physicalContractCardinality:
+    ONE_CAPABILITY_TO_ONE_PHYSICAL_CONTRACT:
+      description: >-
+        Default mapping. One registry capability references one physical
+        contract and the physical contract identifies that capability.
+    MANY_CAPABILITIES_TO_ONE_PHYSICAL_CONTRACT:
+      description: >-
+        Explicit consolidation mapping. Multiple registry capabilities may
+        reference the same physical contract when they share a coherent API
+        ownership boundary. Registry IDs and capability IDs remain unique.
+      requirements:
+        - "Registry contract ids remain globally unique"
+        - "Registry capability values remain globally unique"
+        - "Shared physical path is allowed"
+        - "All registry entries sharing a path use the same domain"
+        - "All registry entries sharing a path use the same businessOwner"
+        - "The physical contract declares info.x-sixpay-contract.registryIds"
+        - "The physical contract declares info.x-sixpay-contract.capabilities"
+        - "Physical metadata exactly matches registry entries sharing the path"
+contracts:
+  - id: "tresorpay-payment-request-api-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-payment-request-api-v1.yaml"
+    domain: "payment"
+    capability: "PAYMENT_REQUEST"
+    direction: "TRESOR_PAY_TO_SIXPAY"
+    sourceSystem: "TRESOR_PAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.1"
+    security:
+      active:
+        - "BEARER_AUTHORIZATION_TOKEN"
+        - "SUBSCRIPTION_KEY"
+        - "LOCAL_SIGNED_TOKEN_VALIDATION"
+      deferred:
+        - "OAUTH2_CLIENT_CREDENTIALS"
+        - "MUTUAL_TLS"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Receive a TRESOR PAY payment order"
+        - "Enforce idempotency and correlation"
+        - "Durably persist Payment before any Amplitude call"
+        - "Acknowledge intake without claiming banking success"
+      constraints:
+        - "TRESOR PAY remains the subscription system of record"
+        - "No local subscription validation"
+        - "Subscription authorization is attested by a short-lived signed JWT"
+        - "No synchronous TRESOR PAY subscription-verification call in the MVP"
+        - "Treasury beneficiaries must resolve to bank-controlled configuration"
+        - "Credentials are forbidden in the JSON payload"
+    approvalPrerequisite:
+      - "TRESOR PAY contract owner approval"
+      - "SIXPAY Payment and Integration approval"
+      - "Security approval"
+      - "Completion and approval of the full IA-0.5P Payment Contract Pack"
+
+  - id: "tresorpay-payment-status-query-api-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-payment-status-query-api-v1.yaml"
+    domain: "accounting"
+    businessOwner: "accounting"
+    deliveryOwner: "integration"
+    capability: "TRESORPAY_PAYMENT_STATUS_QUERY"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "TRESOR_PAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    gate: "ACCOUNTING_T1"
+    phaseStep: "T1.1"
+    security:
+      status: "APPROVED_CONTRACT_PROFILE"
+      authentication: ["OAUTH2_CLIENT_CREDENTIALS"]
+      operationalParameters: "EXTERNAL_CONFIGURATION"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Verify that a T0-completed SIXPAY Payment is also recorded as paid/completed in TRESOR PAY before T1 selection"
+        - "Provide downstream coherence evidence for Accounting eligibility"
+      constraints:
+        - "TRESOR PAY status never invalidates authoritative T0 COMPLETED"
+        - "Only TRESOR PAY COMPLETED evidence is eligible for T1.1"
+        - "Unavailable or non-final status excludes the transaction from the current T1 selection without failing T0"
+        - "OAuth2 Client Credentials token is obtained from POST /oauth2/token and sent as Authorization: Bearer <token>"
+        - "Short-lived token TTL is provider-managed external configuration"
+        - "SIXPAY and TRESOR PAY gateway egress IP addresses are allowlisted"
+        - "mTLS may additionally be enabled when required by the deployed partner/Core Banking network profile"
+    approvalEvidence:
+      - "TRESOR PAY payment-status endpoint and response schema supplied for ACCOUNTING_T1 T1.1"
+      - "OAuth2 Client Credentials profile approved for the status-query capability"
+      - "Network source-IP allowlisting required for SIXPAY and TRESOR PAY gateways"
+      - "Callback HMAC-SHA256 rule retained for applicable inbound partner callback capabilities"
+
+  - id: "tresorpay-payment-confirmation-api-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-payment-confirmation-api-v1.yaml"
+    domain: "payment"
+    businessOwner: "payment"
+    deliveryOwner: "integration"
+    capability: "PAYMENT_CONFIRMATION"
+    direction: "TRESOR_PAY_TO_SIXPAY"
+    sourceSystem: "TRESOR_PAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "0.4.2"
+    security:
+      status: "APPROVED_CONTRACT_PROFILE"
+      authentication: ["OAUTH2_BEARER_JWT", "MUTUAL_TLS"]
+      requiredScopes:
+        create: "payment.confirmation.create"
+        verify: "payment.confirmation.verify"
+        resend: "payment.confirmation.resend"
+        read: "payment.confirmation.read"
+      operationalParameters: "EXTERNAL_CONFIGURATION"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Create and send a customer confirmation challenge for an existing Payment"
+        - "Synchronously verify the customer OTP"
+        - "Replace and resend the current challenge"
+        - "Read the current normalized challenge state"
+        - "Enforce idempotency and authoritative recovery semantics"
+      constraints:
+        - "Payment remains the aggregate root"
+        - "At most one challenge is active per Payment"
+        - "La Regionale owns OTP generation, storage, delivery and verification"
+        - "SIXPAY never persists OTP"
+        - "challengeReference remains internal to SIXPAY"
+        - "Create and resend have no public request body"
+        - "GET returns the current challenge only"
+        - "No public revoke endpoint"
+        - "OTP success does not establish funds availability or posting success"
+        - "La Regionale resend maximum is 3; cooldown is 3 minutes and remains runtime-configurable if bank policy requires"
+        - "If the configurable one-minute post-OTP execution window is exceeded, customer confirmation is invalidated and a new OTP challenge is required"
+        - "TRESOR PAY approved the public Payment Confirmation API surface in LOT 0.4.7"
+        - "Security and Architecture approved the Payment Confirmation security/architecture principles in LOT 0.4.7"
+    approvalPrerequisite: []
+
+  - id: "amplitude-payment-confirmation-api-v1"
+    path: "documentation/contracts/amplitude/amplitude-payment-confirmation-api-v1.yaml"
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "integration"
+    capability: "BANKING_PAYMENT_CONFIRMATION"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "AMPLITUDE"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    governanceDecision: "D00-CB-OWNERSHIP"
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "0.4.7"
+    security:
+      status: "APPROVED_CONTRACT_PROFILE"
+      authentication: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      correlationHeader: "X-Correlation-ID"
+      institutionHeader: "X-Financial-Institution-Code"
+      operationalParameters: "EXTERNAL_CONFIGURATION"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Create and send a bank-owned Payment confirmation challenge"
+        - "Synchronously verify the customer OTP"
+        - "Replace the active challenge and send a new OTP"
+        - "Read authoritative challenge status"
+        - "Recover an uncertain create or replacement outcome by original idempotency key"
+        - "Revoke an active challenge when Payment is cancelled or rejected before valid confirmation"
+      constraints:
+        - "Payment is the business owner of confirmation orchestration"
+        - "Amplitude / La Regionale is system of record for OTP and bank challenge state"
+        - "SIXPAY never persists OTP"
+        - "At most one challenge is active per Payment"
+        - "Create, verify and replacement are idempotent"
+        - "Same key and different logical request is HTTP 409 conflict"
+        - "Unknown outcomes require authoritative lookup before retry"
+        - "Recovery by original idempotency key is part of the approved contract surface"
+        - "Revoke is idempotent under D046-01 with same-key replay and HTTP 409 on same-key/different-request conflict"
+        - "Target challenge statuses are approved by D046-02 as ACTIVE, VERIFIED, EXPIRED, LOCKED, REPLACED and REVOKED"
+        - "Target business codes and the current wire schemas are approved by D046-03"
+        - "Verify request equivalence uses the S05-01 HMAC-SHA-256 keyed fingerprint without persisting OTP or a raw OTP hash"
+        - "D046-04 defines confirmed delivery failure as REPLACED + DELIVERY_FAILED; resend/replacement creates a new OTP and challengeReference"
+        - "An uncertain delivery outcome is never DELIVERY_FAILED and follows OUTCOME_UNKNOWN plus authoritative lookup under P10/P11"
+        - "LOT 0.4.7 fixes the bank resend maximum at 3 and the resend cooldown at 3 minutes, with cooldown runtime-configurable when bank policy requires"
+        - "LOT 0.4.7 invalidates customer confirmation when the configurable one-minute post-OTP execution window is exceeded and requires a new OTP challenge"
+        - "LOT 0.4.7 Security approval requires previous HMAC keys to remain available for idempotency replay/fingerprint verification while they are still needed; no retention duration is invented"
+        - "LOT 0.4.7 records La Regionale, Security and Architecture approval of the Core Banking Payment Confirmation contract"
+        - "Environment-specific OAuth2/mTLS endpoints, certificates, trust material and operational limits remain external runtime configuration and do not authorize generation"
+        - "OTP success does not establish funds availability or posting success"
+
+  - id: "amplitude-customer-verification-api-v1"
+    path: "documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml"
+    domain: "integration"
+    capability: "BANKING_CUSTOMER_AND_ACCOUNT_VERIFICATION"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    systemOfRecord: "AMPLITUDE"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    governanceDecision: "D00-CB-OWNERSHIP"
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "1.R1"
+    reviewedForGate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    reviewStep: "1.3"
+    reviewDecisionPath: "documentation/ai/payment/AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW.md"
+    mvpUsage:
+      included: true
+      confirmedForPayment: true
+      invocationPoint: "AFTER_PAYMENT_REQUEST_DURABLY_PERSISTED"
+      purpose:
+        - "Verify the banking customer and NIU"
+        - "Retrieve canonical banking customer/account references, banking identity and required KYC facts"
+        - "Find accounts and verify account ownership and status"
+        - "Detect blocks or oppositions"
+        - "Provide the verified banking identity/contact facts required before Payment confirmation challenge creation"
+      limitations:
+        - "Does not authorize or manage a SIXPAY Customer subscription"
+        - "Does not define funds-availability controls"
+        - "Does not define debit or CUT-credit posting"
+        - "Does not define end-of-day Treasury confirmation"
+      progressionRule: >-
+        After durable Payment persistence, only a VERIFIED banking customer,
+        account and required-KYC outcome may authorize progression to Payment
+        confirmation/OTP challenge creation. REJECTED or INDETERMINATE outcomes
+        must not create or send an OTP challenge. Funds control remains a later,
+        distinct execution-time capability after successful customer confirmation.
+    configurable:
+      - "timeout"
+      - "retry"
+      - "sla"
+
+
+  - id: "amplitude-accounting-entries-api-v1"
+    path: "documentation/contracts/amplitude/amplitude-accounting-entries-api-v1.yaml"
+    domain: "integration"
+    businessOwner: "accounting"
+    deliveryOwner: "integration"
+    capability: "BANKING_ACCOUNTING_ENTRIES_SUBMISSION"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "AMPLITUDE"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    governanceDecision: "ACCOUNTING_T1_T1_4_APPROVED_DECISIONS"
+    gate: "ACCOUNTING_T1"
+    phaseStep: "T1.4"
+    security:
+      status: "APPROVED_CONTRACT_PROFILE_REUSED"
+      authentication: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      correlationHeader: "X-Correlation-ID"
+      institutionHeader: "X-Financial-Institution-Code"
+      idempotencyHeader: "Idempotency-Key"
+      operationalParameters: "EXTERNAL_CONFIGURATION"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Submit frozen T0 accounting entries in an Accounting-owned T1 batch"
+        - "Support synchronous completion or asynchronous accepted/processing behavior through one contract"
+        - "Return independent SUCCESS, FAILED or UNKNOWN results per Payment item"
+        - "Recover uncertain submission outcomes by batch id or original idempotency key"
+      constraints:
+        - "AccountingBatch is the canonical source; full bkmvti entities are not persisted in SIXPAY"
+        - "New T1.3 batch items submit exactly two immutable DEBIT/CREDIT frozen entries"
+        - "DEBIT maps to D and CREDIT maps to C"
+        - "Core Banking account references use age-ncp-clc"
+        - "HTTP 200 may carry a conclusive result; HTTP 202 means accepted or processing"
+        - "A COMPLETED batch may contain SUCCESS, FAILED and UNKNOWN item results"
+        - "One failed or unknown item does not block successful items"
+        - "T0 is never invalidated by T1 FAILED or UNKNOWN"
+        - "Unknown financial outcomes require authoritative lookup before retry"
+        - "Blind financial replay is forbidden"
+        - "Provider DTO/mapping/client implementation belongs to T1.5"
+        - "FAILED/UNKNOWN regularization and final TFJ reconciliation belong to T1.6"
+    approvalPrerequisite: []
+
+  - id: "amplitude-payment-posting-api-v1"
+    path: "documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml"
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "integration"
+    capability: "BANKING_PAYMENT_EVENT_EXECUTION"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "AMPLITUDE"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    governanceDecision: "D00-CB-OWNERSHIP"
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "2.3.T0"
+    security:
+      status: "APPROVED_CONTRACT_PROFILE"
+      authentication: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      requiredScopes:
+        execute: "amplitude.payment.execution"
+        read: "amplitude.payment.execution.read"
+      correlationHeader: "X-Correlation-ID"
+      institutionHeader: "X-Financial-Institution-Code"
+      idempotencyHeader: "Idempotency-Key"
+      operationalParameters: "EXTERNAL_CONFIGURATION"
+    mvpUsage:
+      included: true
+      purpose:
+        - "Freeze Payment-owned immutable reduced financial-event and financial-entry snapshots before provider submission"
+        - "Map those snapshots to the provider Payment event payload corresponding to bkeve plus bkmvti lines"
+        - "Execute POST /api/v1/payment-events as the single protected T0 Core Banking financial command"
+        - "Require all eight authoritative execution-time banking controls"
+        - "Require Core Banking atomic execution of debit and credit"
+        - "Recover an uncertain outcome by Payment reference"
+        - "Recover an uncertain outcome by original Idempotency-Key"
+        - "Read the last Core Banking event number for the configured operation code before event construction"
+        - "Read the authoritative Core Banking accounting date before event construction"
+        - "Read the Core Banking night-mode state required by the preserved T0 flow"
+      constraints:
+        - "SIXPAY persists reduced immutable snapshots, not the complete historical Amplitude bkeve/bkmvti entity/table schema"
+        - "Provider-specific payloads and mappings remain in Payment infrastructure"
+        - "Debtor and creditor account references use the approved age-ncp-clc exchange format"
+        - "The auxiliary event-number, accounting-date and night-mode lookups are read-only Core Banking context operations under the same OAuth2 client-credentials plus mTLS profile"
+        - "No standalone read-only Funds Control Core Banking call exists in the MVP"
+        - "The canonical debtor account reference comes from the earlier VERIFIED Customer Verification result"
+        - "The protected creditor account reference is resolved from Partner-owned data before snapshot finalization"
+        - "A finalized/submitted financial snapshot is immutable"
+        - "T1 consumes immutable financial-entry facts through an approved Payment-to-Accounting boundary"
+        - "Accounting never reads Payment infrastructure/JPA directly"
+        - "Same Idempotency-Key plus same logical request maps to the same financial operation/result"
+        - "Same Idempotency-Key plus a different logical request is a conflict"
+        - "Unknown financial outcomes permit authoritative lookup only, never blind replay"
+        - "OAuth2 Client Credentials and mTLS remain application-level security even inside the same bank SI"
+      approvedOperations:
+        execute: "POST /api/v1/payment-events"
+        lookupByPaymentReference: "GET /api/v1/payment-events/{paymentReference}"
+        lookupByIdempotencyKey: "GET /api/v1/payment-events/idempotency/{idempotencyKey}"
+    approvalPrerequisite: []
+
+  - id: "tresorpay-payment-status-webhook-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-payment-status-webhook-v1.yaml"
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "notification"
+    capability: "PAYMENT_STATUS_NOTIFICATION"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.5"
+    mvpUsage:
+      included: true
+      eventTypes:
+        - "PAYMENT_RECEIVED"
+        - "PAYMENT_REJECTED"
+        - "PAYMENT_PROCESSING"
+        - "PAYMENT_DEBITED"
+        - "CUT_CREDITED"
+        - "PAYMENT_FAILED"
+        - "PAYMENT_REVERSED"
+      semantics:
+        delivery: "AT_LEAST_ONCE"
+        idempotencyKey: "eventId"
+        attemptIdentifier: "deliveryId"
+        ordering: "paymentVersion"
+        durableAcceptance: "HTTP_204"
+      constraints:
+        - "PAYMENT_DEBITED is an intermediate fact"
+        - "CUT_CREDITED does not establish TFJ finality"
+        - "Delivery failure never changes Payment financial state"
+        - "Operational replay preserves eventId and payload"
+        - "Notification replay never triggers a financial replay"
+    approvalPrerequisite:
+      - "TRESOR PAY approves endpoint registration and event semantics"
+      - "Security approves Bearer, Subscription Key and HMAC profile"
+      - "Operations approves retry, DLQ, alert and replay procedures"
+
+  - id: "amplitude-end-of-day-confirmation-api-v1"
+    path: "documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml"
+    domain: "integration"
+    businessOwner: "accounting"
+    lifecycleConsumer: "payment"
+    capability: "END_OF_DAY_TREASURY_CONFIRMATION"
+    primaryDirection: "AMPLITUDE_TO_SIXPAY"
+    fallbackDirection: "SIXPAY_TO_AMPLITUDE"
+    systemOfRecord: "AMPLITUDE"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    governanceDecision: "D00-CB-OWNERSHIP"
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.6"
+    mvpUsage:
+      included: true
+      primaryMode: "AMPLITUDE_ASYNCHRONOUS_CONFIRMATION"
+      fallbackMode: "SIXPAY_SCHEDULED_RECONCILIATION_QUERY"
+      finalitySource: "AMPLITUDE_TFJ_RESULT"
+      matchingKeys:
+        - "FINANCIAL_INSTITUTION_CODE"
+        - "BUSINESS_DATE"
+        - "PAYMENT_REFERENCE"
+        - "BANK_POSTING_REFERENCE"
+      constraints:
+        - "T1 batch submission uses immutable SIXPAY-generated financial-entry snapshots; this contract governs result/reconciliation only"
+        - "Core Banking validates and effectively posts/accounts the submitted T1 lines"
+        - "Only a matched successful result establishes TREASURY_INTEGRATED"
+        - "An unmatched, ambiguous or conflicting result is quarantined"
+        - "A quarantined result never changes Payment"
+        - "A missing result keeps Payment pending and triggers the fallback query"
+        - "TFJ delay alone never authorizes automatic reversal"
+    approvalPrerequisite:
+      - "SIXPAY Accounting and Integration approve the target callback, lookup and business-status semantics"
+      - "Security approves mTLS plus HMAC for callback and OAuth2 plus mTLS for lookup"
+      - "Accounting and Operations approve cutoff, quarantine and reconciliation procedures"
+
+  - id: "tresorpay-treasury-integration-webhook-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-treasury-integration-webhook-v1.yaml"
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "notification"
+    capability: "TREASURY_INTEGRATION_NOTIFICATION"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.6"
+    mvpUsage:
+      included: true
+      eventTypes:
+        - "PENDING_END_OF_DAY_CONFIRMATION"
+        - "TREASURY_INTEGRATED"
+        - "TREASURY_INTEGRATION_FAILED"
+      semantics:
+        delivery: "AT_LEAST_ONCE"
+        idempotencyKey: "eventId"
+        attemptIdentifier: "deliveryId"
+        ordering: "paymentVersion"
+        durableAcceptance: "HTTP_204"
+      constraints:
+        - "TREASURY_INTEGRATED requires a durably persisted and uniquely matched Amplitude result"
+        - "TREASURY_INTEGRATION_FAILED never commands an automatic reversal"
+        - "Delivery failure never changes Payment financial state"
+        - "Operational replay never triggers a financial replay"
+    approvalPrerequisite:
+      - "TRESOR PAY approves endpoint registration and event semantics"
+      - "Security approves Bearer, Subscription Key and HMAC profile"
+      - "Operations approves retry, DLQ, alert and replay procedures"
+
+  - id: "payment-query-api-v1"
+    path: "documentation/contracts/internal/payment-query-api-v1.yaml"
+    domain: "payment"
+    businessOwner: "reporting"
+    securityOwner: "security"
+    capability: "PAYMENT_QUERY"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.7"
+    security:
+      authentication: "OIDC_OAUTH2_BEARER_JWT"
+      scopes:
+        - "payment.read"
+      authorization: "RBAC_PLUS_SCOPE_PLUS_INSTITUTION_PERIMETER"
+      dataClassification: "CONFIDENTIAL"
+    mvpUsage:
+      included: true
+      readOnly: true
+      pagination: "STABLE_CURSOR"
+      purpose:
+        - "List and filter masked Payment projections"
+        - "Read Payment detail and current status"
+        - "Read normalized banking, posting, notification, TFJ and reversal summaries"
+      constraints:
+        - "No Payment mutation"
+        - "No unmasked bank account"
+        - "No subscription lifecycle data"
+        - "Timeline and immutable audit evidence remain in payment-audit-query-api-v1"
+
+  - id: "observed-customer-query-api-v1"
+    path: "documentation/contracts/internal/observed-customer-query-api-v1.yaml"
+    domain: "customer"
+    businessOwner: "reporting"
+    securityOwner: "security"
+    capability: "OBSERVED_CUSTOMER_QUERY"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.7"
+    security:
+      authentication: "OIDC_OAUTH2_BEARER_JWT"
+      scopes:
+        - "observed-customer.read"
+      authorization: "RBAC_PLUS_SCOPE_PLUS_INSTITUTION_PERIMETER"
+      dataClassification: "CONFIDENTIAL"
+    mvpUsage:
+      included: true
+      readOnly: true
+      pagination: "STABLE_CURSOR"
+      purpose:
+        - "List and filter ObservedCustomer projections"
+        - "Read projection freshness and observed institutions"
+        - "List linked masked Payment references"
+      constraints:
+        - "ObservedCustomer remains non-authoritative"
+        - "No customer or Amplitude mutation"
+        - "No subscription lifecycle"
+        - "No unmasked bank account"
+
+  - id: "payment-audit-query-api-v1"
+    path: "documentation/contracts/internal/payment-audit-query-api-v1.yaml"
+    domain: "reporting"
+    businessOwner: "reporting"
+    securityOwner: "security"
+    evidenceOwners:
+      - "payment"
+      - "customer"
+      - "accounting"
+      - "notification"
+      - "integration"
+    capability: "PAYMENT_AUDIT_QUERY"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    phaseStep: "1.7"
+    security:
+      authentication: "OIDC_OAUTH2_BEARER_JWT"
+      scopes:
+        - "payment.audit.read"
+        - "payment.audit.export"
+      authorization: "AUDITOR_RBAC_PLUS_SCOPE_PLUS_PURPOSE"
+      dataClassification: "RESTRICTED"
+    mvpUsage:
+      included: true
+      readOnly: true
+      pagination: "STABLE_CURSOR"
+      purpose:
+        - "Read ordered Payment lifecycle timelines"
+        - "Search immutable Payment audit evidence"
+        - "Request and retrieve controlled masked audit exports"
+      constraints:
+        - "Every consultation, denial and export is audited"
+        - "No audit mutation"
+        - "No operational replay or financial command"
+        - "No raw external payload, credential, secret or unmasked account"
+
+  - id: "tresorpay-authorization-request-api-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-authorization-request-api-v1.yaml"
+    domain: "subscription"
+    capability: "SUBSCRIPTION_AUTHORIZATION_REQUEST"
+    direction: "TRESOR_PAY_TO_SIXPAY"
+    systemOfRecord: "TRESOR_PAY"
+    lifecycleStatus: "DEFERRED_FUTURE"
+    approvalStatus: "DRAFT"
+    generationPolicy: "EXCLUDED"
+    codeGenerationAllowed: false
+    mvpUsage:
+      included: false
+      reason: "For the MVP, subscription initiation and validation remain entirely in TRESOR PAY."
+    futureUsage:
+      purpose: "Allow a SIXPAY bank-agent interface to retrieve and process a pending TRESOR PAY subscription."
+      prerequisite: "A future TRESOR PAY integration contract and explicit architecture approval."
+
+  - id: "tresorpay-authorization-decision-webhook-v1"
+    path: "documentation/contracts/tresorpay/tresorpay-authorization-decision-webhook-v1.yaml"
+    domain: "subscription"
+    capability: "SUBSCRIPTION_AUTHORIZATION_LIFECYCLE_NOTIFICATION"
+    direction: "SIXPAY_TO_TRESOR_PAY"
+    systemOfRecord: "TRESOR_PAY"
+    lifecycleStatus: "DEFERRED_FUTURE"
+    approvalStatus: "DRAFT"
+    generationPolicy: "EXCLUDED"
+    codeGenerationAllowed: false
+    mvpUsage:
+      included: false
+      reason: "SIXPAY does not own or update the subscription lifecycle in the MVP."
+    futureUsage:
+      purpose: "Return a bank-agent decision to TRESOR PAY when the future SIXPAY-assisted subscription journey is activated."
+      prerequisite: "Activation of the deferred subscription scope and explicit architecture approval."
+
+  - id: "accounting-query-api-v1"
+    path: "documentation/contracts/internal/accounting-query-api-v1.yaml"
+    domain: "accounting"
+    businessOwner: "accounting"
+    securityOwner: "security"
+    capability: "ACCOUNTING_BATCH_QUERY"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "FS-1.3_ACCOUNTING_QUERY_CONTRACT"
+    phaseStep: "FS-1.3"
+    security:
+      authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
+      roles:
+        - "ADMIN"
+        - "MANAGER"
+        - "AUDITOR"
+      dataClassification: "CONFIDENTIAL"
+    mvpUsage:
+      included: true
+      readOnly: true
+      pagination: "OFFSET_PAGE"
+      purpose:
+        - "List and filter Accounting batches"
+        - "Read Accounting batch detail and items"
+      constraints:
+        - "No Accounting mutation"
+        - "No provider command"
+        - "No payment replay"
+
+  - id: "administration-query-api-v1"
+    path: "documentation/contracts/internal/administration-operational-api-v1.yaml"
+    domain: "administration"
+    businessOwner: "administration"
+    securityOwner: "security"
+    capability: "ADMINISTRATION_OPERATIONAL_QUERY"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "FS-1.4_ADMINISTRATION_INCIDENTS_CONTRACT_GAP_CLOSURE"
+    phaseStep: "FS-1.4.1"
+    security:
+      authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
+      authorization: "ROLE_BASED"
+      roles:
+        - "ADMIN"
+      dataClassification: "INTERNAL"
+    mvpUsage:
+      included: true
+      readOnly: true
+      pagination: "NOT_REQUIRED"
+      purpose:
+        - "Read the operational Administration overview"
+        - "Read effective runtime-backed operational settings"
+        - "Read observable integration-health projections"
+      constraints:
+        - "No settings mutation"
+        - "No integration mutation"
+        - "No Security user or identity mutation"
+        - "No mock or demo value may be treated as system-of-record data"
+
+  - id: "incident-query-api-v1"
+    path: "documentation/contracts/internal/administration-operational-api-v1.yaml"
+    domain: "administration"
+    businessOwner: "administration"
+    securityOwner: "security"
+    capability: "OPERATIONAL_INCIDENT_QUERY"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "FS-1.4_ADMINISTRATION_INCIDENTS_CONTRACT_GAP_CLOSURE"
+    phaseStep: "FS-1.4.2"
+    security:
+      authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
+      authorization: "ROLE_BASED"
+      roles:
+        - "ADMIN"
+        - "MANAGER"
+        - "AUDITOR"
+      dataClassification: "INTERNAL"
+    mvpUsage:
+      included: true
+      readOnly: true
+      pagination: "OFFSET_PAGE"
+      purpose:
+        - "List and filter operational incidents"
+        - "Read operational incident detail"
+        - "Read the safe operational incident timeline"
+      constraints:
+        - "No incident creation or mutation"
+        - "No incident status transition"
+        - "No Payment audit payload"
+        - "No raw provider payload"
+        - "No secret or credential exposure"
+
+  - id: "customer-management-query-api-v1"
+    path: "documentation/contracts/internal/customer-management-query-api-v1.yaml"
+    domain: "customer"
+    businessOwner: "customer"
+    securityOwner: "security"
+    capability: "CUSTOMER_MANAGEMENT"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
+    phaseStep: "FS-2.1.3"
+    security:
+      authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
+      scopes: ["customer.read", "customer.create", "customer.update", "customer.suspend"]
+      dataClassification: "CONFIDENTIAL"
+    mvpUsage:
+      included: true
+      readOnly: false
+      pagination: "OFFSET_PAGE"
+      purpose:
+        - "Search and read authoritative SIXPAY Customer master data"
+        - "Preview banking Customer data before enrollment"
+        - "Enroll and update SIXPAY Customers"
+        - "Suspend, reactivate and logically close Customers"
+        - "List, link, unlink and select the default verified bank account"
+      constraints:
+        - "ObservedCustomer projection remains outside this capability"
+        - "Subscription endpoints remain outside this physical contract"
+        - "Customer close is logical, not physical deletion"
+
+  - id: "security-user-administration-api-v1"
+    path: "documentation/contracts/internal/security-user-administration-api-v1.yaml"
+    domain: "security"
+    businessOwner: "security"
+    deliveryBoundary: "administration"
+    securityOwner: "security"
+    capability: "SECURITY_USER_ADMINISTRATION"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
+    phaseStep: "FS-2.1.3"
+    security:
+      authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
+      authorization: "ROLE_BASED"
+      roles: ["ADMIN"]
+      dataClassification: "RESTRICTED"
+    mvpUsage:
+      included: true
+      readOnly: false
+      purpose:
+        - "Create, list, read, update and delete SIXPAY security users"
+        - "Enable and disable user accounts"
+        - "Manage local authentication availability and local password resets"
+        - "Link and unlink OIDC identities"
+        - "Manage roles and permissions through the existing update boundary"
+      constraints:
+        - "ROLE_ADMIN is required for every endpoint"
+        - "Authentication runtime endpoints are outside this contract"
+        - "Passwords are request-only and never returned"
+        - "Security remains owner of users, identities, roles, permissions and authentication"
+  - id: "notification-operational-trigger-v1"
+    path: "documentation/contracts/internal/notification-operational-trigger-v1.md"
+    domain: "notification"
+    businessOwner: "notification"
+    sourceFactOwners:
+      - "payment"
+      - "accounting"
+    capability: "OPERATIONAL_NOTIFICATION_TRIGGER"
+    direction: "INTERNAL_DOMAIN_TO_NOTIFICATION"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
+    phaseStep: "FS-2.2.2"
+    security:
+      authentication: "IN_PROCESS_TRUST_BOUNDARY"
+      dataClassification: "INTERNAL"
+    mvpUsage:
+      included: true
+      readOnly: true
+      transport: "IN_PROCESS_MODULAR_MONOLITH"
+      purpose:
+        - "Consume the Payment posted semantic fact"
+        - "Consume the Accounting batch completed semantic fact"
+        - "Drive Notification routing and template selection"
+      constraints:
+        - "The contract does not mandate Kafka"
+        - "Payment remains owner of payment.posted.v1"
+        - "Accounting remains owner of accounting.batch.completed.v1"
+        - "Notification owns trigger-consumption semantics"
+        - "Raw account, NIU, full Customer identity and credentials are excluded"
+
+  - id: "notification-operational-email-v1"
+    path: "documentation/contracts/internal/notification-operational-email-v1.md"
+    domain: "notification"
+    businessOwner: "notification"
+    capability: "OPERATIONAL_EMAIL_DISPATCH"
+    direction: "NOTIFICATION_TO_EMAIL_PROVIDER"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
+    phaseStep: "FS-2.2.2"
+    security:
+      authentication: "DEPLOYMENT_SECRET_BACKED_PROVIDER_AUTHENTICATION"
+      dataClassification: "INTERNAL"
+    mvpUsage:
+      included: true
+      readOnly: false
+      providerMode: "SMTP"
+      purpose:
+        - "Dispatch an EMAIL NotificationIntent through the SMTP adapter"
+        - "Return the normalized NotificationDispatchResult"
+        - "Classify retryable and permanent delivery errors"
+      constraints:
+        - "ACCEPTED does not claim final mailbox delivery"
+        - "SMTP credentials come from deployment configuration or secret store"
+        - "Provider error messages are not part of the contract and are not persisted"
+  - id: "customer-subscription-management-api-v1"
+    path: "documentation/contracts/internal/customer-subscription-management-api-v1.yaml"
+    domain: "customer"
+    businessOwner: "customer"
+    securityOwner: "security"
+    capability: "CUSTOMER_SUBSCRIPTION_MANAGEMENT"
+    direction: "INTERNAL_CLIENT_TO_SIXPAY"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "SIXPAY"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "PENDING_APPROVAL"
+    generationPolicy: "REFERENCE_ONLY"
+    codeGenerationAllowed: false
+    gate: "FS-2_REPOSITORY_BASELINE_CONSOLIDATION"
+    phaseStep: "FS-2.1.4"
+    security:
+      authentication: "SIXPAY_AUTHENTICATED_PRINCIPAL"
+      scopes: ["subscription.read", "subscription.create", "subscription.update", "subscription.suspend", "subscription.close"]
+      dataClassification: "CONFIDENTIAL"
+    mvpUsage:
+      included: true
+      readOnly: false
+      pagination: "NOT_REQUIRED"
+      purpose: ["Manage the Customer-owned subscription relationship", "Activate, suspend, close and read a subscription"]
+      constraints: ["Distinct from deferred TRESOR PAY subscription authorization", "References an enrolled Customer and bank account", "Closure is logical and history is retained"]
+
+missingMvpContracts:
+  status: "PARTIALLY_CLOSED"
+  contracts:
+    - id: "amplitude-payment-verification-api-v1"
+      capability: "PAYMENT_EXECUTION_VERIFICATION"
+      direction: "SIXPAY_TO_AMPLITUDE"
+  completedAtStep17:
+    - "payment-query-api-v1"
+    - "observed-customer-query-api-v1"
+    - "payment-audit-query-api-v1"
+
+mvpAuthorizationVerification:
+  gate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+  phaseStep: "1.2"
+  decision: "LOCAL_SIGNED_TOKEN_VALIDATION"
+  decisionPath: "documentation/ai/payment/PAYMENT_AUTHORIZATION_VERIFICATION_DECISION.md"
+  sourceSystem: "TRESOR_PAY"
+  subscriptionSystemOfRecord: "TRESOR_PAY"
+  localSubscriptionManagement: false
+  remoteApiContract:
+    id: "tresorpay-subscription-verification-api-v1"
+    requiredForMvp: false
+    produced: false
+    status: "NOT_REQUIRED_BY_DECISION"
+  signedToken:
+    profile: "JWT_COMPACT_JWS"
+    asymmetricSignatureRequired: true
+    jwksRequired: true
+    shortLived: true
+    requestBindingRequired: true
+    replayProtectionRequired: true
+  approvalStatus: "PENDING_EXTERNAL_APPROVAL"
+  approvalPrerequisite:
+    - "TRESOR PAY confirms signed-token issuance and claims"
+    - "TRESOR PAY confirms approved JWKS publication and rotation"
+    - "Security approves algorithms, maximum TTL and clock skew"
+    - "Payment and Integration approve request-claim binding"
+  generationPolicy: "REFERENCE_ONLY"
+  codeGenerationAllowed: false
+
+rules:
+  - "Operational Administration and Incident query APIs are read-only; their system of record is SIXPAY and integration/demo mocks are never authoritative."
+  - "File location does not determine lifecycle classification; this registry and each OpenAPI x-sixpay-contract block do."
+  - "Deferred contracts remain versioned at their stable paths for traceability."
+  - "A DEFERRED_FUTURE or EXCLUDED contract must not trigger MVP code generation."
+  - "A REFERENCE_MVP contract cannot authorize implementation of capabilities listed in its limitations."
+  - "The registry and embedded OpenAPI classifications must remain consistent."
+  - "The absent tresorpay-subscription-verification-api-v1 contract is intentional while LOCAL_SIGNED_TOKEN_VALIDATION remains approved for the MVP."
+  - "amplitude-customer-verification-api-v1 is confirmed for Payment customer/account checks only; it does not replace amplitude-payment-verification-api-v1 for funds control."
+  - "amplitude-payment-posting-api-v1 performs final execution-time checks but does not replace the dedicated pre-posting verification contract."
+  - "Financial-command uncertainty is resolved by authoritative lookup; blind resubmission is forbidden."
+  - "Payment status webhook delivery is idempotent on eventId; deliveryId identifies attempts only."
+  - "CUT_CREDITED is an immediate posting result and must never be interpreted as TFJ finality."
+  - "Internal Payment, ObservedCustomer and audit APIs are read-only and use stable cursor pagination."
+  - "Payment audit is separated from Payment query and requires dedicated privileged scopes."
+  - "Every privileged audit consultation, denial and export is itself audited."
+  - "Payment confirmation is Payment-owned; OTP and authoritative bank challenge state remain bank-owned."
+  - "TRESOR PAY Payment confirmation exposes only the current normalized challenge and never the OTP or bank challengeReference."
