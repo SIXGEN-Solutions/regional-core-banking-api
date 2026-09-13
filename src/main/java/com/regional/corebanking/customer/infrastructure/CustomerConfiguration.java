@@ -1,5 +1,8 @@
 package com.regional.corebanking.customer.infrastructure;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.regional.corebanking.customer.api.CustomerApiMapper;
+
 import com.regional.corebanking.customer.application.port.out.CustomerBankingPort;
 import com.regional.corebanking.customer.application.service.CustomerVerificationService;
 import com.regional.corebanking.customer.infrastructure.amplitude.CustomerSqlDialect;
@@ -45,6 +48,11 @@ public class CustomerConfiguration {
     @ConditionalOnMissingBean(CustomerBankingPort.class)
     CustomerBankingPort unconfiguredCustomerBankingPort() {
         return new UnconfiguredCustomerBankingAdapter();
+    }
+
+    @Bean
+    CustomerApiMapper customerApiMapper(ObjectMapper objectMapper) {
+        return new CustomerApiMapper(objectMapper);
     }
 
     @Bean

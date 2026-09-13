@@ -256,7 +256,7 @@ public final class JdbcCustomerBankingAdapter implements CustomerBankingPort {
                 trim(rs.getString("dev")),
                 BankAccount.AccountType.UNKNOWN,
                 BankAccount.AccountStatus.ACTIVE,
-                Set.of(BankAccount.AccountRestriction.UNKNOWN),
+                Set.of(),
                 Instant.now()
         );
     }

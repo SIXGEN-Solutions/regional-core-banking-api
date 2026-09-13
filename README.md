@@ -2,7 +2,7 @@
 
 Autonomous Core Banking integration API of **La Régionale**, reusable by SIXPAY CONNECT and other explicitly authorized Regional applications.
 
-## Current lot
+## Previous foundation
 
 **R3 — Contract Generation & CI**
 
@@ -119,17 +119,39 @@ Environment-specific endpoints, credentials, certificates, private keys and trus
 
 **R4 — Customer / Account Verification**
 
-R4 implements the Regional customer/account domain and application verification
-orchestration behind the already approved V1 contract.
+R4 implements the Regional Customer capability behind the approved V1 contract:
 
-No OpenAPI generation is executed by the R4 patch.
+- `GET /api/v1/customers`;
+- `GET /api/v1/customers/{customerReference}`;
+- `POST /api/v1/customer-verifications`.
 
-The real Amplitude/Informix infrastructure adapter remains fail-closed until
-approved La Régionale evidence defines the access mechanism, tables/views or
-procedures, mappings and transaction semantics. No banking schema or SQL is
-invented.
+`GET /api/v1/customers/{customerReference}/accounts` remains wired but is
+explicitly reserved for the future Account coverage, especially RIB/IBAN behavior.
 
-R4 starting revision:
+The HTTP boundary implements the R3-generated `CustomersApi`; generated transport
+models remain separate from Regional domain/application models.
 
-`feat/customer-account-verification @ c79d748c8078528d2074fa31911f345c79d65f09`
+Bank access uses the approved legacy evidence through a JDBC anti-corruption
+adapter with Informix and Oracle SQL dialect isolation. Customer lookup supports
+`customerNumber`, `niu` (`bkcli.nid`) or both. The existing bank filter
+`bkcom.ife='N' AND bkcom.cfe='N' AND bkcom.dev='001'` is the accepted active-account
+filter for this Customer lot.
+
+The R4 patch itself does not invoke OpenAPI generation. The
+`r3-no-openapi-generation` profile now correctly wires the generator `skip`
+parameter.
+
+Known compatibility decision still open:
+
+- the Regional canonical `CustomerVerificationRequest` is flattened
+  (`accountReference`, `expectedNiu`, `expectedAccountHolder`, ...);
+- the SIXPAY REFERENCE_ONLY contract currently describes nested
+  `customer` / `account` subjects.
+
+That conflict must not be silently reconciled. The Regional OpenAPI is not changed
+by R4 without explicit human contract approval.
+
+R4 implementation revision audited before this patch:
+
+`feat/customer-account-verification @ 7e4c99f0827f8eb4b0603d9e25ba44ddd0244f72`
 

@@ -22,6 +22,7 @@
         <maven.compiler.release>21</maven.compiler.release>
 
         <openapi.generator.version>7.15.0</openapi.generator.version>
+        <openapi.generator.skip>false</openapi.generator.skip>
         <openapi.input.spec>${project.basedir}/contracts/openapi/regional-core-banking-api-v1.yaml</openapi.input.spec>
         <openapi.generated.dir>${project.build.directory}/generated-sources/openapi</openapi.generated.dir>
         <openapi.api.package>com.regional.corebanking.generated.api</openapi.api.package>
@@ -32,6 +33,11 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
 
         <dependency>
@@ -85,6 +91,7 @@
                         </goals>
                         <configuration>
                             <inputSpec>${openapi.input.spec}</inputSpec>
+                            <skip>${openapi.generator.skip}</skip>
                             <generatorName>spring</generatorName>
                             <output>${openapi.generated.dir}</output>
                             <apiPackage>${openapi.api.package}</apiPackage>

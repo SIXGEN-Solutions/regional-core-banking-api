@@ -74,3 +74,42 @@ Until then, integration testing against Informix is blocked by missing bank evid
 - The historical Core Banking error codes are reused through Regional `Problem.code` where relevant; the Regional OpenAPI error schema is unchanged.
 - Because no authoritative fields for account opposition/blocking or KYC verification status were supplied, these checks are represented as `UNKNOWN` and the composite result becomes `INDETERMINATE` rather than incorrectly authorizing the payment path.
 - No Informix/Oracle driver coordinates, credentials, URLs or secrets are committed. Runtime DataSource provisioning remains external configuration.
+
+## Customer HTTP closure increment
+
+Starting revision for this increment:
+
+`feat/customer-account-verification @ 7e4c99f0827f8eb4b0603d9e25ba44ddd0244f72`
+
+Implemented in this increment:
+
+- generated `CustomersApi` HTTP boundary adapter for Customer operations;
+- explicit transport/domain mapper;
+- Regional `Problem` exception mapping;
+- HTTP contract tests for customer search, customer identity, verification and 404 errors;
+- transport mapper tests;
+- contract compatibility characterization tests;
+- Spring JDBC runtime foundation;
+- effective Maven `r3-no-openapi-generation` generator skip wiring;
+- README correction.
+
+Bank decision confirmed for this lot:
+
+- `bkcom.ife='N' AND bkcom.cfe='N' AND bkcom.dev='001'` is sufficient to select
+  the active account context used by Customer verification;
+- no additional blocked/closed/opposition status mapping is required to close
+  the Customer increment.
+
+Deferred to Account coverage:
+
+- RIB lookup;
+- IBAN lookup;
+- full `GET /api/v1/customers/{customerReference}/accounts` behavior.
+
+Known contract compatibility conflict, deliberately not reconciled in code:
+
+- Regional canonical V1 uses the flattened `CustomerVerificationRequest`;
+- SIXPAY REFERENCE_ONLY currently describes nested customer/account subjects.
+
+This requires an explicit Regional contract/consumer compatibility decision before
+full SIXPAY verification-request wire compatibility can be declared.
