@@ -25,4 +25,6 @@ public interface CustomerBankingPort {
             String rib,
             String iban
     );
+
+    BankAccount findAccountByReference(String accountReference);
 }

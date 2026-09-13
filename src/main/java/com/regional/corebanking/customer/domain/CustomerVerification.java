@@ -10,36 +10,12 @@ public final class CustomerVerification {
     }
 
     public record Request(
-            String financialInstitutionCode,
-            CustomerSubject customer,
-            AccountSubject account,
+            String accountReference,
+            String expectedNiu,
+            String expectedAccountHolder,
             List<String> requiredKycFields,
             Instant requestedAt
     ) {
-    }
-
-    public record CustomerSubject(
-            String customerReference,
-            String customerNumber,
-            String niu,
-            String legalName,
-            String phoneNumber,
-            String email
-    ) {
-    }
-
-    public record AccountSubject(
-            String accountReference,
-            String rib,
-            String iban
-    ) {
-        public boolean hasIdentifier() {
-            return notBlank(accountReference) || notBlank(rib) || notBlank(iban);
-        }
-
-        private static boolean notBlank(String value) {
-            return value != null && !value.isBlank();
-        }
     }
 
     public record Result(

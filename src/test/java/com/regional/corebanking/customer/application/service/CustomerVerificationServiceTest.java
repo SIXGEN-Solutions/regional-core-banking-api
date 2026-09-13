@@ -25,29 +25,23 @@ class CustomerVerificationServiceTest {
     }
 
     @Test
-    void verifiesCustomerAccountAndKyc() {
+    void returnsIndeterminateWhenBankHasNoRestrictionOrKycVerificationEvidence() {
         var service = new CustomerVerificationService(new StubPort());
 
         var result = service.verifyCustomer(new CustomerVerification.Request(
-                "REGIONAL",
-                new CustomerVerification.CustomerSubject(
-                        null, null, "NIU-001", "Jane Doe", null, null
-                ),
-                new CustomerVerification.AccountSubject(
-                        "ACC-001", null, null
-                ),
+                "001-123456-7",
+                "NIU-001",
+                "Jane Doe",
                 List.of("niu", "legalName", "phoneNumber", "email"),
-                Instant.parse("2026-09-11T00:00:00Z")
+                Instant.parse("2026-09-13T00:00:00Z")
         ));
 
         assertThat(result.outcome())
-                .isEqualTo(CustomerVerification.Outcome.VERIFIED);
+                .isEqualTo(CustomerVerification.Outcome.INDETERMINATE);
         assertThat(result.customerReference()).isEqualTo("CUS-001");
-        assertThat(result.accountReference()).isEqualTo("ACC-001");
-        assertThat(result.checks()).hasSize(11);
+        assertThat(result.accountReference()).isEqualTo("001-123456-7");
         assertThat(result.checks())
-                .allMatch(check ->
-                        check.result() == CustomerVerification.CheckResult.PASS);
+                .anyMatch(check -> check.result() == CustomerVerification.CheckResult.UNKNOWN);
     }
 
     private static final class StubPort implements CustomerBankingPort {
@@ -59,7 +53,7 @@ class CustomerVerificationServiceTest {
                 String customerNumber
         ) {
             return List.of(new CustomerSummary(
-                    "CUS-001", "C001", "REGIONAL", "NIU-001", "Jane Doe"
+                    "CUS-001", "CUS-001", "REGIONAL", "NIU-001", "Jane Doe"
             ));
         }
 
@@ -68,23 +62,23 @@ class CustomerVerificationServiceTest {
                 String financialInstitutionCode,
                 String customerReference
         ) {
-            Instant now = Instant.parse("2026-09-11T00:00:00Z");
+            Instant now = Instant.parse("2026-09-13T00:00:00Z");
             return new CustomerIdentity(
                     "CUS-001",
-                    "C001",
+                    "CUS-001",
                     "REGIONAL",
                     "NIU-001",
                     "Jane Doe",
                     "+237600000000",
                     "jane@example.com",
-                    CustomerIdentity.KycStatus.COMPLETE,
+                    CustomerIdentity.KycStatus.UNKNOWN,
                     List.of(
-                            new CustomerIdentity.KycField("niu", null, true, true, now),
-                            new CustomerIdentity.KycField("legalName", null, true, true, now),
-                            new CustomerIdentity.KycField("phoneNumber", null, true, true, now),
-                            new CustomerIdentity.KycField("email", null, true, true, now)
+                            new CustomerIdentity.KycField("niu", "NIU-001", true, null, null),
+                            new CustomerIdentity.KycField("legalName", "Jane Doe", true, null, null),
+                            new CustomerIdentity.KycField("phoneNumber", "+237600000000", true, null, null),
+                            new CustomerIdentity.KycField("email", "jane@example.com", true, null, null)
                     ),
-                    now,
+                    null,
                     now
             );
         }
@@ -96,17 +90,22 @@ class CustomerVerificationServiceTest {
                 String rib,
                 String iban
         ) {
-            return List.of(new BankAccount(
-                    "ACC-001",
+            return List.of(findAccountByReference("001-123456-7"));
+        }
+
+        @Override
+        public BankAccount findAccountByReference(String accountReference) {
+            return new BankAccount(
+                    "001-123456-7",
                     "CUS-001",
                     "REGIONAL",
-                    "****0001",
-                    "XAF",
-                    BankAccount.AccountType.CURRENT,
+                    "**********56-7",
+                    "001",
+                    BankAccount.AccountType.UNKNOWN,
                     BankAccount.AccountStatus.ACTIVE,
-                    Set.of(),
-                    Instant.parse("2026-09-11T00:00:00Z")
-            ));
+                    Set.of(BankAccount.AccountRestriction.UNKNOWN),
+                    Instant.parse("2026-09-13T00:00:00Z")
+            );
         }
     }
 }

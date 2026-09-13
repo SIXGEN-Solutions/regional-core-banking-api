@@ -62,3 +62,15 @@ system, La Régionale must supply or confirm:
 6. sandbox connectivity and credentials as external configuration.
 
 Until then, integration testing against Informix is blocked by missing bank evidence.
+
+## Additional R4 decisions from Regional legacy review
+
+- `bkcli.nid` is the current NIU column to use for Customer lookup and identity mapping.
+- Customer lookup supports `customerNumber`, `niu`, or both using prepared parameters.
+- The legacy list response is preserved at the API boundary, while the banking query returns at most one customer.
+- `age-ncp-clc` remains the internal canonical account-reference representation produced from the observed legacy fields.
+- Informix and Oracle share the current ANSI Customer/Account query set.
+- Informix alone applies `SET ISOLATION TO DIRTY READ` on each acquired connection.
+- The historical Core Banking error codes are reused through Regional `Problem.code` where relevant; the Regional OpenAPI error schema is unchanged.
+- Because no authoritative fields for account opposition/blocking or KYC verification status were supplied, these checks are represented as `UNKNOWN` and the composite result becomes `INDETERMINATE` rather than incorrectly authorizing the payment path.
+- No Informix/Oracle driver coordinates, credentials, URLs or secrets are committed. Runtime DataSource provisioning remains external configuration.

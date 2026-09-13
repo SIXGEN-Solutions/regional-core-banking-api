@@ -11,8 +11,7 @@ public final class UnconfiguredCustomerBankingAdapter implements CustomerBanking
 
     private static UnsupportedOperationException missingEvidence() {
         return new UnsupportedOperationException(
-                "Customer/Account banking access is not configured: "
-                        + "approved La Régionale Informix/Amplitude mapping evidence is required"
+                "Customer/Account banking access is not configured until approved La Régionale banking evidence is available"
         );
     }
 
@@ -40,6 +39,11 @@ public final class UnconfiguredCustomerBankingAdapter implements CustomerBanking
             String rib,
             String iban
     ) {
+        throw missingEvidence();
+    }
+
+    @Override
+    public BankAccount findAccountByReference(String accountReference) {
         throw missingEvidence();
     }
 }

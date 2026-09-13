@@ -24,7 +24,7 @@ public record CustomerIdentity(
             String code,
             Object value,
             boolean present,
-            boolean verified,
+            Boolean verified,
             Instant verifiedAt
     ) {
     }
