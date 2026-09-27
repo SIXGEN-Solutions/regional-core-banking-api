@@ -193,3 +193,13 @@ Customer OpenAPI group:
 The Oracle mock is test infrastructure only. It does not establish new production
 Amplitude mappings or replace La Régionale banking evidence.
 
+
+
+## R5.1 — Payment Confirmation / OTP
+
+R5.1 introduces the provider-independent challenge/OTP domain, secure OTP verification,
+idempotency/recovery ports and lifecycle tests behind the six approved Regional operations.
+It does not implement BKSMS SQL or physical email transport; those require approved Regional
+infrastructure evidence. No OpenAPI generation is performed by this patch.
+
+See `documentation/architecture/R5_1_PAYMENT_CONFIRMATION_OTP_BASELINE.md`.
