@@ -1,7 +1,11 @@
 package com.regional.corebanking.confirmation.application.port.out;
-import com.regional.corebanking.confirmation.domain.*;
+
+import com.regional.corebanking.confirmation.domain.ConfirmationChallenge;
+import com.regional.corebanking.confirmation.domain.DeliveryChannel;
 import java.util.Set;
+
 public interface ConfirmationDeliveryPort {
+    enum Outcome { DELIVERED, CONFIRMED_FAILURE, UNKNOWN }
     Set<DeliveryChannel> enabledChannels();
-    void dispatch(ConfirmationChallenge challenge,char[] otp);
+    Outcome dispatch(ConfirmationChallenge challenge, char[] otp);
 }

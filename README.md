@@ -203,3 +203,13 @@ It does not implement BKSMS SQL or physical email transport; those require appro
 infrastructure evidence. No OpenAPI generation is performed by this patch.
 
 See `documentation/architecture/R5_1_PAYMENT_CONFIRMATION_OTP_BASELINE.md`.
+
+
+### R5.1 closure increment
+
+R5.1 now wires the six approved Payment Confirmation operations through the generated
+HTTP boundary and adds HTTP contract tests, Spring wiring, atomic in-process idempotency,
+concurrency characterization, recovery tests and explicit delivery outcome semantics.
+
+Durable persistence, production secret management, BKSMS mapping and physical email
+delivery remain R5.2 concerns.

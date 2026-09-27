@@ -16,9 +16,16 @@ class PaymentConfirmationServiceTest {
     private final InMemoryIdempotencyRepository idem=new InMemoryIdempotencyRepository();
     private final HmacOtpSecurityAdapter otp=new HmacOtpSecurityAdapter(new byte[32],"test-v1");
     private final AtomicReference<char[]> delivered=new AtomicReference<>();
-    private final ConfirmationDeliveryPort delivery=new ConfirmationDeliveryPort(){
-        public Set<DeliveryChannel> enabledChannels(){ return Set.of(DeliveryChannel.SMS,DeliveryChannel.EMAIL); }
-        public void dispatch(ConfirmationChallenge c,char[] v){ delivered.set(v.clone()); }
+
+    private final ConfirmationDeliveryPort delivery = new ConfirmationDeliveryPort() {
+        public Set<DeliveryChannel> enabledChannels() {
+            return Set.of(DeliveryChannel.SMS, DeliveryChannel.EMAIL);
+        }
+
+        public Outcome dispatch(ConfirmationChallenge c, char[] v) {
+            delivered.set(v.clone());
+            return Outcome.DELIVERED;
+        }
     };
     private final PaymentConfirmationService service=new PaymentConfirmationService(challenges,idem,otp,delivery,
             Clock.fixed(now,ZoneOffset.UTC),Duration.ofMinutes(5),3,3);
