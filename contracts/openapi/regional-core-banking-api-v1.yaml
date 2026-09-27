@@ -29,6 +29,7 @@ info:
       - EXPLICIT_REGIONAL_HUMAN_APPROVAL
       - SIXPAY_WIRE_COMPATIBILITY_EVIDENCE
       - REGIONAL_PAYMENT_EVENT_MAPPING_DECISIONS
+      - LEGACY_CUSTOMER_DETAIL_FUNCTIONAL_EVIDENCE
 
 servers:
   - url: https://regional-core-banking-api.example
@@ -63,6 +64,26 @@ paths:
           in: query
           required: false
           schema: { type: string, minLength: 1, maxLength: 50 }
+        - name: accountNo
+          in: query
+          required: false
+          description: Legacy-compatible account number filter.
+          schema: { type: string, minLength: 1, maxLength: 100 }
+        - name: age
+          in: query
+          required: false
+          description: Legacy-compatible agency filter used with accountNo when applicable.
+          schema: { type: string, minLength: 1, maxLength: 20 }
+        - name: accountTypes
+          in: query
+          required: false
+          description: Legacy-compatible account type filter; may remain unused initially.
+          schema: { type: string, minLength: 1, maxLength: 200 }
+        - name: chapitre
+          in: query
+          required: false
+          description: Legacy-compatible chapter exclusion filter; may remain unused initially.
+          schema: { type: string, minLength: 1, maxLength: 200 }
       responses:
         '200':
           description: Matching customers, possibly empty.
@@ -600,6 +621,9 @@ components:
     CustomerSummary:
       type: object
       additionalProperties: false
+      description: |
+        Regional customer summary preserving the existing wire-compatible fields
+        while additively retaining the complete supplied legacy CustomerDetail field set.
       required: [customerReference, customerNumber, financialInstitutionCode, niu, legalName]
       properties:
         customerReference: { type: string, minLength: 1, maxLength: 100 }
@@ -607,10 +631,49 @@ components:
         financialInstitutionCode: { $ref: '#/components/schemas/FinancialInstitutionCode' }
         niu: { type: string, minLength: 1, maxLength: 50 }
         legalName: { type: string, minLength: 1, maxLength: 200 }
+        matricule: { type: string, maxLength: 100 }
+        accountNo:
+          type: string
+          maxLength: 100
+          description: Legacy account reference represented as `age-ncp-clc`.
+        accountName: { type: string, maxLength: 200 }
+        customerName: { type: string, maxLength: 200 }
+        sexe: { type: string, maxLength: 20 }
+        adresse: { type: string, maxLength: 500 }
+        dataNaissance:
+          type: string
+          maxLength: 50
+          description: Preserved as String to match the supplied legacy CustomerDetail.
+        lieuNaissance: { type: string, maxLength: 200 }
+        departNaissance: { type: string, maxLength: 200 }
+        situation: { type: string, maxLength: 100 }
+        typePiece: { type: string, maxLength: 100 }
+        numCNI: { type: string, maxLength: 100 }
+        dateDelivrance: { type: string, format: date }
+        lieuDelivrance: { type: string, maxLength: 200 }
+        dateExpiration: { type: string, format: date }
+        ville: { type: string, maxLength: 200 }
+        codeGestionnaire: { type: string, maxLength: 100 }
+        loginGestionnaire: { type: string, maxLength: 100 }
+        comptes:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 100 }
+        telephones:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 50 }
+        adresseMails:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 254 }
 
     CustomerIdentity:
       type: object
       additionalProperties: false
+      description: |
+        Regional customer identity preserving the existing wire-compatible fields
+        while additively retaining the complete supplied legacy CustomerDetail field set.
       required:
         [customerReference, customerNumber, financialInstitutionCode, niu, legalName, kycStatus, source, retrievedAt]
       properties:
@@ -626,6 +689,42 @@ components:
           enum: [COMPLETE, INCOMPLETE, EXPIRED, NOT_VERIFIED, UNKNOWN]
         source: { type: string, const: AMPLITUDE }
         retrievedAt: { type: string, format: date-time }
+        matricule: { type: string, maxLength: 100 }
+        accountNo:
+          type: string
+          maxLength: 100
+          description: Legacy account reference represented as `age-ncp-clc`.
+        accountName: { type: string, maxLength: 200 }
+        customerName: { type: string, maxLength: 200 }
+        sexe: { type: string, maxLength: 20 }
+        adresse: { type: string, maxLength: 500 }
+        dataNaissance:
+          type: string
+          maxLength: 50
+          description: Preserved as String to match the supplied legacy CustomerDetail.
+        lieuNaissance: { type: string, maxLength: 200 }
+        departNaissance: { type: string, maxLength: 200 }
+        situation: { type: string, maxLength: 100 }
+        typePiece: { type: string, maxLength: 100 }
+        numCNI: { type: string, maxLength: 100 }
+        dateDelivrance: { type: string, format: date }
+        lieuDelivrance: { type: string, maxLength: 200 }
+        dateExpiration: { type: string, format: date }
+        ville: { type: string, maxLength: 200 }
+        codeGestionnaire: { type: string, maxLength: 100 }
+        loginGestionnaire: { type: string, maxLength: 100 }
+        comptes:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 100 }
+        telephones:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 50 }
+        adresseMails:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 254 }
 
     AccountSearchResult:
       type: object

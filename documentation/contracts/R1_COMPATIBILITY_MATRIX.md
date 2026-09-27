@@ -48,3 +48,23 @@ The SIXPAY inbound TFJ callback `/webhooks/v1/amplitude/end-of-day-confirmations
 is not part of the Regional Core Banking server surface.
 
 No Spring/OpenAPI code generation is executed as part of R1.
+
+
+## Customer contract enrichment — legacy functional baseline
+
+The Regional Customer transport initially retains the complete functional
+legacy `CustomerDetail` field set supplied as Regional implementation evidence:
+`matricule`, `accountNo`, `accountName`, `customerName`, `sexe`, `adresse`,
+`dataNaissance`, `lieuNaissance`, `departNaissance`, `situation`, `typePiece`,
+`numCNI`, `niu`, `dateDelivrance`, `lieuDelivrance`, `dateExpiration`, `ville`,
+`codeGestionnaire`, `loginGestionnaire`, `comptes`, `telephones` and
+`adresseMails`.
+
+Customer search continues to support `niu` and `customerNumber` and also exposes
+the legacy-compatible optional filters `accountNo`, `age`, `accountTypes` and
+`chapitre`. These additional filters may remain unused by the first
+implementation.
+
+No additional Amplitude table, column, SQL statement, transaction rule or
+banking mapping is introduced beyond the implementation evidence supplied for
+this change.

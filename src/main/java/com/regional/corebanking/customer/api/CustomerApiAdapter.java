@@ -27,8 +27,16 @@ public class CustomerApiAdapter implements CustomersApi {
             UUID xCorrelationID,
             String financialInstitutionCode,
             String niu,
-            String customerNumber
+            String customerNumber,
+            String accountNo,
+            String age,
+            String accountTypes,
+            String chapitre
     ) {
+        // accountNo, age, accountTypes and chapitre are exposed by the Regional
+        // contract for legacy compatibility but are intentionally not wired yet.
+        // The existing application use case remains based on NIU/customer number
+        // until the corresponding banking behavior is explicitly implemented.
         return ResponseEntity.ok(mapper.toSearchResult(
                 useCase.searchCustomers(financialInstitutionCode, niu, customerNumber)
         ));
