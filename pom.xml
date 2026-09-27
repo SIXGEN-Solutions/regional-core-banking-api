@@ -22,6 +22,8 @@
         <maven.compiler.release>21</maven.compiler.release>
 
         <openapi.generator.version>7.15.0</openapi.generator.version>
+        <springdoc.version>2.8.17</springdoc.version>
+        <oracle.jdbc.version>23.26.1.0.0</oracle.jdbc.version>
         <openapi.generator.skip>false</openapi.generator.skip>
         <openapi.input.spec>${project.basedir}/contracts/openapi/regional-core-banking-api-v1.yaml</openapi.input.spec>
         <openapi.generated.dir>${project.build.directory}/generated-sources/openapi</openapi.generated.dir>
@@ -54,6 +56,12 @@
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations-jakarta</artifactId>
             <version>2.2.36</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
         </dependency>
 
         <dependency>
@@ -151,6 +159,18 @@
             <properties>
                 <openapi.generator.skip>true</openapi.generator.skip>
             </properties>
+        </profile>
+
+        <profile>
+            <id>customer-oracle-mock</id>
+            <dependencies>
+                <dependency>
+                    <groupId>com.oracle.database.jdbc</groupId>
+                    <artifactId>ojdbc11</artifactId>
+                    <version>${oracle.jdbc.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
         </profile>
     </profiles>
 </project>

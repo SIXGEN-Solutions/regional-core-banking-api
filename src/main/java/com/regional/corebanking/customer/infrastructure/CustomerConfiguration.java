@@ -10,9 +10,8 @@ import com.regional.corebanking.customer.infrastructure.amplitude.InformixCustom
 import com.regional.corebanking.customer.infrastructure.amplitude.JdbcCustomerBankingAdapter;
 import com.regional.corebanking.customer.infrastructure.amplitude.OracleCustomerSqlDialect;
 import com.regional.corebanking.customer.infrastructure.amplitude.UnconfiguredCustomerBankingAdapter;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -35,19 +34,18 @@ public class CustomerConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(DataSource.class)
-    CustomerBankingPort jdbcCustomerBankingPort(
-            DataSource dataSource,
+    CustomerBankingPort customerBankingPort(
+            ObjectProvider<DataSource> dataSourceProvider,
             CustomerSqlDialect dialect,
             @Value("${regional.banking.financial-institution-code:}") String institutionCode
     ) {
-        return new JdbcCustomerBankingAdapter(dataSource, dialect, institutionCode);
-    }
+        DataSource dataSource = dataSourceProvider.getIfAvailable();
 
-    @Bean
-    @ConditionalOnMissingBean(CustomerBankingPort.class)
-    CustomerBankingPort unconfiguredCustomerBankingPort() {
-        return new UnconfiguredCustomerBankingAdapter();
+        if (dataSource == null) {
+            return new UnconfiguredCustomerBankingAdapter();
+        }
+
+        return new JdbcCustomerBankingAdapter(dataSource, dialect, institutionCode);
     }
 
     @Bean

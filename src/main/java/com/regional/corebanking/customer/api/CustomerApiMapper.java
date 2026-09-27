@@ -169,6 +169,14 @@ public final class CustomerApiMapper {
         if (value instanceof OffsetDateTime offsetDateTime) {
             return offsetDateTime.toInstant();
         }
+        if (value instanceof Number number) {
+            java.math.BigDecimal epoch = new java.math.BigDecimal(number.toString());
+            long seconds = epoch.longValue();
+            int nanos = epoch.subtract(java.math.BigDecimal.valueOf(seconds))
+                    .movePointRight(9)
+                    .intValue();
+            return Instant.ofEpochSecond(seconds, nanos);
+        }
         return Instant.parse(value.toString());
     }
 }

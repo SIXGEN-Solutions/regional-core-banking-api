@@ -141,17 +141,55 @@ The R4 patch itself does not invoke OpenAPI generation. The
 `r3-no-openapi-generation` profile now correctly wires the generator `skip`
 parameter.
 
-Known compatibility decision still open:
+Customer closure decisions:
 
-- the Regional canonical `CustomerVerificationRequest` is flattened
-  (`accountReference`, `expectedNiu`, `expectedAccountHolder`, ...);
-- the SIXPAY REFERENCE_ONLY contract currently describes nested
-  `customer` / `account` subjects.
+- the Regional canonical `CustomerVerificationRequest` signature remains unchanged;
+- SIXPAY must align with the Regional request contract where the SIXPAY
+  REFERENCE_ONLY contract differs;
+- customers can be searched by NIU through `GET /api/v1/customers` and retrieved
+  by canonical `customerReference` through
+  `GET /api/v1/customers/{customerReference}`;
+- the existing active-account filter is sufficient for this Customer increment;
+  no additional blocked/opposed mapping is required for closure;
+- `KycField.verified` and `verifiedAt` remain authoritative banking facts. Until
+  La Régionale supplies their authoritative source/mapping, verification that
+  requires those facts remains safely `INDETERMINATE`.
 
-That conflict must not be silently reconciled. The Regional OpenAPI is not changed
-by R4 without explicit human contract approval.
+No Regional OpenAPI signature is changed by this closure increment.
 
 R4 implementation revision audited before this patch:
 
 `feat/customer-account-verification @ 7e4c99f0827f8eb4b0603d9e25ba44ddd0244f72`
+
+## Customer Oracle integration mock
+
+Start the database:
+
+```bash
+set ORACLE_APP_PASSWORD=local-test-password
+docker compose -f compose.customer-oracle.yml up -d
+```
+
+Run the real JDBC/HTTP integration test:
+
+```bash
+set RUN_CUSTOMER_ORACLE_IT=true
+set ORACLE_APP_PASSWORD=local-test-password
+mvn -Pcustomer-oracle-mock -Dtest=CustomerOracleIT test
+```
+
+Run the application against the Oracle mock:
+
+```bash
+set ORACLE_APP_PASSWORD=local-test-password
+mvn -Pcustomer-oracle-mock spring-boot:run -Dspring-boot.run.profiles=customer-oracle-mock
+```
+
+Customer OpenAPI group:
+
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- Customer OpenAPI JSON: `http://localhost:8080/v3/api-docs/customer`
+
+The Oracle mock is test infrastructure only. It does not establish new production
+Amplitude mappings or replace La Régionale banking evidence.
 

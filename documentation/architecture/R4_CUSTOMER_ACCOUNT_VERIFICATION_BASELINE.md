@@ -106,10 +106,26 @@ Deferred to Account coverage:
 - IBAN lookup;
 - full `GET /api/v1/customers/{customerReference}/accounts` behavior.
 
-Known contract compatibility conflict, deliberately not reconciled in code:
+Customer closure decisions confirmed after compatibility review:
 
-- Regional canonical V1 uses the flattened `CustomerVerificationRequest`;
-- SIXPAY REFERENCE_ONLY currently describes nested customer/account subjects.
+- Regional canonical V1 remains authoritative and the existing flattened
+  `CustomerVerificationRequest` signature is intentionally unchanged.
+- SIXPAY must align with the Regional request contract where its REFERENCE_ONLY
+  contract differs; no Regional schema change is required for that divergence.
+- Customer lookup is supported by NIU through `GET /api/v1/customers` and by
+  canonical `customerReference` through
+  `GET /api/v1/customers/{customerReference}`.
+- The accepted active-account filter
+  `bkcom.ife='N' AND bkcom.cfe='N' AND bkcom.dev='001'` remains sufficient for
+  this Customer increment. Additional blocked/opposed evidence is not a closure
+  prerequisite.
+- `KycField.verified` and `verifiedAt` must come from authoritative La Régionale
+  banking evidence. They are not inferred from field presence. Until that
+  evidence is supplied, checks requiring verified KYC facts remain
+  `UNKNOWN`/`INDETERMINATE`.
+- HTTP contract coverage now includes NIU search, customerReference lookup,
+  the unchanged composite verification request and Customer 404 mapping.
 
-This requires an explicit Regional contract/consumer compatibility decision before
-full SIXPAY verification-request wire compatibility can be declared.
+With these decisions, the Regional Customer API implementation can proceed to
+closure testing. The unresolved KYC verification source is an explicit banking
+ evidence limitation, not a reason to invent a provider mapping.

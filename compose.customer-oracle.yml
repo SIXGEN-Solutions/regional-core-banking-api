@@ -1,0 +1,22 @@
+services:
+  customer-oracle:
+    image: gvenzl/oracle-free:23.26.1-slim-faststart
+    container_name: regional-customer-oracle
+    ports:
+      - "${ORACLE_PORT:-1521}:1521"
+    environment:
+      ORACLE_RANDOM_PASSWORD: "true"
+      APP_USER: REGIONAL_MOCK
+      APP_USER_PASSWORD: "${ORACLE_APP_PASSWORD:?ORACLE_APP_PASSWORD must be set}"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    volumes:
+      - ./docker/customer-oracle/001_customer_schema.sql:/container-entrypoint-initdb.d/001_customer_schema.sql:ro
+      - customer-oracle-data:/opt/oracle/oradata
+
+volumes:
+  customer-oracle-data:
