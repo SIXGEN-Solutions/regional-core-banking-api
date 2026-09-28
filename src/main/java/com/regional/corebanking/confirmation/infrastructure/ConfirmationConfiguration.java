@@ -82,33 +82,33 @@ public class ConfirmationConfiguration {
     }
 
     @Bean
-    @Profile("!smtp-test")
+    @Profile("!local")
     ConfirmationDeliveryPort confirmationDeliveryPort() {
         return new NoopConfirmationDeliveryAdapter(
                 EnumSet.of(DeliveryChannel.SMS, DeliveryChannel.EMAIL));
     }
 
     @Bean
-    @Profile("smtp-test")
-    ConfirmationRecipientPort smtpTestConfirmationRecipientPort(
+    @Profile("local")
+    ConfirmationRecipientPort localConfirmationRecipientPort(
             @Value("${regional.confirmation.email.test-recipient}") String recipient) {
         if (recipient == null || recipient.isBlank()) {
             throw new IllegalArgumentException(
-                    "regional.confirmation.email.test-recipient is required for smtp-test");
+                    "regional.confirmation.email.test-recipient is required for local");
         }
         return (financialInstitutionCode, customerReference) -> Optional.of(recipient);
     }
 
     @Bean
-    @Profile("smtp-test")
-    ConfirmationDeliveryPort smtpTestConfirmationDeliveryPort(
+    @Profile("local")
+    ConfirmationDeliveryPort localConfirmationDeliveryPort(
             JavaMailSender mailSender,
             ConfirmationRecipientPort recipientPort,
             @Value("${regional.confirmation.email.sender}") String sender,
             @Value("${regional.confirmation.email.enabled:false}") boolean enabled) {
         if (!enabled) {
             throw new IllegalStateException(
-                    "regional.confirmation.email.enabled must be true for smtp-test");
+                    "regional.confirmation.email.enabled must be true for local");
         }
         return new EmailConfirmationDeliveryAdapter(
                 mailSender, recipientPort, sender, true);

@@ -9,7 +9,7 @@ infrastructure decision.
 
 ## Safety boundary
 
-The `smtp-test` profile resolves the recipient from
+The `local` profile resolves the recipient from
 `REGIONAL_OTP_EMAIL_TEST_RECIPIENT`. This is deliberately test-only and must not
 be used as the production banking recipient source.
 
@@ -30,11 +30,11 @@ Configure the existing technical PostgreSQL and HMAC environment variables, then
 - `REGIONAL_OTP_EMAIL_SENDER`
 - `REGIONAL_OTP_EMAIL_TEST_RECIPIENT`
 
-Start with Spring profile `smtp-test`.
+Start with Spring profile `local`.
 
 Example:
 
-`mvn -Pr3-no-openapi-generation spring-boot:run -Dspring-boot.run.profiles=smtp-test`
+`mvn -Pr3-no-openapi-generation spring-boot:run -Dspring-boot.run.profiles=local`
 
 Then create a Payment Confirmation challenge through the approved HTTP endpoint.
 The generated OTP must be delivered through the configured external SMTP server.
