@@ -6,18 +6,22 @@ import com.regional.corebanking.confirmation.application.port.in.PaymentConfirma
 import com.regional.corebanking.confirmation.application.port.out.*;
 import com.regional.corebanking.confirmation.application.service.PaymentConfirmationService;
 import com.regional.corebanking.confirmation.domain.DeliveryChannel;
+import com.regional.corebanking.confirmation.infrastructure.email.EmailConfirmationDeliveryAdapter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.util.EnumSet;
+import java.util.Optional;
 
 @Configuration
 public class ConfirmationConfiguration {
@@ -78,9 +82,36 @@ public class ConfirmationConfiguration {
     }
 
     @Bean
+    @Profile("!smtp-test")
     ConfirmationDeliveryPort confirmationDeliveryPort() {
         return new NoopConfirmationDeliveryAdapter(
                 EnumSet.of(DeliveryChannel.SMS, DeliveryChannel.EMAIL));
+    }
+
+    @Bean
+    @Profile("smtp-test")
+    ConfirmationRecipientPort smtpTestConfirmationRecipientPort(
+            @Value("${regional.confirmation.email.test-recipient}") String recipient) {
+        if (recipient == null || recipient.isBlank()) {
+            throw new IllegalArgumentException(
+                    "regional.confirmation.email.test-recipient is required for smtp-test");
+        }
+        return (financialInstitutionCode, customerReference) -> Optional.of(recipient);
+    }
+
+    @Bean
+    @Profile("smtp-test")
+    ConfirmationDeliveryPort smtpTestConfirmationDeliveryPort(
+            JavaMailSender mailSender,
+            ConfirmationRecipientPort recipientPort,
+            @Value("${regional.confirmation.email.sender}") String sender,
+            @Value("${regional.confirmation.email.enabled:false}") boolean enabled) {
+        if (!enabled) {
+            throw new IllegalStateException(
+                    "regional.confirmation.email.enabled must be true for smtp-test");
+        }
+        return new EmailConfirmationDeliveryAdapter(
+                mailSender, recipientPort, sender, true);
     }
 
     @Bean

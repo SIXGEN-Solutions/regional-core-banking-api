@@ -1,0 +1,8 @@
+# R5.2.3b - explicit real SMTP integration-test profile.
+# Never commit real SMTP credentials or recipient addresses.
+regional:
+  confirmation:
+    email:
+      enabled: ${REGIONAL_OTP_EMAIL_ENABLED:true}
+      sender: ${REGIONAL_OTP_EMAIL_SENDER}
+      test-recipient: ${REGIONAL_OTP_EMAIL_TEST_RECIPIENT}

@@ -1,9 +1,25 @@
-logging:
-  level:
-    com.regional.corebanking: INFO
+# Local developer profile only.
+# Secrets are loaded from the ignored ./config/application-local-secrets.yml.
+spring:
+  config:
+    import: optional:file:./config/application-local-secrets.yml
+  mail:
+    host: sandbox.smtp.mailtrap.io
+    port: 587
+    properties:
+      mail.smtp.starttls.enable: true
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
 
 regional:
   technical-datasource:
-    url: ${REGIONAL_TECHNICAL_DB_URL:jdbc:postgresql://localhost:15432/regional_core_banking}
-    username: ${REGIONAL_TECHNICAL_DB_USERNAME:regional_core_banking_app}
-    password: ${REGIONAL_TECHNICAL_DB_PASSWORD:regional_core_banking_dev}
+    url: jdbc:postgresql://localhost:15432/regional_core_banking?currentSchema=core_banking
+    username: regional_core_banking_app
+    password: regional_core_banking_dev
+  confirmation:
+    persistence: jdbc
+    email:
+      enabled: true
+      sender: no-reply@regional-test.local
+      test-recipient: customer@regional-test.local

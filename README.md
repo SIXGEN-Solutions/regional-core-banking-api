@@ -266,3 +266,21 @@ Payment Confirmation keeps an internal delivery lifecycle distinct from the appr
 
 R5.2.6 strengthens Payment Confirmation robustness tests for restart/recovery, concurrency, idempotency conflicts, OTP-attempt, replacement and expiration races, HMAC rotation, EMAIL outcomes, unknown delivery outcomes, OTP leakage and contract characterization. PostgreSQL integration tests remain environment-backed through `REGIONAL_CONFIRMATION_IT_DB_*`; skipped integration tests do not prove the multi-instance gate. SMS/BKSMS remains deferred pending authoritative La Régionale mapping evidence. No OpenAPI/Spring generation is executed in this lot.
 \n\n### Technical PostgreSQL datasource\n\nThe Regional-owned technical store uses PostgreSQL database `regional_core_banking`, schema `core_banking`. Local Docker uses application user `regional_core_banking_app`; the local-only default password is `regional_core_banking_dev`. Runtime credentials remain external configuration. Flyway owns technical schema migrations. Customer/Amplitude banking access uses the separate `regional.banking.datasource` namespace and must never reuse the technical PostgreSQL datasource.\n\nFor R5.2.6 PostgreSQL integration tests:\n- `REGIONAL_CONFIRMATION_IT_DB_URL=jdbc:postgresql://localhost:5432/regional_core_banking?currentSchema=core_banking`\n- `REGIONAL_CONFIRMATION_IT_DB_USERNAME=regional_core_banking_app`\n- `REGIONAL_CONFIRMATION_IT_DB_PASSWORD=regional_core_banking_dev` (local only)\n
+
+## Local Payment Confirmation / SMTP test profile
+
+R5.2.3b validated the EMAIL OTP path with a real SMTP connection against a Mailtrap Email Sandbox. The observed end-to-end result was: challenge creation -> EMAIL delivery accepted -> message captured by Mailtrap -> OTP submitted to the verification endpoint -> `VERIFIED` / `OTP_VERIFIED`. A separate test submitted after the five-minute TTL returned `EXPIRED` / `CHALLENGE_EXPIRED`, confirming expiry enforcement.
+
+This validation proves the Regional SMTP adapter and OTP EMAIL flow against test SMTP infrastructure. It does not establish La Régionale production SMTP parameters and does not prove authoritative customer-email lookup from Amplitude. SMS/BKSMS remains deferred pending authoritative physical bank mapping evidence.
+
+For local development, activate `local,smtp-test`. The `local` profile contains local/non-production configuration for the dedicated PostgreSQL technical datasource and Mailtrap Sandbox connection. The `smtp-test` profile selects the real EMAIL delivery adapter.
+
+Secrets are intentionally excluded from committed profiles. Copy `config/application-local-secrets.example.yml` to `config/application-local-secrets.yml`, then fill the Mailtrap username/password and a local 32-byte Base64 HMAC key once. The real local secrets file is gitignored and imported automatically by `application-local.yml`.
+
+Start without re-entering environment variables:
+
+```bash
+mvn -Pr3-no-openapi-generation spring-boot:run "-Dspring-boot.run.profiles=local,smtp-test"
+```
+
+The local secrets file is developer-machine configuration only. HMAC and SMTP production secrets remain external deployment secrets and must never be committed or stored in PostgreSQL.

@@ -39,3 +39,6 @@ venv/
 
 # Local bootstrap backups
 .regional-local-backups/
+
+# Local developer secrets - never commit
+/config/application-local-secrets.yml
