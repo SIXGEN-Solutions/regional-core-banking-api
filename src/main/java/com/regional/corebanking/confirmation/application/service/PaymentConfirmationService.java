@@ -58,7 +58,7 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
                 "CREATE", institution, command.paymentReference(), command.customerReference(),
                 command.debtorAccountReference(), command.amount().toPlainString(), command.currency());
 
-        return idempotency.execute(key, "CREATE", fingerprint, () -> {
+        return idempotency.execute(institution, key, "CREATE", fingerprint, () -> {
             Instant now = clock.instant();
             String reference = "CHL-" + UUID.randomUUID();
             char[] value = otp.generate();
@@ -70,8 +70,8 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
                         ChallengeStatus.ACTIVE, ConfirmationBusinessCode.CHALLENGE_ACTIVE,
                         0, 0, delivery.enabledChannels(), now, now.plus(ttl),
                         null, null, null);
-                challenges.save(challenge);
-                return applyDeliveryOutcome(challenge, delivery.dispatch(challenge, value));
+                challenges.save(institution, challenge);
+                return applyDeliveryOutcome(institution, challenge, delivery.dispatch(challenge, value));
             } finally {
                 Arrays.fill(value, '\0');
             }
@@ -85,8 +85,8 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
                 "VERIFY", institution, reference, command.paymentReference(),
                 otp.verifier("IDEMPOTENCY:" + reference, command.otp()));
         try {
-            return idempotency.execute(key, "VERIFY", fingerprint, () ->
-                    challenges.update(reference, current -> {
+            return idempotency.execute(institution, key, "VERIFY", fingerprint, () ->
+                    challenges.update(institution, reference, current -> {
                         requirePayment(current, command.paymentReference());
                         current = expire(current);
                         if (current.status() != ChallengeStatus.ACTIVE) {
@@ -112,8 +112,8 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
                                          ConfirmationCommand.Replace command) {
         String fingerprint = fingerprint("REPLACE", institution, reference, command.paymentReference());
 
-        return idempotency.execute(key, "REPLACE", fingerprint, () -> {
-            ConfirmationChallenge previous = challenges.update(reference, current -> {
+        return idempotency.execute(institution, key, "REPLACE", fingerprint, () -> {
+            ConfirmationChallenge previous = challenges.update(institution, reference, current -> {
                 requirePayment(current, command.paymentReference());
                 current = expire(current);
                 if (current.status() != ChallengeStatus.ACTIVE) {
@@ -141,8 +141,8 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
                         ChallengeStatus.ACTIVE, ConfirmationBusinessCode.CHALLENGE_ACTIVE,
                         0, previous.replacementCount() + 1, delivery.enabledChannels(),
                         now, now.plus(ttl), null, null, null);
-                challenges.save(replacement);
-                return applyDeliveryOutcome(replacement, delivery.dispatch(replacement, value));
+                challenges.save(institution, replacement);
+                return applyDeliveryOutcome(institution, replacement, delivery.dispatch(replacement, value));
             } finally {
                 Arrays.fill(value, '\0');
             }
@@ -151,12 +151,12 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
 
     @Override
     public ConfirmationChallenge get(String institution, String reference) {
-        return challenges.update(reference, this::expire);
+        return challenges.update(institution, reference, this::expire);
     }
 
     @Override
     public ConfirmationChallenge recover(String institution, String key) {
-        return idempotency.find(key)
+        return idempotency.find(institution, key)
                 .map(IdempotencyRepository.Entry::result)
                 .orElseThrow(() -> new ChallengeNotFoundException("idempotency:" + key));
     }
@@ -167,8 +167,8 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
         String fingerprint = fingerprint(
                 "REVOKE", institution, reference, command.paymentReference(), command.reasonCode());
 
-        return idempotency.execute(key, "REVOKE", fingerprint, () ->
-                challenges.update(reference, current -> {
+        return idempotency.execute(institution, key, "REVOKE", fingerprint, () ->
+                challenges.update(institution, reference, current -> {
                     requirePayment(current, command.paymentReference());
                     current = expire(current);
                     if (current.status() == ChallengeStatus.REVOKED) {
@@ -182,7 +182,7 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
     }
 
     private ConfirmationChallenge applyDeliveryOutcome(
-            ConfirmationChallenge challenge,
+            String institution, ConfirmationChallenge challenge,
             ConfirmationDeliveryPort.Outcome outcome
     ) {
         if (outcome == ConfirmationDeliveryPort.Outcome.DELIVERED) {
@@ -193,7 +193,7 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
                 : ConfirmationBusinessCode.DEPENDENCY_RESULT_UNKNOWN;
 
         return challenges.update(
-                challenge.challengeReference(),
+                institution, challenge.challengeReference(),
                 current -> current.failed(current.failedAttempts(), current.status(), code));
     }
 

@@ -8,6 +8,10 @@ import com.regional.corebanking.confirmation.application.service.PaymentConfirma
 import com.regional.corebanking.confirmation.domain.DeliveryChannel;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.security.SecureRandom;
 import java.time.Clock;
@@ -17,12 +21,50 @@ import java.util.EnumSet;
 @Configuration
 public class ConfirmationConfiguration {
     @Bean
-    ChallengeRepository confirmationChallengeRepository() {
+    @ConditionalOnProperty(
+            name = "regional.confirmation.persistence",
+            havingValue = "jdbc",
+            matchIfMissing = true)
+    TransactionTemplate confirmationTransactionTemplate(PlatformTransactionManager transactionManager) {
+        return new TransactionTemplate(transactionManager);
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            name = "regional.confirmation.persistence",
+            havingValue = "jdbc",
+            matchIfMissing = true)
+    ChallengeRepository jdbcConfirmationChallengeRepository(
+            JdbcTemplate jdbc,
+            TransactionTemplate tx) {
+        return new JdbcChallengeRepository(jdbc, tx);
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            name = "regional.confirmation.persistence",
+            havingValue = "jdbc",
+            matchIfMissing = true)
+    IdempotencyRepository jdbcConfirmationIdempotencyRepository(
+            JdbcTemplate jdbc,
+            TransactionTemplate tx,
+            ObjectMapper objectMapper) {
+        return new JdbcIdempotencyRepository(jdbc, tx, objectMapper);
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            name = "regional.confirmation.persistence",
+            havingValue = "memory")
+    ChallengeRepository inMemoryConfirmationChallengeRepository() {
         return new InMemoryChallengeRepository();
     }
 
     @Bean
-    IdempotencyRepository confirmationIdempotencyRepository() {
+    @ConditionalOnProperty(
+            name = "regional.confirmation.persistence",
+            havingValue = "memory")
+    IdempotencyRepository inMemoryConfirmationIdempotencyRepository() {
         return new InMemoryIdempotencyRepository();
     }
 

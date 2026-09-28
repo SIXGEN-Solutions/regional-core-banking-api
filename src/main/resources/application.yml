@@ -1,6 +1,11 @@
 spring:
   application:
     name: regional-core-banking-api
+  datasource:
+    url: ${REGIONAL_TECHNICAL_DB_URL}
+    username: ${REGIONAL_TECHNICAL_DB_USERNAME}
+    password: ${REGIONAL_TECHNICAL_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
 
 server:
   shutdown: graceful
@@ -15,3 +20,8 @@ management:
       probes:
         enabled: true
       show-details: never
+
+regional:
+  confirmation:
+    persistence: jdbc
+

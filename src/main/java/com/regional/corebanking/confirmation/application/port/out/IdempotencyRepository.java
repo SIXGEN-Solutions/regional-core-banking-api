@@ -5,8 +5,9 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 public interface IdempotencyRepository {
-    ConfirmationChallenge execute(String key, String operation, String fingerprint,
-                                  Supplier<ConfirmationChallenge> action);
-    Optional<Entry> find(String key);
-    record Entry(String key, String operation, String fingerprint, ConfirmationChallenge result) {}
+    ConfirmationChallenge execute(String institution, String key, String operation,
+                                  String fingerprint, Supplier<ConfirmationChallenge> action);
+    Optional<Entry> find(String institution, String key);
+    record Entry(String institution, String key, String operation, String fingerprint,
+                 ConfirmationChallenge result) {}
 }

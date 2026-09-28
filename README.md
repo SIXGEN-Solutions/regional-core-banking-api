@@ -227,3 +227,14 @@ contract divergence without modifying the canonical OpenAPI; a separately approv
 contract evolution and compatibility review are required first.
 
 See `documentation/architecture/R5_2_PAYMENT_CONFIRMATION_BANK_INTEGRATION_DECISIONS.md`.
+
+### R5.2.1 — Durable PostgreSQL persistence
+
+Payment Confirmation runtime persistence now targets the dedicated Regional PostgreSQL technical store.
+Challenge and idempotency access is scoped by financial institution. Same-key concurrency is arbitrated by PostgreSQL transactions and the `(institution_code, idempotency_key)` primary key.
+
+The schema artifact is `src/main/resources/db/r5_2_1/confirmation-postgresql.sql`. R5.2.1 does not introduce a migration product; applying that schema is an explicit deployment step until migration tooling is separately approved.
+
+Runtime datasource values are external: `REGIONAL_TECHNICAL_DB_URL`, `REGIONAL_TECHNICAL_DB_USERNAME`, `REGIONAL_TECHNICAL_DB_PASSWORD`.
+
+Optional PostgreSQL integration tests run when `REGIONAL_CONFIRMATION_IT_DB_URL`, `REGIONAL_CONFIRMATION_IT_DB_USERNAME` and `REGIONAL_CONFIRMATION_IT_DB_PASSWORD` are supplied.
