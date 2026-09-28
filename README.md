@@ -271,7 +271,7 @@ R5.2.6 strengthens Payment Confirmation robustness tests for restart/recovery, c
 
 R5.2.3b validated the EMAIL OTP path with a real SMTP connection against a Mailtrap Email Sandbox. The observed end-to-end result was: challenge creation -> EMAIL delivery accepted -> message captured by Mailtrap -> OTP submitted to the verification endpoint -> `VERIFIED` / `OTP_VERIFIED`. A separate test submitted after the five-minute TTL returned `EXPIRED` / `CHALLENGE_EXPIRED`, confirming expiry enforcement.
 
-This validation proves the Regional SMTP adapter and OTP EMAIL flow against test SMTP infrastructure. It does not establish La Régionale production SMTP parameters and does not prove authoritative customer-email lookup from Amplitude. SMS/BKSMS remains deferred pending authoritative physical bank mapping evidence.
+This validation proves the Regional SMTP adapter and OTP EMAIL flow against test SMTP infrastructure. Production recipient resolution is now wired through the existing Customer banking capability, which exposes the first `bkemacli.email` row for the customer reference. It does not establish La Régionale production SMTP/relay, network or security parameters. SMS/BKSMS remains deferred pending authoritative physical bank mapping evidence.
 
 For local development, activate only the `local` profile. It contains the dedicated PostgreSQL technical datasource and Mailtrap Sandbox connection and also selects the real EMAIL delivery adapter used for local SMTP testing.
 
@@ -299,3 +299,5 @@ The `local` profile keeps its fixed test recipient only for Mailtrap developer t
 
 Production activation therefore remains conditional on La Régionale supplying the real
 SMTP/relay/security/network parameters and secrets. No production SMTP credentials are committed.
+
+Operational activation steps and the exact production configuration inventory are documented in `documentation/runbooks/REGIONAL_PRODUCTION_EMAIL_OTP_ACTIVATION.md`.
