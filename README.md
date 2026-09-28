@@ -249,10 +249,10 @@ OTP HMAC material is no longer generated at startup. Runtime requires `REGIONAL_
 R5.2.3 adds the SMTP/relay `EmailConfirmationDeliveryAdapter`, external EMAIL configuration,
 and focused SMTP-client mock tests. The consumer never supplies the recipient address.
 
-Production recipient wiring is intentionally blocked at this revision: Customer currently
-obtains Spring's default `DataSource`, while R5.2.1 configures that default datasource as
-the Regional technical PostgreSQL store. Banking and technical datasources must be separated
-before the EMAIL adapter is wired to the authoritative Customer banking port.
+Production EMAIL recipient resolution is wired through the existing Customer banking
+capability. `CustomerBankingPort.getCustomer(...)` exposes `CustomerIdentity.email()`, backed
+by the first `bkemacli.email` row for `cli = customerReference`. Customer/KYC data quality is
+owned by the Core Banking system; Payment Confirmation does not duplicate KYC validation.
 
 No SMTP credential is committed and the adapter contains no OTP logging.
 
@@ -284,3 +284,18 @@ mvn -Pr3-no-openapi-generation spring-boot:run "-Dspring-boot.run.profiles=local
 ```
 
 The local secrets file is developer-machine configuration only. HMAC and SMTP production secrets remain external deployment secrets and must never be committed or stored in PostgreSQL.
+
+
+### Production EMAIL OTP wiring
+
+Payment Confirmation resolves the production EMAIL recipient through the existing Customer
+banking capability: `ConfirmationRecipientPort` delegates to
+`CustomerBankingPort.getCustomer(...)` and uses `CustomerIdentity.email()`. The Customer JDBC
+adapter already returns the first `bkemacli.email` row for the customer reference.
+
+The Noop delivery adapter is removed. Outside `local`, the real
+`EmailConfirmationDeliveryAdapter` is used with externally supplied SMTP configuration.
+The `local` profile keeps its fixed test recipient only for Mailtrap developer testing.
+
+Production activation therefore remains conditional on La Régionale supplying the real
+SMTP/relay/security/network parameters and secrets. No production SMTP credentials are committed.

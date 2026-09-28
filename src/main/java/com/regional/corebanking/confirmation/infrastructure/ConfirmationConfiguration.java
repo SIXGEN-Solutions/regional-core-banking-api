@@ -5,8 +5,9 @@ import com.regional.corebanking.confirmation.api.PaymentConfirmationApiMapper;
 import com.regional.corebanking.confirmation.application.port.in.PaymentConfirmationUseCase;
 import com.regional.corebanking.confirmation.application.port.out.*;
 import com.regional.corebanking.confirmation.application.service.PaymentConfirmationService;
-import com.regional.corebanking.confirmation.domain.DeliveryChannel;
 import com.regional.corebanking.confirmation.infrastructure.email.EmailConfirmationDeliveryAdapter;
+import com.regional.corebanking.confirmation.infrastructure.email.BankingConfirmationRecipientAdapter;
+import com.regional.corebanking.customer.application.port.out.CustomerBankingPort;
 import org.springframework.context.annotation.Bean;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,7 +21,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.EnumSet;
 import java.util.Optional;
 
 @Configuration
@@ -82,13 +82,6 @@ public class ConfirmationConfiguration {
     }
 
     @Bean
-    @Profile("!local")
-    ConfirmationDeliveryPort confirmationDeliveryPort() {
-        return new NoopConfirmationDeliveryAdapter(
-                EnumSet.of(DeliveryChannel.SMS, DeliveryChannel.EMAIL));
-    }
-
-    @Bean
     @Profile("local")
     ConfirmationRecipientPort localConfirmationRecipientPort(
             @Value("${regional.confirmation.email.test-recipient}") String recipient) {
@@ -100,18 +93,20 @@ public class ConfirmationConfiguration {
     }
 
     @Bean
-    @Profile("local")
-    ConfirmationDeliveryPort localConfirmationDeliveryPort(
+    @Profile("!local")
+    ConfirmationRecipientPort bankingConfirmationRecipientPort(
+            CustomerBankingPort customerBankingPort) {
+        return new BankingConfirmationRecipientAdapter(customerBankingPort);
+    }
+
+    @Bean
+    ConfirmationDeliveryPort confirmationDeliveryPort(
             JavaMailSender mailSender,
             ConfirmationRecipientPort recipientPort,
             @Value("${regional.confirmation.email.sender}") String sender,
             @Value("${regional.confirmation.email.enabled:false}") boolean enabled) {
-        if (!enabled) {
-            throw new IllegalStateException(
-                    "regional.confirmation.email.enabled must be true for local");
-        }
         return new EmailConfirmationDeliveryAdapter(
-                mailSender, recipientPort, sender, true);
+                mailSender, recipientPort, sender, enabled);
     }
 
     @Bean

@@ -3,6 +3,8 @@ package com.regional.corebanking.confirmation.application.service;
 import com.regional.corebanking.confirmation.domain.ConfirmationCommand;
 import com.regional.corebanking.confirmation.domain.DeliveryChannel;
 import com.regional.corebanking.confirmation.infrastructure.*;
+import com.regional.corebanking.confirmation.application.port.out.ConfirmationDeliveryPort;
+import com.regional.corebanking.confirmation.domain.ConfirmationChallenge;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -37,7 +39,21 @@ class PaymentConfirmationRecoveryTest {
                 new InMemoryChallengeRepository(),
                 new InMemoryIdempotencyRepository(),
                 new HmacOtpSecurityAdapter(new byte[32], "test-v1"),
-                new NoopConfirmationDeliveryAdapter(Set.of(DeliveryChannel.SMS)),
+                new ConfirmationDeliveryPort() {
+                    @Override
+                    public Set<DeliveryChannel> enabledChannels() {
+                        return Set.of(DeliveryChannel.SMS);
+                    }
+
+                    @Override
+                    public Outcome dispatch(
+                            String financialInstitutionCode,
+                            ConfirmationChallenge challenge,
+                            char[] otp
+                    ) {
+                        return Outcome.ACCEPTED;
+                    }
+                },
                 Clock.systemUTC(), Duration.ofMinutes(5), 3, 3);
     }
 
