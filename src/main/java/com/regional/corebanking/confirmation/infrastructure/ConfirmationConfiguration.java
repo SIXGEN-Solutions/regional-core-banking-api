@@ -7,13 +7,13 @@ import com.regional.corebanking.confirmation.application.port.out.*;
 import com.regional.corebanking.confirmation.application.service.PaymentConfirmationService;
 import com.regional.corebanking.confirmation.domain.DeliveryChannel;
 import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.EnumSet;
@@ -69,10 +69,10 @@ public class ConfirmationConfiguration {
     }
 
     @Bean
-    OtpSecurityPort confirmationOtpSecurityPort() {
-        byte[] key = new byte[32];
-        new SecureRandom().nextBytes(key);
-        return new HmacOtpSecurityAdapter(key, "runtime-local");
+    OtpSecurityPort confirmationOtpSecurityPort(
+            @Value("${regional.confirmation.hmac.active-key-version}") String activeKeyVersion,
+            @Value("${regional.confirmation.hmac.keys}") String encodedKeys) {
+        return new HmacOtpSecurityAdapter(OtpHmacKeyRingConfiguration.parse(encodedKeys), activeKeyVersion);
     }
 
     @Bean

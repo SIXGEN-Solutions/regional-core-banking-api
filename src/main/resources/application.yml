@@ -24,4 +24,7 @@ management:
 regional:
   confirmation:
     persistence: jdbc
+    hmac:
+      active-key-version: ${REGIONAL_OTP_HMAC_ACTIVE_KEY_VERSION}
+      keys: ${REGIONAL_OTP_HMAC_KEYS}
 

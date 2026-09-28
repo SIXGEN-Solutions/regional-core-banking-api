@@ -238,3 +238,7 @@ The schema artifact is `src/main/resources/db/r5_2_1/confirmation-postgresql.sql
 Runtime datasource values are external: `REGIONAL_TECHNICAL_DB_URL`, `REGIONAL_TECHNICAL_DB_USERNAME`, `REGIONAL_TECHNICAL_DB_PASSWORD`.
 
 Optional PostgreSQL integration tests run when `REGIONAL_CONFIRMATION_IT_DB_URL`, `REGIONAL_CONFIRMATION_IT_DB_USERNAME` and `REGIONAL_CONFIRMATION_IT_DB_PASSWORD` are supplied.
+
+### R5.2.2 — Versioned external OTP HMAC keys
+
+OTP HMAC material is no longer generated at startup. Runtime requires `REGIONAL_OTP_HMAC_ACTIVE_KEY_VERSION` and `REGIONAL_OTP_HMAC_KEYS`, supplied by the deployment secret-injection mechanism. The key ring uses comma-separated `<version>:<base64-secret>` entries. New challenges use the active version; existing challenges retain `otpKeyVersion` and remain verifiable while that previous key is retained. Secrets are never committed or stored in PostgreSQL. Old versions must not be retired while challenges or idempotent verification replays can still require them.

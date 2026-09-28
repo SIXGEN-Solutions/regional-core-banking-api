@@ -81,9 +81,11 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
     @Override
     public ConfirmationChallenge verify(String institution, String key, String reference,
                                         ConfirmationCommand.Verify command) {
+        ConfirmationChallenge persisted = challenges.find(institution, reference)
+                .orElseThrow(() -> new ChallengeNotFoundException(reference));
         String fingerprint = fingerprint(
                 "VERIFY", institution, reference, command.paymentReference(),
-                otp.verifier("IDEMPOTENCY:" + reference, command.otp()));
+                otp.verifier("IDEMPOTENCY:" + reference, command.otp(), persisted.otpKeyVersion()));
         try {
             return idempotency.execute(institution, key, "VERIFY", fingerprint, () ->
                     challenges.update(institution, reference, current -> {
@@ -92,7 +94,7 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
                         if (current.status() != ChallengeStatus.ACTIVE) {
                             return current;
                         }
-                        if (otp.matches(reference, command.otp(), current.otpVerifier())) {
+                        if (otp.matches(reference, command.otp(), current.otpVerifier(), current.otpKeyVersion())) {
                             return current.verified(clock.instant());
                         }
                         int attempts = current.failedAttempts() + 1;
