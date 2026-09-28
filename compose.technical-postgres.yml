@@ -1,0 +1,21 @@
+services:
+  technical-postgres:
+    image: postgres:16
+    container_name: regional-core-banking-postgres
+    ports:
+      - "${REGIONAL_TECHNICAL_DB_PORT:-15432}:5432"
+    environment:
+      POSTGRES_DB: regional_core_banking
+      POSTGRES_USER: regional_core_banking_app
+      POSTGRES_PASSWORD: ${REGIONAL_TECHNICAL_DB_PASSWORD:-regional_core_banking_dev}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U regional_core_banking_app -d regional_core_banking"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - technical-postgres-data:/var/lib/postgresql/data
+      - ./docker/technical-postgres/001_create_schema.sql:/docker-entrypoint-initdb.d/001_create_schema.sql:ro
+
+volumes:
+  technical-postgres-data:

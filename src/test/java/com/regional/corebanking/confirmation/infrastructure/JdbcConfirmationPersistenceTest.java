@@ -45,6 +45,59 @@ class JdbcConfirmationPersistenceTest {
         Future<ConfirmationChallenge> f2=pool.submit(()->{start.await();return b.execute("REGIONAL","idem-concurrent","CREATE","b".repeat(64),()->{calls.incrementAndGet();return challenge("CHL-CONCURRENT-2");});});
         start.countDown(); assertEquals(f1.get(),f2.get()); assertEquals(1,calls.get()); pool.shutdownNow();
     }
+    @Test
+    void challengeStateSurvivesRepositoryRecreation() {
+        JdbcChallengeRepository first = new JdbcChallengeRepository(jdbc, tx);
+
+        ConfirmationChallenge original = challenge("CHL-RESTART")
+                .deliveryRequested(Instant.parse("2026-09-27T12:00:01Z"))
+                .deliveryAccepted(Instant.parse("2026-09-27T12:00:02Z"));
+
+        first.save("REGIONAL", original);
+
+        JdbcChallengeRepository restarted =
+                new JdbcChallengeRepository(jdbc, tx);
+
+        ConfirmationChallenge actual =
+                restarted.find("REGIONAL", "CHL-RESTART").orElseThrow();
+
+        assertEquals(original.challengeReference(), actual.challengeReference());
+        assertEquals(original.paymentReference(), actual.paymentReference());
+        assertEquals(original.customerReference(), actual.customerReference());
+        assertEquals(original.debtorAccountReference(), actual.debtorAccountReference());
+
+        assertEquals(
+                0,
+                original.amount().compareTo(actual.amount()),
+                "Persisted amount must remain numerically equal regardless of BigDecimal scale"
+        );
+
+        assertEquals(original.currency(), actual.currency());
+        assertEquals(original.otpVerifier(), actual.otpVerifier());
+        assertEquals(original.otpKeyVersion(), actual.otpKeyVersion());
+        assertEquals(original.status(), actual.status());
+        assertEquals(original.businessCode(), actual.businessCode());
+        assertEquals(original.failedAttempts(), actual.failedAttempts());
+        assertEquals(original.replacementCount(), actual.replacementCount());
+        assertEquals(original.deliveryChannels(), actual.deliveryChannels());
+        assertEquals(original.createdAt(), actual.createdAt());
+        assertEquals(original.expiresAt(), actual.expiresAt());
+        assertEquals(original.verifiedAt(), actual.verifiedAt());
+        assertEquals(original.replacedAt(), actual.replacedAt());
+        assertEquals(original.revokedAt(), actual.revokedAt());
+        assertEquals(original.deliveryStatus(), actual.deliveryStatus());
+        assertEquals(original.deliveryRequestedAt(), actual.deliveryRequestedAt());
+        assertEquals(original.sentAt(), actual.sentAt());
+    }
+    @Test void concurrentChallengeUpdatesAcrossRepositoryInstancesDoNotLoseOtpAttempts() throws Exception {
+        JdbcChallengeRepository a=new JdbcChallengeRepository(jdbc,tx), b=new JdbcChallengeRepository(jdbc,tx);
+        a.save("REGIONAL",challenge("CHL-OTP-RACE"));
+        ExecutorService pool=Executors.newFixedThreadPool(2);CountDownLatch start=new CountDownLatch(1);
+        Callable<ConfirmationChallenge> one=()->{start.await();return a.update("REGIONAL","CHL-OTP-RACE",c->c.failed(c.failedAttempts()+1,ChallengeStatus.ACTIVE,ConfirmationBusinessCode.OTP_INVALID));};
+        Callable<ConfirmationChallenge> two=()->{start.await();return b.update("REGIONAL","CHL-OTP-RACE",c->c.failed(c.failedAttempts()+1,ChallengeStatus.ACTIVE,ConfirmationBusinessCode.OTP_INVALID));};
+        Future<ConfirmationChallenge> f1=pool.submit(one),f2=pool.submit(two);start.countDown();f1.get(5,TimeUnit.SECONDS);f2.get(5,TimeUnit.SECONDS);
+        assertEquals(2,a.find("REGIONAL","CHL-OTP-RACE").orElseThrow().failedAttempts());pool.shutdownNow();
+    }
     @Test void idempotencyIsScopedByInstitution(){
         JdbcIdempotencyRepository r=new JdbcIdempotencyRepository(jdbc,tx,json);
         r.execute("BANK-A","same-key","CREATE","c".repeat(64),()->challenge("CHL-A"));

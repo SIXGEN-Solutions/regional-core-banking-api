@@ -1,6 +1,9 @@
-# Local profile skeleton only.
-# Do not commit credentials, endpoints, certificates or trust material here.
-
 logging:
   level:
     com.regional.corebanking: INFO
+
+regional:
+  technical-datasource:
+    url: ${REGIONAL_TECHNICAL_DB_URL:jdbc:postgresql://localhost:15432/regional_core_banking}
+    username: ${REGIONAL_TECHNICAL_DB_USERNAME:regional_core_banking_app}
+    password: ${REGIONAL_TECHNICAL_DB_PASSWORD:regional_core_banking_dev}

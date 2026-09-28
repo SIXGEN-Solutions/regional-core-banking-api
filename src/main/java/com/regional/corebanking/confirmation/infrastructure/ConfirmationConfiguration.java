@@ -7,6 +7,7 @@ import com.regional.corebanking.confirmation.application.port.out.*;
 import com.regional.corebanking.confirmation.application.service.PaymentConfirmationService;
 import com.regional.corebanking.confirmation.domain.DeliveryChannel;
 import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -25,7 +26,8 @@ public class ConfirmationConfiguration {
             name = "regional.confirmation.persistence",
             havingValue = "jdbc",
             matchIfMissing = true)
-    TransactionTemplate confirmationTransactionTemplate(PlatformTransactionManager transactionManager) {
+    TransactionTemplate confirmationTransactionTemplate(
+            @Qualifier("technicalTransactionManager") PlatformTransactionManager transactionManager) {
         return new TransactionTemplate(transactionManager);
     }
 
@@ -35,7 +37,7 @@ public class ConfirmationConfiguration {
             havingValue = "jdbc",
             matchIfMissing = true)
     ChallengeRepository jdbcConfirmationChallengeRepository(
-            JdbcTemplate jdbc,
+            @Qualifier("technicalJdbcTemplate") JdbcTemplate jdbc,
             TransactionTemplate tx) {
         return new JdbcChallengeRepository(jdbc, tx);
     }
@@ -46,7 +48,7 @@ public class ConfirmationConfiguration {
             havingValue = "jdbc",
             matchIfMissing = true)
     IdempotencyRepository jdbcConfirmationIdempotencyRepository(
-            JdbcTemplate jdbc,
+            @Qualifier("technicalJdbcTemplate") JdbcTemplate jdbc,
             TransactionTemplate tx,
             ObjectMapper objectMapper) {
         return new JdbcIdempotencyRepository(jdbc, tx, objectMapper);

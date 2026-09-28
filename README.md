@@ -260,3 +260,9 @@ No SMTP credential is committed and the adapter contains no OTP logging.
 ### R5.2.4 — Delivery semantics
 
 Payment Confirmation keeps an internal delivery lifecycle distinct from the approved OpenAPI challenge status: CREATED, REQUESTED, ACCEPTED, FAILED and UNKNOWN. `sentAt` is populated only after adapter acceptance and is no longer derived from `createdAt`. A Noop adapter never reports successful delivery. No endpoint or OpenAPI schema/status is changed.
+
+
+### R5.2.6 — Robustness and closure
+
+R5.2.6 strengthens Payment Confirmation robustness tests for restart/recovery, concurrency, idempotency conflicts, OTP-attempt, replacement and expiration races, HMAC rotation, EMAIL outcomes, unknown delivery outcomes, OTP leakage and contract characterization. PostgreSQL integration tests remain environment-backed through `REGIONAL_CONFIRMATION_IT_DB_*`; skipped integration tests do not prove the multi-instance gate. SMS/BKSMS remains deferred pending authoritative La Régionale mapping evidence. No OpenAPI/Spring generation is executed in this lot.
+\n\n### Technical PostgreSQL datasource\n\nThe Regional-owned technical store uses PostgreSQL database `regional_core_banking`, schema `core_banking`. Local Docker uses application user `regional_core_banking_app`; the local-only default password is `regional_core_banking_dev`. Runtime credentials remain external configuration. Flyway owns technical schema migrations. Customer/Amplitude banking access uses the separate `regional.banking.datasource` namespace and must never reuse the technical PostgreSQL datasource.\n\nFor R5.2.6 PostgreSQL integration tests:\n- `REGIONAL_CONFIRMATION_IT_DB_URL=jdbc:postgresql://localhost:5432/regional_core_banking?currentSchema=core_banking`\n- `REGIONAL_CONFIRMATION_IT_DB_USERNAME=regional_core_banking_app`\n- `REGIONAL_CONFIRMATION_IT_DB_PASSWORD=regional_core_banking_dev` (local only)\n
