@@ -211,5 +211,19 @@ R5.1 now wires the six approved Payment Confirmation operations through the gene
 HTTP boundary and adds HTTP contract tests, Spring wiring, atomic in-process idempotency,
 concurrency characterization, recovery tests and explicit delivery outcome semantics.
 
-Durable persistence, production secret management, BKSMS mapping and physical email
-delivery remain R5.2 concerns.
+R5.2 has validated the target infrastructure direction:
+- Regional Core Banking API is authoritative for OTP generation/lifecycle and delivery orchestration;
+- delivery channels are Regional server configuration and may enable SMS, EMAIL or both;
+- consumers do not select channels or destination contacts;
+- durable challenge/idempotency/recovery state uses dedicated PostgreSQL, separate from Amplitude;
+- multi-instance correctness relies primarily on PostgreSQL transactions and database uniqueness/concurrency guarantees;
+- HMAC and SMTP secrets remain external to source control and PostgreSQL;
+- EMAIL uses a Regional-owned outbound mail adapter with environment configuration;
+- SMS follows the confirmed bank database -> Kannel -> M-Target path and awaits authoritative physical mapping.
+
+The approved OpenAPI still exposes singular `deliveryChannel`, while Regional
+configuration may enable SMS and EMAIL simultaneously. R5.2.0 records this known
+contract divergence without modifying the canonical OpenAPI; a separately approved
+contract evolution and compatibility review are required first.
+
+See `documentation/architecture/R5_2_PAYMENT_CONFIRMATION_BANK_INTEGRATION_DECISIONS.md`.

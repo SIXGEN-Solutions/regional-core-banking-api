@@ -72,9 +72,11 @@ R9 : sandbox, sécurité, Informix et déploiement.
 outil/version OpenAPI Generator et périmètre généré ;
 accès Informix exact : JDBC/procédures/services, comptes techniques et transactions ;
 mappings bancaires exacts et champs provider ;
-mécanisme réel d'OTP/SMS derrière La Régionale ;
+mapping physique et sémantique d'écriture/statut de la base SMS utilisée par Kannel ;
+paramètres d'environnement SMTP/relay et sécurité du compte de service EMAIL ;
 OAuth2 issuer/token endpoint, scopes Regional, mTLS, certificats/trust stores et allowlists ;
-éventuelle base technique propre pour idempotence/audit/recovery ;
+schéma/migrations physiques de la base technique PostgreSQL dédiée validée pour R5.2 ;
+évolution contractuelle explicite de `deliveryChannel` singulier pour représenter SMS+EMAIL simultanés, avec validation de compatibilité consommateur ;
 stratégie de versionnement et release du nouveau repository ;
 statut final de chaque endpoint/contexte avant approbation V1.
 # 10. Prompt de démarrage du nouveau projet ChatGPT
