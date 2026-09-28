@@ -4,6 +4,7 @@ import com.regional.corebanking.confirmation.application.port.out.ConfirmationDe
 import com.regional.corebanking.confirmation.domain.ConfirmationBusinessCode;
 import com.regional.corebanking.confirmation.domain.ConfirmationCommand;
 import com.regional.corebanking.confirmation.domain.DeliveryChannel;
+import com.regional.corebanking.confirmation.domain.DeliveryStatus;
 import com.regional.corebanking.confirmation.infrastructure.*;
 import org.junit.jupiter.api.Test;
 
@@ -27,6 +28,23 @@ class PaymentConfirmationDeliverySemanticsTest {
         assertThat(service(ConfirmationDeliveryPort.Outcome.UNKNOWN)
                 .create("REGIONAL", "key-unknown", command())
                 .businessCode()).isEqualTo(ConfirmationBusinessCode.DEPENDENCY_RESULT_UNKNOWN);
+    }
+
+    @Test
+    void acceptedDeliveryHasRealSentAt() {
+        var c=service(ConfirmationDeliveryPort.Outcome.ACCEPTED).create("REGIONAL","key-accepted",command());
+        assertThat(c.deliveryStatus()).isEqualTo(DeliveryStatus.ACCEPTED);
+        assertThat(c.deliveryRequestedAt()).isNotNull();
+        assertThat(c.sentAt()).isNotNull();
+        assertThat(c.sentAt()).isAfterOrEqualTo(c.deliveryRequestedAt());
+    }
+
+    @Test
+    void unknownDeliveryHasNoSentAt() {
+        var c=service(ConfirmationDeliveryPort.Outcome.UNKNOWN).create("REGIONAL","key-unknown-sent-at",command());
+        assertThat(c.deliveryStatus()).isEqualTo(DeliveryStatus.UNKNOWN);
+        assertThat(c.deliveryRequestedAt()).isNotNull();
+        assertThat(c.sentAt()).isNull();
     }
 
     private PaymentConfirmationService service(ConfirmationDeliveryPort.Outcome outcome) {

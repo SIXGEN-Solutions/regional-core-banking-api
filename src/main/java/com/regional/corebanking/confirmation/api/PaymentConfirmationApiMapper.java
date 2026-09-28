@@ -66,10 +66,7 @@ public final class PaymentConfirmationApiMapper {
                 challenge.deliveryChannels().size() == 1
                         ? challenge.deliveryChannels().iterator().next().name()
                         : null);
-        payload.put("sentAt",
-                challenge.businessCode() == ConfirmationBusinessCode.CHALLENGE_ACTIVE
-                        ? challenge.createdAt()
-                        : null);
+        payload.put("sentAt", challenge.sentAt());
         payload.put("expiresAt", challenge.expiresAt());
         payload.put("verifiedAt", challenge.verifiedAt());
         return payload;

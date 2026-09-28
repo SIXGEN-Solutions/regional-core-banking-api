@@ -23,7 +23,7 @@ class PaymentConfirmationConcurrencyTest {
             public Set<DeliveryChannel> enabledChannels() { return Set.of(DeliveryChannel.SMS); }
             public Outcome dispatch(String institution, com.regional.corebanking.confirmation.domain.ConfirmationChallenge c, char[] otp) {
                 deliveries.incrementAndGet();
-                return Outcome.DELIVERED;
+                return Outcome.ACCEPTED;
             }
         };
 

@@ -255,3 +255,8 @@ the Regional technical PostgreSQL store. Banking and technical datasources must 
 before the EMAIL adapter is wired to the authoritative Customer banking port.
 
 No SMTP credential is committed and the adapter contains no OTP logging.
+
+
+### R5.2.4 — Delivery semantics
+
+Payment Confirmation keeps an internal delivery lifecycle distinct from the approved OpenAPI challenge status: CREATED, REQUESTED, ACCEPTED, FAILED and UNKNOWN. `sentAt` is populated only after adapter acceptance and is no longer derived from `createdAt`. A Noop adapter never reports successful delivery. No endpoint or OpenAPI schema/status is changed.

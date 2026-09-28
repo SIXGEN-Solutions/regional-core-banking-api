@@ -71,7 +71,8 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
                         0, 0, delivery.enabledChannels(), now, now.plus(ttl),
                         null, null, null);
                 challenges.save(institution, challenge);
-                return applyDeliveryOutcome(institution, challenge, delivery.dispatch(institution, challenge, value));
+                ConfirmationChallenge requested = challenges.update(institution, reference, current -> current.deliveryRequested(clock.instant()));
+                return applyDeliveryOutcome(institution, requested, delivery.dispatch(institution, requested, value));
             } finally {
                 Arrays.fill(value, '\0');
             }
@@ -144,7 +145,8 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
                         0, previous.replacementCount() + 1, delivery.enabledChannels(),
                         now, now.plus(ttl), null, null, null);
                 challenges.save(institution, replacement);
-                return applyDeliveryOutcome(institution, replacement, delivery.dispatch(institution, replacement, value));
+                ConfirmationChallenge requested = challenges.update(institution, newReference, current -> current.deliveryRequested(clock.instant()));
+                return applyDeliveryOutcome(institution, requested, delivery.dispatch(institution, requested, value));
             } finally {
                 Arrays.fill(value, '\0');
             }
@@ -187,16 +189,11 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
             String institution, ConfirmationChallenge challenge,
             ConfirmationDeliveryPort.Outcome outcome
     ) {
-        if (outcome == ConfirmationDeliveryPort.Outcome.DELIVERED) {
-            return challenge;
-        }
-        ConfirmationBusinessCode code = outcome == ConfirmationDeliveryPort.Outcome.CONFIRMED_FAILURE
-                ? ConfirmationBusinessCode.DELIVERY_FAILED
-                : ConfirmationBusinessCode.DEPENDENCY_RESULT_UNKNOWN;
-
-        return challenges.update(
-                institution, challenge.challengeReference(),
-                current -> current.failed(current.failedAttempts(), current.status(), code));
+        return challenges.update(institution, challenge.challengeReference(), current -> switch (outcome) {
+            case ACCEPTED -> current.deliveryAccepted(clock.instant());
+            case CONFIRMED_FAILURE -> current.deliveryFailed();
+            case UNKNOWN -> current.deliveryUnknown();
+        });
     }
 
     private ConfirmationChallenge expire(ConfirmationChallenge challenge) {

@@ -34,7 +34,7 @@ class EmailConfirmationDeliveryAdapterTest {
         JavaMailSender s=sender();
         var a=new EmailConfirmationDeliveryAdapter(s,(i,c)->Optional.of("client@regional.test"),
                 "no-reply@regional.test",true);
-        assertThat(a.dispatch("REGIONAL",challenge(),"123456".toCharArray())).isEqualTo(ConfirmationDeliveryPort.Outcome.DELIVERED);
+        assertThat(a.dispatch("REGIONAL",challenge(),"123456".toCharArray())).isEqualTo(ConfirmationDeliveryPort.Outcome.ACCEPTED);
         verify(s).send(any(MimeMessage.class));
     }
 

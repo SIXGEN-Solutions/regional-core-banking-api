@@ -5,7 +5,7 @@ import com.regional.corebanking.confirmation.domain.DeliveryChannel;
 import java.util.Set;
 
 public interface ConfirmationDeliveryPort {
-    enum Outcome { DELIVERED, CONFIRMED_FAILURE, UNKNOWN }
+    enum Outcome { ACCEPTED, CONFIRMED_FAILURE, UNKNOWN }
     Set<DeliveryChannel> enabledChannels();
     Outcome dispatch(String financialInstitutionCode, ConfirmationChallenge challenge, char[] otp);
 }

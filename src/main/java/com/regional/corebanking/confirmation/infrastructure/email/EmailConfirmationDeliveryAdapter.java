@@ -41,7 +41,7 @@ public final class EmailConfirmationDeliveryAdapter implements ConfirmationDeliv
             m.setSubject("Payment confirmation");
             m.setText("Confirmation code: "+new String(otp),"UTF-8");
             sender.send(m);
-            return Outcome.DELIVERED;
+            return Outcome.ACCEPTED;
         } catch (MailException | MessagingException e) {
             return timeout(e) ? Outcome.UNKNOWN : Outcome.CONFIRMED_FAILURE;
         }

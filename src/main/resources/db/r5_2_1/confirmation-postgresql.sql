@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS regional_confirmation_challenge (
   verified_at timestamptz NULL,
   replaced_at timestamptz NULL,
   revoked_at timestamptz NULL,
+  delivery_status varchar(32) NOT NULL DEFAULT 'CREATED',
+  delivery_requested_at timestamptz NULL,
+  sent_at timestamptz NULL,
   PRIMARY KEY (institution_code, challenge_reference)
 );
 CREATE INDEX IF NOT EXISTS ix_confirmation_payment

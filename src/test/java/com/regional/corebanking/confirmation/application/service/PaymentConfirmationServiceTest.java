@@ -24,7 +24,7 @@ class PaymentConfirmationServiceTest {
 
         public Outcome dispatch(String institution, ConfirmationChallenge c, char[] v) {
             delivered.set(v.clone());
-            return Outcome.DELIVERED;
+            return Outcome.ACCEPTED;
         }
     };
     private final PaymentConfirmationService service=new PaymentConfirmationService(challenges,idem,otp,delivery,
