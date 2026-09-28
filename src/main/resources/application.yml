@@ -1,11 +1,23 @@
 spring:
   application:
     name: regional-core-banking-api
+
   datasource:
     url: ${REGIONAL_TECHNICAL_DB_URL}
     username: ${REGIONAL_TECHNICAL_DB_USERNAME}
     password: ${REGIONAL_TECHNICAL_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+
+  mail:
+    host: ${REGIONAL_OTP_EMAIL_HOST:}
+    port: ${REGIONAL_OTP_EMAIL_PORT:25}
+    username: ${REGIONAL_OTP_EMAIL_USERNAME:}
+    password: ${REGIONAL_OTP_EMAIL_PASSWORD:}
+    properties:
+      mail.smtp.starttls.enable: ${REGIONAL_OTP_EMAIL_TLS:true}
+      mail.smtp.connectiontimeout: ${REGIONAL_OTP_EMAIL_CONNECTION_TIMEOUT_MS:5000}
+      mail.smtp.timeout: ${REGIONAL_OTP_EMAIL_READ_TIMEOUT_MS:5000}
+      mail.smtp.writetimeout: ${REGIONAL_OTP_EMAIL_WRITE_TIMEOUT_MS:5000}
 
 server:
   shutdown: graceful
@@ -27,4 +39,6 @@ regional:
     hmac:
       active-key-version: ${REGIONAL_OTP_HMAC_ACTIVE_KEY_VERSION}
       keys: ${REGIONAL_OTP_HMAC_KEYS}
-
+    email:
+      enabled: ${REGIONAL_OTP_EMAIL_ENABLED:false}
+      sender: ${REGIONAL_OTP_EMAIL_SENDER:}

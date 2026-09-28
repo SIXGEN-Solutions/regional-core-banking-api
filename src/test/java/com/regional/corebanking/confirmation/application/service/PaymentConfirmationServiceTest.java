@@ -22,7 +22,7 @@ class PaymentConfirmationServiceTest {
             return Set.of(DeliveryChannel.SMS, DeliveryChannel.EMAIL);
         }
 
-        public Outcome dispatch(ConfirmationChallenge c, char[] v) {
+        public Outcome dispatch(String institution, ConfirmationChallenge c, char[] v) {
             delivered.set(v.clone());
             return Outcome.DELIVERED;
         }

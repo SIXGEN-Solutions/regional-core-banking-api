@@ -21,7 +21,7 @@ class PaymentConfirmationConcurrencyTest {
         AtomicInteger deliveries = new AtomicInteger();
         ConfirmationDeliveryPort delivery = new ConfirmationDeliveryPort() {
             public Set<DeliveryChannel> enabledChannels() { return Set.of(DeliveryChannel.SMS); }
-            public Outcome dispatch(com.regional.corebanking.confirmation.domain.ConfirmationChallenge c, char[] otp) {
+            public Outcome dispatch(String institution, com.regional.corebanking.confirmation.domain.ConfirmationChallenge c, char[] otp) {
                 deliveries.incrementAndGet();
                 return Outcome.DELIVERED;
             }

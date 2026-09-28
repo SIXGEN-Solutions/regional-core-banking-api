@@ -35,8 +35,14 @@ class PaymentConfirmationDeliverySemanticsTest {
                 new InMemoryIdempotencyRepository(),
                 new HmacOtpSecurityAdapter(new byte[32], "test-v1"),
                 new ConfirmationDeliveryPort() {
-                    public Set<DeliveryChannel> enabledChannels() { return Set.of(DeliveryChannel.SMS); }
-                    public Outcome dispatch(com.regional.corebanking.confirmation.domain.ConfirmationChallenge c, char[] otp) {
+                    public Set<DeliveryChannel> enabledChannels() {
+                        return Set.of(DeliveryChannel.SMS);
+                    }
+
+                    public Outcome dispatch(
+                            String financialInstitutionCode,
+                            com.regional.corebanking.confirmation.domain.ConfirmationChallenge c,
+                            char[] otp) {
                         return outcome;
                     }
                 },

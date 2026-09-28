@@ -18,7 +18,7 @@ public final class NoopConfirmationDeliveryAdapter implements ConfirmationDelive
     }
 
     @Override
-    public Outcome dispatch(ConfirmationChallenge challenge, char[] otp) {
+    public Outcome dispatch(String financialInstitutionCode, ConfirmationChallenge challenge, char[] otp) {
         return Outcome.DELIVERED;
     }
 }

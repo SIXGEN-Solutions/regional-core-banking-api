@@ -242,3 +242,16 @@ Optional PostgreSQL integration tests run when `REGIONAL_CONFIRMATION_IT_DB_URL`
 ### R5.2.2 — Versioned external OTP HMAC keys
 
 OTP HMAC material is no longer generated at startup. Runtime requires `REGIONAL_OTP_HMAC_ACTIVE_KEY_VERSION` and `REGIONAL_OTP_HMAC_KEYS`, supplied by the deployment secret-injection mechanism. The key ring uses comma-separated `<version>:<base64-secret>` entries. New challenges use the active version; existing challenges retain `otpKeyVersion` and remain verifiable while that previous key is retained. Secrets are never committed or stored in PostgreSQL. Old versions must not be retired while challenges or idempotent verification replays can still require them.
+
+
+### R5.2.3 — EMAIL OTP adapter
+
+R5.2.3 adds the SMTP/relay `EmailConfirmationDeliveryAdapter`, external EMAIL configuration,
+and focused SMTP-client mock tests. The consumer never supplies the recipient address.
+
+Production recipient wiring is intentionally blocked at this revision: Customer currently
+obtains Spring's default `DataSource`, while R5.2.1 configures that default datasource as
+the Regional technical PostgreSQL store. Banking and technical datasources must be separated
+before the EMAIL adapter is wired to the authoritative Customer banking port.
+
+No SMTP credential is committed and the adapter contains no OTP logging.

@@ -71,7 +71,7 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
                         0, 0, delivery.enabledChannels(), now, now.plus(ttl),
                         null, null, null);
                 challenges.save(institution, challenge);
-                return applyDeliveryOutcome(institution, challenge, delivery.dispatch(challenge, value));
+                return applyDeliveryOutcome(institution, challenge, delivery.dispatch(institution, challenge, value));
             } finally {
                 Arrays.fill(value, '\0');
             }
@@ -144,7 +144,7 @@ public final class PaymentConfirmationService implements PaymentConfirmationUseC
                         0, previous.replacementCount() + 1, delivery.enabledChannels(),
                         now, now.plus(ttl), null, null, null);
                 challenges.save(institution, replacement);
-                return applyDeliveryOutcome(institution, replacement, delivery.dispatch(replacement, value));
+                return applyDeliveryOutcome(institution, replacement, delivery.dispatch(institution, replacement, value));
             } finally {
                 Arrays.fill(value, '\0');
             }
