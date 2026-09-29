@@ -1,0 +1,12 @@
+package com.regional.corebanking.payment.domain;
+
+public enum PaymentExecutionCheckType {
+    ACCOUNT_EXISTS,
+    ACCOUNT_ACTIVE,
+    DEBIT_ALLOWED,
+    CURRENCY_SUPPORTED,
+    AVAILABLE_FUNDS_SUFFICIENT,
+    PER_TRANSACTION_LIMIT_NOT_EXCEEDED,
+    DAILY_LIMIT_NOT_EXCEEDED,
+    OTHER_APPLICABLE_LIMITS_NOT_EXCEEDED
+}

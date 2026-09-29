@@ -23,6 +23,7 @@ class JdbcConfirmationPersistenceTest {
     @BeforeEach void setup() throws Exception {
         String url=System.getenv("REGIONAL_CONFIRMATION_IT_DB_URL");
         Assumptions.assumeTrue(url!=null && !url.isBlank(), "PostgreSQL integration DB not configured");
+        assertDedicatedIntegrationDatabase(url);
         DriverManagerDataSource ds=new DriverManagerDataSource(url,System.getenv("REGIONAL_CONFIRMATION_IT_DB_USERNAME"),System.getenv("REGIONAL_CONFIRMATION_IT_DB_PASSWORD"));
         jdbc=new JdbcTemplate(ds); tx=new TransactionTemplate(new DataSourceTransactionManager(ds));
         json=new ObjectMapper().registerModule(new JavaTimeModule());
@@ -110,5 +111,21 @@ class JdbcConfirmationPersistenceTest {
         r.execute("REGIONAL","conflict-key","CREATE","e".repeat(64),()->challenge("CHL-X"));
         assertThrows(IdempotencyConflictException.class,()->r.execute("REGIONAL","conflict-key","CREATE","f".repeat(64),()->challenge("CHL-Y")));
     }
+    private static void assertDedicatedIntegrationDatabase(String url) {
+        String normalized = url.toLowerCase(java.util.Locale.ROOT);
+        boolean dedicatedDatabase = normalized.matches(
+                "jdbc:postgresql://[^/]+/regional_core_banking_test(?:\\?.*)?"
+        );
+
+        if (!dedicatedDatabase) {
+            throw new IllegalStateException(
+                    "Refusing to run destructive confirmation persistence integration tests "
+                            + "against a non-test database. REGIONAL_CONFIRMATION_IT_DB_URL "
+                            + "must target database 'regional_core_banking_test'. Actual URL: "
+                            + url
+            );
+        }
+    }
+
     private static ConfirmationChallenge challenge(String ref){Instant now=Instant.parse("2026-09-27T12:00:00Z");return new ConfirmationChallenge(ref,"PAY-0123456789ABCDEFGHJKMNPQRS","C1","001-1-1",new BigDecimal("100.00"),"XAF","verifier","v1",ChallengeStatus.ACTIVE,ConfirmationBusinessCode.CHALLENGE_ACTIVE,0,0,Set.of(DeliveryChannel.EMAIL),now,now.plusSeconds(300),null,null,null);}
 }

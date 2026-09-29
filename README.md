@@ -346,3 +346,40 @@ To also remove local database volumes:
 The example passwords and HMAC material are local-development values only.
 Production database, HMAC, SMTP, OAuth2, mTLS and banking connectivity parameters
 remain external deployment configuration.
+
+## R6 — Payment Execution / Recovery
+
+R6 wires the three approved Regional Payment Execution operations behind the generated
+HTTP boundary and adds a Regional domain/application model for execution and authoritative
+recovery. Financial execution is never blindly replayed: an `UNKNOWN` result is returned
+as HTTP 202 and must be resolved through the payment-reference or original-idempotency-key
+lookup before any retry.
+
+The approved Regional V1 does not expose the historical SIXPAY context endpoints
+(event-number allocation, accounting date, night mode), so R6 does not invent them.
+
+Physical Amplitude/Informix posting remains fail-closed until La Régionale supplies and
+approves the exact execution/recovery mapping, transaction boundary, execution checks,
+bank-reference source and authoritative idempotency lookup. The current adapter therefore
+returns service unavailable rather than simulating a financial result.
+
+See `documentation/architecture/R6_PAYMENT_EXECUTION_RECOVERY_BASELINE.md`.
+
+## Dedicated PostgreSQL integration-test datasource
+
+Destructive JDBC confirmation persistence tests use a database that is
+physically separate from the local/runtime technical datasource.
+
+See
+`documentation/testing/POSTGRESQL_INTEGRATION_TEST_DATASOURCE.md` and
+`.env.test.example`.
+
+The dedicated test container is started with:
+
+```bash
+docker compose -f compose.test-postgres.yml up -d
+```
+
+The runtime `regional_core_banking` database must not be used by
+`JdbcConfirmationPersistenceTest`.
+
