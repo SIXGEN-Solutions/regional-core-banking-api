@@ -1,0 +1,33 @@
+# Local Docker Compose runtime only.
+# Oracle below is test infrastructure and does not establish production
+# Amplitude/Informix mappings.
+
+regional:
+  technical-datasource:
+    url: ${REGIONAL_TECHNICAL_DB_URL:jdbc:postgresql://postgres:15432/regional_core_banking?currentSchema=core_banking}
+    username: ${REGIONAL_TECHNICAL_DB_USERNAME:regional_core_banking_app}
+    password: ${REGIONAL_TECHNICAL_DB_PASSWORD}
+  banking:
+    database:
+      vendor: oracle
+    financial-institution-code: REGIONAL
+    datasource:
+      url: ${ORACLE_JDBC_URL:jdbc:oracle:thin:@//customer-oracle:1521/FREEPDB1}
+      username: ${ORACLE_APP_USERNAME:REGIONAL_MOCK}
+      password: ${ORACLE_APP_PASSWORD}
+      driver-class-name: oracle.jdbc.OracleDriver
+  confirmation:
+    persistence: jdbc
+    hmac:
+      active-key-version: ${REGIONAL_OTP_HMAC_ACTIVE_KEY_VERSION}
+      keys: ${REGIONAL_OTP_HMAC_KEYS}
+    email:
+      enabled: ${REGIONAL_OTP_EMAIL_ENABLED:false}
+      sender: ${REGIONAL_OTP_EMAIL_SENDER:no-reply@regional-docker.local}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+  api-docs:
+    path: /v3/api-docs

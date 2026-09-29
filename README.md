@@ -301,3 +301,48 @@ Production activation therefore remains conditional on La Régionale supplying t
 SMTP/relay/security/network parameters and secrets. No production SMTP credentials are committed.
 
 Operational activation steps and the exact production configuration inventory are documented in `documentation/runbooks/REGIONAL_PRODUCTION_EMAIL_OTP_ACTIVATION.md`.
+
+## Local Docker stack — R5
+
+The local Docker stack runs the Regional Core Banking API, its Regional-owned
+PostgreSQL technical persistence, and the existing Oracle Customer/Account mock.
+
+The Oracle service remains test infrastructure only. It does not establish or
+replace production Amplitude/Informix mappings.
+
+### Build prerequisite
+
+This Docker increment does not execute OpenAPI generation. The Docker image
+therefore consumes the already-built application JAR:
+
+`target/regional-core-banking-api-1.0.0-SNAPSHOT.jar`
+
+Because the Docker runtime connects to the Oracle mock, the prebuilt artifact must
+contain the Oracle JDBC runtime dependency supplied by the existing
+`customer-oracle-mock` Maven profile.
+
+### Start
+
+Optionally copy `.env.example` to `.env`, then start:
+
+    docker compose up --build
+
+Application: `http://localhost:8080`
+
+Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+Actuator health: `http://localhost:8080/actuator/health`
+
+PostgreSQL is exposed on host port `15432` by default and Oracle mock on `1521`.
+
+### Stop
+
+    docker compose down
+
+To also remove local database volumes:
+
+    docker compose down -v
+
+The example passwords and HMAC material are local-development values only.
+Production database, HMAC, SMTP, OAuth2, mTLS and banking connectivity parameters
+remain external deployment configuration.
