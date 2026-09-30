@@ -3,6 +3,7 @@ package com.regional.corebanking.payment.application.service;
 import com.regional.corebanking.payment.application.exception.PaymentExecutionNotFoundException;
 import com.regional.corebanking.payment.application.port.in.PaymentExecutionUseCase;
 import com.regional.corebanking.payment.application.port.out.PaymentExecutionBankingPort;
+import com.regional.corebanking.payment.application.port.out.PaymentExecutionPersistencePort;
 import com.regional.corebanking.payment.domain.PaymentExecutionCommand;
 import com.regional.corebanking.payment.domain.PaymentExecutionResult;
 import org.springframework.stereotype.Service;
@@ -11,9 +12,13 @@ import org.springframework.stereotype.Service;
 public class PaymentExecutionService implements PaymentExecutionUseCase {
 
     private final PaymentExecutionBankingPort bankingPort;
+    private final PaymentExecutionPersistencePort persistencePort;
 
-    public PaymentExecutionService(PaymentExecutionBankingPort bankingPort) {
+    public PaymentExecutionService(
+            PaymentExecutionBankingPort bankingPort,
+            PaymentExecutionPersistencePort persistencePort) {
         this.bankingPort = bankingPort;
+        this.persistencePort = persistencePort;
     }
 
     @Override
@@ -25,13 +30,13 @@ public class PaymentExecutionService implements PaymentExecutionUseCase {
         requireText(idempotencyKey, "idempotencyKey");
         validate(command);
 
-        /*
-         * Financial idempotency is deliberately enforced at the authoritative
-         * banking boundary. The Regional application must never retry a command
-         * whose outcome may be unknown without first using one of the recovery
-         * operations below.
-         */
-        return bankingPort.execute(financialInstitutionCode, idempotencyKey, command);
+        String fingerprint = PaymentExecutionFingerprint.sha256(command);
+        return persistencePort.executeIdempotent(
+                financialInstitutionCode,
+                idempotencyKey,
+                fingerprint,
+                command,
+                () -> bankingPort.execute(financialInstitutionCode, idempotencyKey, command));
     }
 
     @Override
@@ -40,7 +45,9 @@ public class PaymentExecutionService implements PaymentExecutionUseCase {
             String paymentReference) {
         requireText(financialInstitutionCode, "financialInstitutionCode");
         requireText(paymentReference, "paymentReference");
-        return bankingPort.findByPaymentReference(financialInstitutionCode, paymentReference)
+
+        return persistencePort.findByPaymentReference(financialInstitutionCode, paymentReference)
+                .or(() -> bankingPort.findByPaymentReference(financialInstitutionCode, paymentReference))
                 .orElseThrow(() -> new PaymentExecutionNotFoundException(
                         "No authoritative payment execution result for paymentReference"));
     }
@@ -51,7 +58,9 @@ public class PaymentExecutionService implements PaymentExecutionUseCase {
             String idempotencyKey) {
         requireText(financialInstitutionCode, "financialInstitutionCode");
         requireText(idempotencyKey, "idempotencyKey");
-        return bankingPort.findByIdempotencyKey(financialInstitutionCode, idempotencyKey)
+
+        return persistencePort.findByIdempotencyKey(financialInstitutionCode, idempotencyKey)
+                .or(() -> bankingPort.findByIdempotencyKey(financialInstitutionCode, idempotencyKey))
                 .orElseThrow(() -> new PaymentExecutionNotFoundException(
                         "No authoritative payment execution result for idempotencyKey"));
     }
