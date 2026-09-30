@@ -3,29 +3,29 @@ openapi: 3.1.0
 info:
   title: La Régionale - Core Banking API
   version: 1.0.0
-  summary: Regional-owned Core Banking API V1 contract — R6.1 revision candidate.
+  summary: Approved Regional-owned Core Banking API V1 contract.
   description: |
     Contract candidate for the autonomous La Régionale Core Banking API.
 
     This contract is owned by the Regional repository. SIXPAY is one consumer
     among others and its contracts/clients are compatibility evidence only.
 
-    The previously approved V1 baseline is being revised for R6 Payment Event
-    using validated Regional decisions and La Régionale implementation evidence.
-    This R6.1 revision requires explicit human approval before any OpenAPI/Spring
-    regeneration or implementation based on the changed Payment Event schemas.
+    The Regional V1 contract includes the explicitly human-approved R6.1 Payment
+    Event revision based on validated Regional decisions and La Régionale
+    implementation evidence. OpenAPI/Spring regeneration may use this approved
+    canonical contract subject to the normal repository validation gates.
 
   x-regional-contract:
-    lifecycleStatus: PENDING_APPROVAL
-    approvalStatus: PENDING_APPROVAL
-    generationPolicy: BLOCKED_PENDING_APPROVAL
-    codeGenerationAllowed: false
+    lifecycleStatus: APPROVED
+    approvalStatus: APPROVED
+    generationPolicy: ACTIVE
+    codeGenerationAllowed: true
     owner: REGIONAL_CORE_BANKING_API
     sourceOfTruth: THIS_REPOSITORY_AFTER_APPROVAL
     sixpayRole: COMPATIBILITY_CONSUMER
     sixpayModelsAreSourceOfTruth: false
     r1Status: APPROVED
-    r6PaymentEventRevisionStatus: PENDING_APPROVAL
+    r6PaymentEventRevisionStatus: APPROVED
     r6PaymentEventRevisionBasis:
       - REGIONAL_R6_0_VALIDATED_DECISIONS
       - BANK_IMPLEMENTATION_EVIDENCE
