@@ -4,7 +4,6 @@ import com.regional.corebanking.payment.application.exception.PaymentExecutionUn
 import com.regional.corebanking.payment.application.port.out.PaymentExecutionBankingPort;
 import com.regional.corebanking.payment.domain.PaymentExecutionCommand;
 import com.regional.corebanking.payment.domain.PaymentExecutionResult;
-import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
@@ -16,7 +15,6 @@ import java.util.Optional;
  * authoritative lookup mechanism. Inventing any of those would be unsafe for a
  * financial operation. Replace this adapter only when that bank evidence is approved.
  */
-@Component
 public class UnconfiguredPaymentExecutionBankingAdapter implements PaymentExecutionBankingPort {
 
     private static PaymentExecutionUnavailableException unavailable() {
