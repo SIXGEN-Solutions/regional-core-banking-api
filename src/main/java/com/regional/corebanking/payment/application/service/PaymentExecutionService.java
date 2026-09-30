@@ -5,11 +5,7 @@ import com.regional.corebanking.payment.application.port.in.PaymentExecutionUseC
 import com.regional.corebanking.payment.application.port.out.PaymentExecutionBankingPort;
 import com.regional.corebanking.payment.domain.PaymentExecutionCommand;
 import com.regional.corebanking.payment.domain.PaymentExecutionResult;
-import com.regional.corebanking.payment.domain.PaymentProviderEntry;
 import org.springframework.stereotype.Service;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @Service
 public class PaymentExecutionService implements PaymentExecutionUseCase {
@@ -71,26 +67,6 @@ public class PaymentExecutionService implements PaymentExecutionUseCase {
         }
         if (!command.paymentReference().equals(command.providerEvent().paymentReference())) {
             throw new IllegalArgumentException("providerEvent.paymentReference must match envelope paymentReference");
-        }
-        if (command.providerEntries() == null || command.providerEntries().size() != 2) {
-            throw new IllegalArgumentException("providerEntries must contain exactly two entries");
-        }
-
-        Set<Integer> sequences = new HashSet<>();
-        for (PaymentProviderEntry entry : command.providerEntries()) {
-            if (entry == null) {
-                throw new IllegalArgumentException("providerEntries must not contain null");
-            }
-            if (!command.paymentReference().equals(entry.paymentReference())) {
-                throw new IllegalArgumentException("entry paymentReference must match envelope paymentReference");
-            }
-            if (!"D".equals(entry.direction()) && !"C".equals(entry.direction())) {
-                throw new IllegalArgumentException("entry direction must be D or C");
-            }
-            sequences.add(entry.sequence());
-        }
-        if (sequences.size() != 2) {
-            throw new IllegalArgumentException("provider entry sequences must be distinct");
         }
     }
 

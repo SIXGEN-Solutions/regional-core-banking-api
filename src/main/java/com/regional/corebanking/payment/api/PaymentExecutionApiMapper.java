@@ -3,15 +3,9 @@ package com.regional.corebanking.payment.api;
 import com.regional.corebanking.generated.model.PaymentEventEnvelope;
 import com.regional.corebanking.generated.model.PaymentEventResult;
 import com.regional.corebanking.generated.model.PaymentExecutionCheck;
-import com.regional.corebanking.generated.model.PaymentProviderEntry;
 import com.regional.corebanking.generated.model.PaymentProviderEvent;
-import com.regional.corebanking.payment.domain.PaymentExecutionCheckResult;
-import com.regional.corebanking.payment.domain.PaymentExecutionCheckType;
 import com.regional.corebanking.payment.domain.PaymentExecutionCommand;
-import com.regional.corebanking.payment.domain.PaymentExecutionOutcome;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Component
 public class PaymentExecutionApiMapper {
@@ -21,7 +15,6 @@ public class PaymentExecutionApiMapper {
                 source.getPaymentReference(),
                 source.getSnapshotVersion(),
                 toDomain(source.getProviderEvent()),
-                source.getProviderEntries().stream().map(this::toDomain).toList(),
                 source.getRequestedAt());
     }
 
@@ -40,26 +33,13 @@ public class PaymentExecutionApiMapper {
         return new com.regional.corebanking.payment.domain.PaymentProviderEvent(
                 source.getPaymentReference(),
                 source.getOperationCode(),
-                source.getEventNumber(),
                 source.getCurrency(),
                 source.getNature(),
-                source.getAccountingDate(),
                 source.getTechnicalUser(),
                 source.getDebtorAccountReference(),
                 source.getCreditorAccountReference(),
                 source.getAmount(),
-                source.getLabel(),
-                source.getNightMode());
-    }
-
-    private com.regional.corebanking.payment.domain.PaymentProviderEntry toDomain(PaymentProviderEntry source) {
-        return new com.regional.corebanking.payment.domain.PaymentProviderEntry(
-                source.getSequence(),
-                source.getDirection().getValue(),
-                source.getAccountReference(),
-                source.getAmount(),
-                source.getCurrency(),
-                source.getPaymentReference());
+                source.getLabel());
     }
 
     private PaymentExecutionCheck toApi(com.regional.corebanking.payment.domain.PaymentExecutionCheck source) {
