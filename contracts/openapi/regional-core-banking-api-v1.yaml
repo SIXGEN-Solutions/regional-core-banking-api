@@ -3,28 +3,32 @@ openapi: 3.1.0
 info:
   title: La Régionale - Core Banking API
   version: 1.0.0
-  summary: Approved Regional-owned Core Banking API V1 contract.
+  summary: Regional-owned Core Banking API V1 contract — R6.1 revision candidate.
   description: |
     Contract candidate for the autonomous La Régionale Core Banking API.
 
     This contract is owned by the Regional repository. SIXPAY is one consumer
     among others and its contracts/clients are compatibility evidence only.
 
-    R1 consolidated the operation surfaces already present in the Regional
-    draft against available SIXPAY compatibility references and explicit
-    Regional decisions. The V1 contract has received explicit human approval.
-    No Spring/OpenAPI generation is executed by R1 itself.
+    The previously approved V1 baseline is being revised for R6 Payment Event
+    using validated Regional decisions and La Régionale implementation evidence.
+    This R6.1 revision requires explicit human approval before any OpenAPI/Spring
+    regeneration or implementation based on the changed Payment Event schemas.
 
   x-regional-contract:
-    lifecycleStatus: APPROVED
-    approvalStatus: APPROVED
-    generationPolicy: ACTIVE
-    codeGenerationAllowed: true
+    lifecycleStatus: PENDING_APPROVAL
+    approvalStatus: PENDING_APPROVAL
+    generationPolicy: BLOCKED_PENDING_APPROVAL
+    codeGenerationAllowed: false
     owner: REGIONAL_CORE_BANKING_API
     sourceOfTruth: THIS_REPOSITORY_AFTER_APPROVAL
     sixpayRole: COMPATIBILITY_CONSUMER
     sixpayModelsAreSourceOfTruth: false
     r1Status: APPROVED
+    r6PaymentEventRevisionStatus: PENDING_APPROVAL
+    r6PaymentEventRevisionBasis:
+      - REGIONAL_R6_0_VALIDATED_DECISIONS
+      - BANK_IMPLEMENTATION_EVIDENCE
     approvalBasis:
       - EXPLICIT_REGIONAL_HUMAN_APPROVAL
       - SIXPAY_WIRE_COMPATIBILITY_EVIDENCE
@@ -976,23 +980,21 @@ components:
       type: object
       additionalProperties: false
       description: |
-        Minimum Regional provider-event payload required to create the Core Banking
-        event. These fields are based on the currently consumed SIXPAY wire shape
-        and explicit Regional approval. Additional provider fields may be introduced
-        only through a future approved contract evolution.
+        Regional caller-supplied data required to request creation of the Core
+        Banking BKEVE event. `eventNumber`, `accountingDate` and `nightMode` are
+        deliberately absent because they are authoritative Core Banking values
+        resolved during execution. Additional provider fields require a future
+        approved contract evolution.
       required:
         - paymentReference
         - operationCode
-        - eventNumber
         - currency
         - nature
-        - accountingDate
         - technicalUser
         - debtorAccountReference
         - creditorAccountReference
         - amount
         - label
-        - nightMode
       properties:
         paymentReference:
           $ref: '#/components/schemas/PaymentReference'
@@ -1003,20 +1005,18 @@ components:
           description: |
             Value supplied/configured by the calling application. Core Banking
             validates it against the Amplitude reference table.
-        eventNumber:
-          type: integer
-          format: int64
         currency:
           type: string
           minLength: 1
           maxLength: 3
+          description: |
+            Current Regional Core Banking scope uses XAF. Currency handling is
+            Core-Banking-authoritative; the representation of this caller field
+            remains subject to the R6 contract review.
         nature:
           type: string
           minLength: 1
           description: Value supplied/configured by the calling application.
-        accountingDate:
-          type: string
-          format: date
         technicalUser:
           type: string
           minLength: 1
@@ -1030,47 +1030,19 @@ components:
         label:
           type: string
           minLength: 1
-        nightMode:
-          type: boolean
-
-    PaymentProviderEntry:
-      type: object
-      additionalProperties: false
-      description: |
-        Minimum Regional `bkmvti`-equivalent entry. A Payment Event contains
-        exactly two entries and they are persisted atomically with the event.
-      required: [sequence, direction, accountReference, amount, currency, paymentReference]
-      properties:
-        sequence:
-          type: integer
-          minimum: 1
-        direction:
-          type: string
-          enum: [D, C]
-          description: D means debit; C means credit.
-        accountReference:
-          $ref: '#/components/schemas/CoreBankingAccountReferenceString'
-        amount:
-          type: number
-          exclusiveMinimum: 0
-        currency:
-          type: string
-          minLength: 1
-          maxLength: 3
-        paymentReference:
-          $ref: '#/components/schemas/PaymentReference'
 
     PaymentEventEnvelope:
       type: object
       additionalProperties: false
-      required: [paymentReference, snapshotVersion, providerEvent, providerEntries, requestedAt]
+      required: [paymentReference, snapshotVersion, providerEvent, requestedAt]
       description: |
-        Receipt of this request directly triggers Core Banking execution.
-        Core Banking performs the applicable execution-time controls before write,
-        then writes the `bkeve`-equivalent event and exactly two `bkmvti`-equivalent
-        entries atomically. A bank reference is returned only after successful
-        execution. An uncertain transport/execution outcome must never be blindly
-        replayed; the authoritative lookup endpoints are used before any retry.
+        Receipt of this request directly triggers the R6 T0 Core Banking
+        execution. Core Banking performs the applicable execution-time controls
+        and persists the BKEVE banking event. BKMVTI entries are not part of this
+        T0 request/execution; they belong to the separate T1 accounting flow.
+        A bank reference is returned only after successful Core Banking execution.
+        An uncertain transport/execution outcome must never be blindly replayed;
+        the authoritative lookup endpoints are used before any retry.
       properties:
         paymentReference:
           $ref: '#/components/schemas/PaymentReference'
@@ -1080,12 +1052,6 @@ components:
           maxLength: 32
         providerEvent:
           $ref: '#/components/schemas/PaymentProviderEvent'
-        providerEntries:
-          type: array
-          minItems: 2
-          maxItems: 2
-          items:
-            $ref: '#/components/schemas/PaymentProviderEntry'
         requestedAt:
           type: string
           format: date-time
@@ -1097,9 +1063,13 @@ components:
       properties:
         type:
           type: string
-          enum:
-            [ACCOUNT_EXISTS, ACCOUNT_ACTIVE, DEBIT_ALLOWED, CURRENCY_SUPPORTED, AVAILABLE_FUNDS_SUFFICIENT,
-             PER_TRANSACTION_LIMIT_NOT_EXCEEDED, DAILY_LIMIT_NOT_EXCEEDED, OTHER_APPLICABLE_LIMITS_NOT_EXCEEDED]
+          enum: [ACCOUNT_VALID, DEBIT_ALLOWED, AVAILABLE_FUNDS_SUFFICIENT]
+          description: |
+            ACCOUNT_VALID represents the combined account existence/open/active
+            observation supported by the validated Core Banking evidence.
+            Application transaction/daily/other limits are outside R6 Core Banking
+            controls. Currency is Core-Banking-authoritative for the current XAF
+            scope and is not exposed as an independent execution check.
         result:
           type: string
           enum: [PASS, FAIL, UNKNOWN]
@@ -1120,8 +1090,8 @@ components:
             paymentReference or idempotency-key lookup before any retry.
         checks:
           type: array
-          minItems: 8
-          maxItems: 8
+          minItems: 3
+          maxItems: 3
           items: { $ref: '#/components/schemas/PaymentExecutionCheck' }
         bankReference:
           type: [string, 'null']
