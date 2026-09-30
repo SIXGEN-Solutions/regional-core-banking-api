@@ -4,9 +4,10 @@
 
 regional:
   technical-datasource:
-    url: ${REGIONAL_TECHNICAL_DB_URL:jdbc:postgresql://postgres:15432/regional_core_banking?currentSchema=core_banking}
+    url: ${REGIONAL_TECHNICAL_DB_URL:jdbc:postgresql://postgres:5432/regional_core_banking?currentSchema=core_banking}
     username: ${REGIONAL_TECHNICAL_DB_USERNAME:regional_core_banking_app}
     password: ${REGIONAL_TECHNICAL_DB_PASSWORD}
+
   banking:
     database:
       vendor: oracle
@@ -16,14 +17,22 @@ regional:
       username: ${ORACLE_APP_USERNAME:REGIONAL_MOCK}
       password: ${ORACLE_APP_PASSWORD}
       driver-class-name: oracle.jdbc.OracleDriver
+
   confirmation:
     persistence: jdbc
+
     hmac:
       active-key-version: ${REGIONAL_OTP_HMAC_ACTIVE_KEY_VERSION}
       keys: ${REGIONAL_OTP_HMAC_KEYS}
+
     email:
       enabled: ${REGIONAL_OTP_EMAIL_ENABLED:false}
       sender: ${REGIONAL_OTP_EMAIL_SENDER:no-reply@regional-docker.local}
+      host: ${REGIONAL_OTP_EMAIL_HOST}
+      port: ${REGIONAL_OTP_EMAIL_PORT:587}
+      username: ${REGIONAL_OTP_EMAIL_USERNAME}
+      password: ${REGIONAL_OTP_EMAIL_PASSWORD}
+      tls: ${REGIONAL_OTP_EMAIL_TLS:true}
 
 springdoc:
   swagger-ui:

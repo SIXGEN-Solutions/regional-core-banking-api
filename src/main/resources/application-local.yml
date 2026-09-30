@@ -14,7 +14,7 @@ spring:
 
 regional:
   technical-datasource:
-    url: jdbc:postgresql://localhost:15432/regional_core_banking?currentSchema=core_banking
+    url: jdbc:postgresql://localhost:15434/regional_core_banking?currentSchema=core_banking
     username: regional_core_banking_app
     password: regional_core_banking_dev
   confirmation:

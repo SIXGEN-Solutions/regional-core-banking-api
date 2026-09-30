@@ -2,6 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -24,6 +25,7 @@
         <openapi.generator.version>7.15.0</openapi.generator.version>
         <springdoc.version>2.8.17</springdoc.version>
         <oracle.jdbc.version>23.26.1.0.0</oracle.jdbc.version>
+
         <openapi.generator.skip>false</openapi.generator.skip>
         <openapi.input.spec>${project.basedir}/contracts/openapi/regional-core-banking-api-v1.yaml</openapi.input.spec>
         <openapi.generated.dir>${project.build.directory}/generated-sources/openapi</openapi.generated.dir>
@@ -32,44 +34,64 @@
     </properties>
 
     <dependencies>
+
+        <!-- Spring Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- JDBC -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
+
+        <!-- Email / SMTP -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- Regional technical persistence -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+
+        <!-- Oracle banking datasource -->
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <version>${oracle.jdbc.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Database migrations -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
 
+        <!-- Actuator -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- Bean validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- OpenAPI / Swagger -->
         <dependency>
             <groupId>io.swagger.core.v3</groupId>
             <artifactId>swagger-annotations-jakarta</artifactId>
@@ -88,6 +110,7 @@
             <version>0.2.7</version>
         </dependency>
 
+        <!-- Tests -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -100,33 +123,43 @@
             <version>1.4.1</version>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <build>
         <plugins>
+
+            <!-- Generate HTTP boundary from the approved Regional OpenAPI contract -->
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
                 <version>${openapi.generator.version}</version>
+
                 <executions>
                     <execution>
                         <id>generate-regional-http-boundary</id>
                         <phase>generate-sources</phase>
+
                         <goals>
                             <goal>generate</goal>
                         </goals>
+
                         <configuration>
                             <inputSpec>${openapi.input.spec}</inputSpec>
                             <skip>${openapi.generator.skip}</skip>
+
                             <generatorName>spring</generatorName>
                             <output>${openapi.generated.dir}</output>
+
                             <apiPackage>${openapi.api.package}</apiPackage>
                             <modelPackage>${openapi.model.package}</modelPackage>
+
                             <generateApiTests>false</generateApiTests>
                             <generateModelTests>false</generateModelTests>
                             <generateApiDocumentation>false</generateApiDocumentation>
                             <generateModelDocumentation>false</generateModelDocumentation>
                             <generateSupportingFiles>false</generateSupportingFiles>
+
                             <configOptions>
                                 <interfaceOnly>true</interfaceOnly>
                                 <useSpringBoot3>true</useSpringBoot3>
@@ -144,17 +177,21 @@
                 </executions>
             </plugin>
 
+            <!-- Add generated OpenAPI sources to Maven compilation -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <version>3.6.1</version>
+
                 <executions>
                     <execution>
                         <id>add-openapi-generated-sources</id>
                         <phase>generate-sources</phase>
+
                         <goals>
                             <goal>add-source</goal>
                         </goals>
+
                         <configuration>
                             <sources>
                                 <source>${openapi.generated.dir}/src/main/java</source>
@@ -164,14 +201,22 @@
                 </executions>
             </plugin>
 
+            <!-- Spring Boot executable JAR -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
         </plugins>
     </build>
 
     <profiles>
+
+        <!--
+            Allows OpenAPI generation to be explicitly disabled when needed.
+            Do not combine this profile with `clean` unless generated sources
+            are already provided by another mechanism.
+        -->
         <profile>
             <id>r3-no-openapi-generation</id>
             <properties>
@@ -179,16 +224,6 @@
             </properties>
         </profile>
 
-        <profile>
-            <id>customer-oracle-mock</id>
-            <dependencies>
-                <dependency>
-                    <groupId>com.oracle.database.jdbc</groupId>
-                    <artifactId>ojdbc11</artifactId>
-                    <version>${oracle.jdbc.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-            </dependencies>
-        </profile>
     </profiles>
+
 </project>

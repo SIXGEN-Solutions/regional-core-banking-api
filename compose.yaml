@@ -7,9 +7,13 @@ services:
       POSTGRES_USER: regional_core_banking_app
       POSTGRES_PASSWORD: ${REGIONAL_TECHNICAL_DB_PASSWORD:-regional_core_banking_dev}
     ports:
-      - "${REGIONAL_POSTGRES_PORT:-15432}:5432"
+      - "${REGIONAL_POSTGRES_PORT:-15434}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U regional_core_banking_app -d regional_core_banking"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U regional_core_banking_app -d regional_core_banking"
+        ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -44,25 +48,41 @@ services:
       context: .
       args:
         APP_JAR: ${REGIONAL_APP_JAR:-target/regional-core-banking-api-1.0.0-SNAPSHOT.jar}
+
     image: regional-core-banking-api:local
     container_name: regional-core-banking-api
+
     depends_on:
       postgres:
         condition: service_healthy
       customer-oracle:
         condition: service_healthy
+
     ports:
-      - "${REGIONAL_API_PORT:-8080}:8080"
+      - "${REGIONAL_API_PORT:-9092}:9092"
+
     environment:
       SPRING_PROFILES_ACTIVE: docker
+
+      # Spring Boot listens on 9092 inside the container.
+      SERVER_PORT: 9092
+
+      # Regional technical PostgreSQL database.
+      # Docker services communicate through the internal Docker network,
+      # therefore PostgreSQL remains reachable on its container port 5432.
       REGIONAL_TECHNICAL_DB_URL: jdbc:postgresql://postgres:5432/regional_core_banking?currentSchema=core_banking
       REGIONAL_TECHNICAL_DB_USERNAME: regional_core_banking_app
       REGIONAL_TECHNICAL_DB_PASSWORD: ${REGIONAL_TECHNICAL_DB_PASSWORD:-regional_core_banking_dev}
+
+      # Customer Oracle mock.
       ORACLE_JDBC_URL: jdbc:oracle:thin:@//customer-oracle:1521/FREEPDB1
       ORACLE_APP_USERNAME: ${ORACLE_APP_USERNAME:-REGIONAL_MOCK}
       ORACLE_APP_PASSWORD: ${ORACLE_APP_PASSWORD:-regional_oracle_dev}
+
+      # OTP HMAC configuration.
       REGIONAL_OTP_HMAC_ACTIVE_KEY_VERSION: ${REGIONAL_OTP_HMAC_ACTIVE_KEY_VERSION:-v1}
       REGIONAL_OTP_HMAC_KEYS: ${REGIONAL_OTP_HMAC_KEYS:-v1:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+
       # OTP EMAIL delivery enabled for Docker integration testing.
       # Real SMTP credentials are loaded from the ignored local .env file.
       REGIONAL_OTP_EMAIL_ENABLED: "${REGIONAL_OTP_EMAIL_ENABLED:-true}"
@@ -72,6 +92,7 @@ services:
       REGIONAL_OTP_EMAIL_USERNAME: "${REGIONAL_OTP_EMAIL_USERNAME:?REGIONAL_OTP_EMAIL_USERNAME must be set}"
       REGIONAL_OTP_EMAIL_PASSWORD: "${REGIONAL_OTP_EMAIL_PASSWORD:?REGIONAL_OTP_EMAIL_PASSWORD must be set}"
       REGIONAL_OTP_EMAIL_TLS: "${REGIONAL_OTP_EMAIL_TLS:-true}"
+
     restart: unless-stopped
 
 volumes:
