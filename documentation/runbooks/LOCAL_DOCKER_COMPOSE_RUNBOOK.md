@@ -29,7 +29,7 @@ d22002/regional-core-banking-api:latest
 For reproducible testing, set an immutable image tag in `.env`, for example:
 
 ```text
-REGIONAL_API_IMAGE=d22002/regional-core-banking-api:sha-<commit>
+REGIONAL_API_IMAGE=d22002/regional-core-banking-api:<6-char-git-sha>
 ```
 
 `latest` is reserved for images published from `main`.

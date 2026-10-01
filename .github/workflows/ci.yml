@@ -40,13 +40,23 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Compute Docker image tag
+        id: docker-tag
+        shell: bash
+        run: |
+          SHORT_SHA="${GITHUB_SHA::6}"
+          IMAGE="${DOCKER_IMAGE}:${SHORT_SHA}"
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Docker image tag::${IMAGE}"
+
       - name: Docker metadata
         id: docker-meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.DOCKER_IMAGE }}
           tags: |
-            type=sha,format=long
+            type=raw,value=${{ steps.docker-tag.outputs.short_sha }}
             type=ref,event=branch
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
@@ -65,12 +75,19 @@ jobs:
           tags: ${{ steps.docker-meta.outputs.tags }}
           labels: ${{ steps.docker-meta.outputs.labels }}
 
-      - name: Docker Compose config
+      - name: Report published Docker image
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          echo "::notice title=Docker image published::${{ steps.docker-tag.outputs.image }}"
+          echo "REGIONAL_API_IMAGE=${{ steps.docker-tag.outputs.image }}"
+
+      - name: Validate Docker Compose configuration
         env:
           REGIONAL_OTP_EMAIL_HOST: smtp.example.invalid
           REGIONAL_OTP_EMAIL_USERNAME: ci-placeholder
           REGIONAL_OTP_EMAIL_PASSWORD: ci-placeholder
-        run: docker compose config
+        run: docker compose config --quiet
 
   dependency-review:
     if: github.event_name == 'pull_request'

@@ -115,7 +115,7 @@ docker compose ps
 ```
 
 To run a specific immutable CI image, set `REGIONAL_API_IMAGE` in the local `.env`
-to the required `d22002/regional-core-banking-api:sha-<commit>` tag.
+to the required `d22002/regional-core-banking-api:<6-char-git-sha>` tag.
 
 Environment-specific endpoints, credentials, certificates, private keys and trust material remain external configuration.
 
