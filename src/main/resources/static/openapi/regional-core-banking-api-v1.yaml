@@ -1,0 +1,1214 @@
+openapi: 3.1.0
+
+info:
+  title: La Régionale - Core Banking API
+  version: 1.0.0
+  summary: Approved Regional-owned Core Banking API V1 contract.
+  description: |
+    Contract candidate for the autonomous La Régionale Core Banking API.
+
+    This contract is owned by the Regional repository. SIXPAY is one consumer
+    among others and its contracts/clients are compatibility evidence only.
+
+    The Regional V1 contract includes the explicitly human-approved R6.1 Payment
+    Event revision based on validated Regional decisions and La Régionale
+    implementation evidence. OpenAPI/Spring regeneration may use this approved
+    canonical contract subject to the normal repository validation gates.
+
+  x-regional-contract:
+    lifecycleStatus: APPROVED
+    approvalStatus: APPROVED
+    generationPolicy: ACTIVE
+    codeGenerationAllowed: true
+    owner: REGIONAL_CORE_BANKING_API
+    sourceOfTruth: THIS_REPOSITORY_AFTER_APPROVAL
+    sixpayRole: COMPATIBILITY_CONSUMER
+    sixpayModelsAreSourceOfTruth: false
+    r1Status: APPROVED
+    r6PaymentEventRevisionStatus: APPROVED
+    r6PaymentEventRevisionBasis:
+      - REGIONAL_R6_0_VALIDATED_DECISIONS
+      - BANK_IMPLEMENTATION_EVIDENCE
+    approvalBasis:
+      - EXPLICIT_REGIONAL_HUMAN_APPROVAL
+      - SIXPAY_WIRE_COMPATIBILITY_EVIDENCE
+      - REGIONAL_PAYMENT_EVENT_MAPPING_DECISIONS
+      - LEGACY_CUSTOMER_DETAIL_FUNCTIONAL_EVIDENCE
+
+servers:
+  - url: https://regional-core-banking-api.example
+    description: Environment-specific placeholder. Runtime endpoint is external configuration.
+
+security:
+  - oauth2ClientCredentials: []
+    mutualTLS: []
+
+tags:
+  - name: Customers
+  - name: Payment confirmation
+  - name: Payment execution
+  - name: Accounting
+  - name: End of day
+
+paths:
+  /api/v1/customers:
+    get:
+      tags: [Customers]
+      operationId: searchCustomers
+      summary: Search banking customers
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeQuery'
+        - name: niu
+          in: query
+          required: false
+          schema: { type: string, minLength: 1, maxLength: 50 }
+        - name: customerNumber
+          in: query
+          required: false
+          schema: { type: string, minLength: 1, maxLength: 50 }
+        - name: accountNo
+          in: query
+          required: false
+          description: Legacy-compatible account number filter.
+          schema: { type: string, minLength: 1, maxLength: 100 }
+        - name: age
+          in: query
+          required: false
+          description: Legacy-compatible agency filter used with accountNo when applicable.
+          schema: { type: string, minLength: 1, maxLength: 20 }
+        - name: accountTypes
+          in: query
+          required: false
+          description: Legacy-compatible account type filter; may remain unused initially.
+          schema: { type: string, minLength: 1, maxLength: 200 }
+        - name: chapitre
+          in: query
+          required: false
+          description: Legacy-compatible chapter exclusion filter; may remain unused initially.
+          schema: { type: string, minLength: 1, maxLength: 200 }
+      responses:
+        '200':
+          description: Matching customers, possibly empty.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CustomerSearchResult' }
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/customers/{customerReference}:
+    get:
+      tags: [Customers]
+      operationId: getCustomer
+      summary: Get banking customer identity/KYC information
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/CustomerReference'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+      responses:
+        '200':
+          description: Customer identity found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CustomerIdentity' }
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/customers/{customerReference}/accounts:
+    get:
+      tags: [Customers]
+      operationId: getCustomerAccounts
+      summary: Find accounts for a banking customer
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/CustomerReference'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - name: rib
+          in: query
+          required: false
+          schema: { type: string, minLength: 10, maxLength: 50 }
+        - name: iban
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 15
+            maxLength: 34
+            pattern: '^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$'
+      responses:
+        '200':
+          description: Customer accounts, possibly empty.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountSearchResult' }
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/customer-verifications:
+    post:
+      tags: [Customers]
+      operationId: verifyCustomer
+      summary: Execute a composite banking customer/account verification
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CustomerVerificationRequest' }
+      responses:
+        '200':
+          description: Completed positive or negative verification result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CustomerVerificationResult' }
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/payment-confirmation-challenges:
+    post:
+      tags: [Payment confirmation]
+      operationId: createPaymentConfirmationChallenge
+      summary: Create and send a bank-owned confirmation challenge
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreatePaymentConfirmationChallengeRequest' }
+      responses:
+        '200':
+          description: Stable authoritative challenge result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmationChallengeResult' }
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/payment-confirmation-challenges/{challengeReference}/verifications:
+    post:
+      tags: [Payment confirmation]
+      operationId: verifyPaymentConfirmationChallenge
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ChallengeReference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VerifyPaymentConfirmationChallengeRequest' }
+      responses:
+        '200':
+          description: Completed positive or negative verification result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmationVerificationResult' }
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/payment-confirmation-challenges/{challengeReference}/replacements:
+    post:
+      tags: [Payment confirmation]
+      operationId: replacePaymentConfirmationChallenge
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ChallengeReference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReplacePaymentConfirmationChallengeRequest' }
+      responses:
+        '200':
+          description: Stable authoritative replacement result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmationChallengeResult' }
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/payment-confirmation-challenges/{challengeReference}:
+    get:
+      tags: [Payment confirmation]
+      operationId: getPaymentConfirmationChallenge
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - $ref: '#/components/parameters/ChallengeReference'
+      responses:
+        '200':
+          description: Current authoritative challenge result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmationChallengeResult' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/payment-confirmation-challenge-lookups/{idempotencyKey}:
+    get:
+      tags: [Payment confirmation]
+      operationId: recoverPaymentConfirmationByIdempotencyKey
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - $ref: '#/components/parameters/IdempotencyKeyPath'
+      responses:
+        '200':
+          description: Recovered authoritative challenge result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmationChallengeResult' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/payment-confirmation-challenges/{challengeReference}/revocations:
+    post:
+      tags: [Payment confirmation]
+      operationId: revokePaymentConfirmationChallenge
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ChallengeReference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RevokePaymentConfirmationChallengeRequest' }
+      responses:
+        '200':
+          description: Stable authoritative revocation result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmationChallengeResult' }
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/payment-events:
+    post:
+      tags: [Payment execution]
+      operationId: executePaymentEvent
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PaymentEventEnvelope' }
+      responses:
+        '200':
+          description: Conclusive COMPLETED or REJECTED result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentEventResult' }
+        '202':
+          description: Accepted with a non-conclusive outcome.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentEventResult' }
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/payment-events/{paymentReference}:
+    get:
+      tags: [Payment execution]
+      operationId: getPaymentEventByPaymentReference
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - $ref: '#/components/parameters/PaymentReferencePath'
+      responses:
+        '200':
+          description: Authoritative payment execution result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentEventResult' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/payment-events/idempotency/{idempotencyKey}:
+    get:
+      tags: [Payment execution]
+      operationId: getPaymentEventByIdempotencyKey
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - $ref: '#/components/parameters/IdempotencyKeyPath'
+      responses:
+        '200':
+          description: Authoritative payment execution result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentEventResult' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/accounting-entries:
+    post:
+      tags: [Accounting]
+      operationId: submitAccountingEntries
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccountingEntriesBatchRequest' }
+      responses:
+        '200':
+          description: Conclusive accounting batch result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountingEntriesBatchResult' }
+        '202':
+          description: Accepted for asynchronous processing.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountingEntriesBatchResult' }
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/accounting-entries/batches/{batchId}:
+    get:
+      tags: [Accounting]
+      operationId: getAccountingBatch
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - $ref: '#/components/parameters/BatchId'
+      responses:
+        '200':
+          description: Current authoritative batch result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountingEntriesBatchResult' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/accounting-entries/idempotency/{idempotencyKey}:
+    get:
+      tags: [Accounting]
+      operationId: getAccountingBatchByIdempotencyKey
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - $ref: '#/components/parameters/IdempotencyKeyPath'
+      responses:
+        '200':
+          description: Current authoritative batch result.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountingEntriesBatchResult' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/end-of-day-confirmations:
+    get:
+      tags: [End of day]
+      operationId: findEndOfDayConfirmation
+      x-regional-review-status: APPROVED
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeQuery'
+        - $ref: '#/components/parameters/BusinessDate'
+        - $ref: '#/components/parameters/PaymentReferenceQuery'
+        - $ref: '#/components/parameters/BankPostingReferenceQuery'
+      responses:
+        '200':
+          description: Authoritative TFJ result found.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EndOfDayConfirmation' }
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+components:
+  securitySchemes:
+    oauth2ClientCredentials:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://identity.regional.example/oauth2/token
+          scopes: {}
+    mutualTLS:
+      type: mutualTLS
+
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
+    FinancialInstitutionCodeHeader:
+      name: X-Financial-Institution-Code
+      in: header
+      required: true
+      schema: { $ref: '#/components/schemas/FinancialInstitutionCode' }
+    FinancialInstitutionCodeQuery:
+      name: financialInstitutionCode
+      in: query
+      required: true
+      schema: { $ref: '#/components/schemas/FinancialInstitutionCode' }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 255 }
+    IdempotencyKeyPath:
+      name: idempotencyKey
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 255 }
+    CustomerReference:
+      name: customerReference
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 100 }
+    ChallengeReference:
+      name: challengeReference
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 128 }
+    PaymentReferencePath:
+      name: paymentReference
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/PaymentReference' }
+    BatchId:
+      name: batchId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    BusinessDate:
+      name: businessDate
+      in: query
+      required: true
+      schema: { type: string, format: date }
+    PaymentReferenceQuery:
+      name: paymentReference
+      in: query
+      required: true
+      schema: { $ref: '#/components/schemas/PaymentReference' }
+    BankPostingReferenceQuery:
+      name: bankPostingReference
+      in: query
+      required: true
+      schema: { $ref: '#/components/schemas/BankPostingReference' }
+
+  schemas:
+    FinancialInstitutionCode:
+      type: string
+      minLength: 1
+      maxLength: 50
+
+    PaymentReference:
+      type: string
+      minLength: 1
+      maxLength: 128
+
+    BankPostingReference:
+      type: string
+      minLength: 1
+      maxLength: 128
+
+    CustomerSearchResult:
+      type: object
+      additionalProperties: false
+      required: [customers, resultCount]
+      properties:
+        customers:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/CustomerSummary' }
+        resultCount: { type: integer, minimum: 0, maximum: 100 }
+
+    CustomerSummary:
+      type: object
+      additionalProperties: false
+      description: |
+        Regional customer summary preserving the existing wire-compatible fields
+        while additively retaining the complete supplied legacy CustomerDetail field set.
+      required: [customerReference, customerNumber, financialInstitutionCode, niu, legalName]
+      properties:
+        customerReference: { type: string, minLength: 1, maxLength: 100 }
+        customerNumber: { type: string, minLength: 1, maxLength: 50 }
+        financialInstitutionCode: { $ref: '#/components/schemas/FinancialInstitutionCode' }
+        niu: { type: string, minLength: 1, maxLength: 50 }
+        legalName: { type: string, minLength: 1, maxLength: 200 }
+        matricule: { type: string, maxLength: 100 }
+        accountNo:
+          type: string
+          maxLength: 100
+          description: Legacy account reference represented as `age-ncp-clc`.
+        accountName: { type: string, maxLength: 200 }
+        customerName: { type: string, maxLength: 200 }
+        sexe: { type: string, maxLength: 20 }
+        adresse: { type: string, maxLength: 500 }
+        dataNaissance:
+          type: string
+          maxLength: 50
+          description: Preserved as String to match the supplied legacy CustomerDetail.
+        lieuNaissance: { type: string, maxLength: 200 }
+        departNaissance: { type: string, maxLength: 200 }
+        situation: { type: string, maxLength: 100 }
+        typePiece: { type: string, maxLength: 100 }
+        numCNI: { type: string, maxLength: 100 }
+        dateDelivrance: { type: string, format: date }
+        lieuDelivrance: { type: string, maxLength: 200 }
+        dateExpiration: { type: string, format: date }
+        ville: { type: string, maxLength: 200 }
+        codeGestionnaire: { type: string, maxLength: 100 }
+        loginGestionnaire: { type: string, maxLength: 100 }
+        comptes:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 100 }
+        telephones:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 50 }
+        adresseMails:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 254 }
+
+    CustomerIdentity:
+      type: object
+      additionalProperties: false
+      description: |
+        Regional customer identity preserving the existing wire-compatible fields
+        while additively retaining the complete supplied legacy CustomerDetail field set.
+      required:
+        [customerReference, customerNumber, financialInstitutionCode, niu, legalName, kycStatus, source, retrievedAt]
+      properties:
+        customerReference: { type: string, minLength: 1, maxLength: 100 }
+        customerNumber: { type: string, minLength: 1, maxLength: 50 }
+        financialInstitutionCode: { $ref: '#/components/schemas/FinancialInstitutionCode' }
+        niu: { type: string, minLength: 1, maxLength: 50 }
+        legalName: { type: string, minLength: 1, maxLength: 200 }
+        phoneNumber: { type: [string, 'null'], maxLength: 20 }
+        email: { type: [string, 'null'], format: email }
+        kycStatus:
+          type: string
+          enum: [COMPLETE, INCOMPLETE, EXPIRED, NOT_VERIFIED, UNKNOWN]
+        source: { type: string, const: AMPLITUDE }
+        retrievedAt: { type: string, format: date-time }
+        matricule: { type: string, maxLength: 100 }
+        accountNo:
+          type: string
+          maxLength: 100
+          description: Legacy account reference represented as `age-ncp-clc`.
+        accountName: { type: string, maxLength: 200 }
+        customerName: { type: string, maxLength: 200 }
+        sexe: { type: string, maxLength: 20 }
+        adresse: { type: string, maxLength: 500 }
+        dataNaissance:
+          type: string
+          maxLength: 50
+          description: Preserved as String to match the supplied legacy CustomerDetail.
+        lieuNaissance: { type: string, maxLength: 200 }
+        departNaissance: { type: string, maxLength: 200 }
+        situation: { type: string, maxLength: 100 }
+        typePiece: { type: string, maxLength: 100 }
+        numCNI: { type: string, maxLength: 100 }
+        dateDelivrance: { type: string, format: date }
+        lieuDelivrance: { type: string, maxLength: 200 }
+        dateExpiration: { type: string, format: date }
+        ville: { type: string, maxLength: 200 }
+        codeGestionnaire: { type: string, maxLength: 100 }
+        loginGestionnaire: { type: string, maxLength: 100 }
+        comptes:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 100 }
+        telephones:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 50 }
+        adresseMails:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 254 }
+
+    AccountSearchResult:
+      type: object
+      additionalProperties: false
+      required: [accounts, resultCount]
+      properties:
+        accounts:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/AccountSummary' }
+        resultCount: { type: integer, minimum: 0, maximum: 100 }
+
+    AccountSummary:
+      type: object
+      additionalProperties: false
+      required: [accountReference, customerReference, status, currency]
+      properties:
+        accountReference: { type: string, minLength: 1, maxLength: 100 }
+        customerReference: { type: string, minLength: 1, maxLength: 100 }
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, BLOCKED, CLOSED, UNKNOWN]
+        currency: { type: string, minLength: 3, maxLength: 3 }
+
+    CustomerVerificationRequest:
+      type: object
+      additionalProperties: false
+      required: [accountReference, expectedNiu, expectedAccountHolder, requestedAt]
+      properties:
+        accountReference: { type: string, minLength: 1, maxLength: 100 }
+        expectedNiu: { type: string, minLength: 1, maxLength: 50 }
+        expectedAccountHolder: { type: string, minLength: 1, maxLength: 200 }
+        requiredKycFields:
+          type: array
+          uniqueItems: true
+          items: { type: string, minLength: 1, maxLength: 64 }
+        requestedAt: { type: string, format: date-time }
+
+    VerificationCheck:
+      type: object
+      additionalProperties: false
+      required: [type, result]
+      properties:
+        type:
+          type: string
+          enum:
+            - CUSTOMER_EXISTS
+            - FINANCIAL_INSTITUTION_MATCHES
+            - NIU_MATCHES
+            - IDENTITY_MATCHES
+            - ACCOUNT_EXISTS
+            - ACCOUNT_BELONGS_TO_CUSTOMER
+            - ACCOUNT_IS_ACTIVE
+            - ACCOUNT_NOT_BLOCKED
+            - ACCOUNT_NOT_OPPOSED
+            - REQUIRED_KYC_PRESENT
+            - REQUIRED_KYC_VERIFIED
+        result:
+          type: string
+          enum: [PASS, FAIL, UNKNOWN]
+        reasonCode:
+          type: [string, 'null']
+          maxLength: 50
+        checkedAt:
+          type: [string, 'null']
+          format: date-time
+
+    CustomerVerificationResult:
+      type: object
+      additionalProperties: false
+      required: [verificationId, verifiedAt, source, outcome, checks]
+      properties:
+        verificationId:
+          type: string
+          format: uuid
+        verifiedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          const: AMPLITUDE
+        outcome:
+          type: string
+          enum: [VERIFIED, REJECTED, INDETERMINATE]
+          description: |
+            VERIFIED requires every applicable mandatory check to pass.
+            REJECTED is a conclusive negative banking result.
+            INDETERMINATE never authorizes progression.
+        customerReference:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 100
+        accountReference:
+          type: [string, 'null']
+          minLength: 1
+          maxLength: 100
+        checks:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/VerificationCheck'
+        identity:
+          oneOf:
+            - $ref: '#/components/schemas/CustomerIdentity'
+            - type: 'null'
+        account:
+          oneOf:
+            - $ref: '#/components/schemas/AccountSummary'
+            - type: 'null'
+
+    CustomerReference:
+      type: string
+      minLength: 1
+      maxLength: 100
+      description: Opaque canonical banking customer reference.
+
+    AccountReference:
+      type: string
+      minLength: 1
+      maxLength: 100
+      description: Opaque canonical debtor-account reference.
+
+    Money:
+      type: object
+      additionalProperties: false
+      required: [amount, currency]
+      properties:
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+
+    CreatePaymentConfirmationChallengeRequest:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, customerReference, debtorAccountReference, amount]
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        customerReference:
+          $ref: '#/components/schemas/CustomerReference'
+        debtorAccountReference:
+          $ref: '#/components/schemas/AccountReference'
+        amount:
+          $ref: '#/components/schemas/Money'
+
+    VerifyPaymentConfirmationChallengeRequest:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, otp]
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        otp:
+          type: string
+          minLength: 1
+          writeOnly: true
+          description: Transient OTP. It must never be persisted or logged.
+
+    ReplacePaymentConfirmationChallengeRequest:
+      type: object
+      additionalProperties: false
+      required: [paymentReference]
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+
+    RevokePaymentConfirmationChallengeRequest:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, reasonCode]
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        reasonCode:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: '^[A-Z][A-Z0-9_]{0,63}$'
+
+    BankChallengeStatus:
+      type: string
+      enum: [ACTIVE, VERIFIED, EXPIRED, LOCKED, REPLACED, REVOKED]
+
+    BankConfirmationBusinessCode:
+      type: string
+      enum:
+        - CHALLENGE_ACTIVE
+        - OTP_VERIFIED
+        - OTP_INVALID
+        - CHALLENGE_EXPIRED
+        - CHALLENGE_LOCKED
+        - CHALLENGE_REPLACED
+        - CHALLENGE_REVOKED
+        - RESEND_NOT_ALLOWED
+        - CONFIRMATION_NOT_AVAILABLE
+        - DEPENDENCY_RESULT_UNKNOWN
+        - DELIVERY_FAILED
+
+    DeliveryChannel:
+      type: string
+      enum: [SMS, EMAIL]
+
+    PaymentConfirmationChallengeResult:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, challengeReference, challengeStatus, businessCode]
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        challengeReference:
+          type: string
+          minLength: 1
+          maxLength: 128
+        challengeStatus:
+          $ref: '#/components/schemas/BankChallengeStatus'
+        businessCode:
+          $ref: '#/components/schemas/BankConfirmationBusinessCode'
+        deliveryChannel:
+          $ref: '#/components/schemas/DeliveryChannel'
+        sentAt:
+          type: [string, 'null']
+          format: date-time
+        expiresAt:
+          type: [string, 'null']
+          format: date-time
+        verifiedAt:
+          type: [string, 'null']
+          format: date-time
+
+    PaymentConfirmationVerificationResult:
+      allOf:
+        - $ref: '#/components/schemas/PaymentConfirmationChallengeResult'
+      description: Positive or negative verification. Success does not prove funds or posting.
+
+    CoreBankingAccountReferenceString:
+      type: string
+      minLength: 5
+      maxLength: 20
+      description: |
+        Core Banking account reference in `age-ncp-clc` format.
+        The three components are respectively agency (`age`), account number (`ncp`)
+        and key (`clc`).
+
+    PaymentProviderEvent:
+      type: object
+      additionalProperties: false
+      description: |
+        Regional caller-supplied data required to request creation of the Core
+        Banking BKEVE event. `eventNumber`, `accountingDate` and `nightMode` are
+        deliberately absent because they are authoritative Core Banking values
+        resolved during execution. Additional provider fields require a future
+        approved contract evolution.
+      required:
+        - paymentReference
+        - operationCode
+        - currency
+        - nature
+        - technicalUser
+        - debtorAccountReference
+        - creditorAccountReference
+        - amount
+        - label
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        operationCode:
+          type: string
+          minLength: 1
+          maxLength: 3
+          description: |
+            Value supplied/configured by the calling application. Core Banking
+            validates it against the Amplitude reference table.
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+          description: |
+            Current Regional Core Banking scope uses XAF. Currency handling is
+            Core-Banking-authoritative; the representation of this caller field
+            remains subject to the R6 contract review.
+        nature:
+          type: string
+          minLength: 1
+          description: Value supplied/configured by the calling application.
+        technicalUser:
+          type: string
+          minLength: 1
+        debtorAccountReference:
+          $ref: '#/components/schemas/CoreBankingAccountReferenceString'
+        creditorAccountReference:
+          $ref: '#/components/schemas/CoreBankingAccountReferenceString'
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        label:
+          type: string
+          minLength: 1
+
+    PaymentEventEnvelope:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, snapshotVersion, providerEvent, requestedAt]
+      description: |
+        Receipt of this request directly triggers the R6 T0 Core Banking
+        execution. Core Banking performs the applicable execution-time controls
+        and persists the BKEVE banking event. BKMVTI entries are not part of this
+        T0 request/execution; they belong to the separate T1 accounting flow.
+        A bank reference is returned only after successful Core Banking execution.
+        An uncertain transport/execution outcome must never be blindly replayed;
+        the authoritative lookup endpoints are used before any retry.
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        snapshotVersion:
+          type: string
+          minLength: 1
+          maxLength: 32
+        providerEvent:
+          $ref: '#/components/schemas/PaymentProviderEvent'
+        requestedAt:
+          type: string
+          format: date-time
+
+    PaymentExecutionCheck:
+      type: object
+      additionalProperties: false
+      required: [type, result]
+      properties:
+        type:
+          type: string
+          enum: [ACCOUNT_VALID, DEBIT_ALLOWED, AVAILABLE_FUNDS_SUFFICIENT]
+          description: |
+            ACCOUNT_VALID represents the combined account existence/open/active
+            observation supported by the validated Core Banking evidence.
+            Application transaction/daily/other limits are outside R6 Core Banking
+            controls. Currency is Core-Banking-authoritative for the current XAF
+            scope and is not exposed as an independent execution check.
+        result:
+          type: string
+          enum: [PASS, FAIL, UNKNOWN]
+        reasonCode: { type: [string, 'null'] }
+
+    PaymentEventResult:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, outcome, checks, observedAt]
+      properties:
+        paymentReference: { $ref: '#/components/schemas/PaymentReference' }
+        outcome:
+          type: string
+          enum: [COMPLETED, REJECTED, UNKNOWN]
+          description: |
+            UNKNOWN means the caller cannot conclude whether Core Banking
+            committed the financial event. The caller must use the authoritative
+            paymentReference or idempotency-key lookup before any retry.
+        checks:
+          type: array
+          minItems: 3
+          maxItems: 3
+          items: { $ref: '#/components/schemas/PaymentExecutionCheck' }
+        bankReference:
+          type: [string, 'null']
+          maxLength: 128
+          description: Present only after successful Core Banking execution.
+        reasonCode: { type: [string, 'null'], maxLength: 64 }
+        observedAt: { type: string, format: date-time }
+
+    AccountingEntriesBatchRequest:
+      type: object
+      additionalProperties: false
+      required: [batchId, businessDate, items]
+      properties:
+        batchId: { type: string, format: uuid }
+        businessDate: { type: string, format: date }
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/AccountingEntriesPaymentItem' }
+
+    AccountingEntriesPaymentItem:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, financialSnapshotId, t0BankReference, entries]
+      properties:
+        paymentReference: { $ref: '#/components/schemas/PaymentReference' }
+        financialSnapshotId: { type: string, format: uuid }
+        t0BankReference: { type: string, minLength: 1, maxLength: 128 }
+        entries:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items: { $ref: '#/components/schemas/AccountingEntry' }
+
+    AccountingEntry:
+      type: object
+      additionalProperties: false
+      required: [sequence, account, currency, amount, direction]
+      properties:
+        sequence: { type: integer, minimum: 1 }
+        account: { $ref: '#/components/schemas/CoreBankingAccountReference' }
+        currency: { type: string, minLength: 1, maxLength: 3 }
+        amount: { type: number, exclusiveMinimum: 0 }
+        direction:
+          type: string
+          enum: [D, C]
+
+    CoreBankingAccountReference:
+      type: object
+      additionalProperties: false
+      required: [age, ncp, clc]
+      properties:
+        age: { type: string, minLength: 1, maxLength: 5 }
+        ncp: { type: string, minLength: 1, maxLength: 11 }
+        clc: { type: string, minLength: 1, maxLength: 2 }
+
+    AccountingEntriesBatchResult:
+      type: object
+      additionalProperties: false
+      required: [batchId, status, items]
+      properties:
+        batchId: { type: string, format: uuid }
+        providerBatchReference: { type: [string, 'null'], maxLength: 128 }
+        status:
+          type: string
+          enum: [ACCEPTED, PROCESSING, COMPLETED]
+        processedAt: { type: [string, 'null'], format: date-time }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AccountingEntryItemResult' }
+
+    AccountingEntryItemResult:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, status]
+      properties:
+        paymentReference: { $ref: '#/components/schemas/PaymentReference' }
+        status:
+          type: string
+          enum: [SUCCESS, FAILED, UNKNOWN]
+        providerItemReference: { type: [string, 'null'], maxLength: 128 }
+        rejectionCode:
+          type: [string, 'null']
+          enum: [INVALID_ACCOUNT, INVALID_ACCOUNTING_DATE, INVALID_ENTRY, UNBALANCED_ENTRIES, DUPLICATE_BATCH, ACCOUNTING_ENTRY_REJECTED, null]
+
+    EndOfDayConfirmation:
+      type: object
+      additionalProperties: false
+      required:
+        [schemaVersion, confirmationId, financialInstitutionCode, businessDate, paymentReference, bankPostingReference, tfjStatus, confirmedAt]
+      properties:
+        schemaVersion: { type: string, const: "1.0" }
+        confirmationId: { type: string, format: uuid }
+        financialInstitutionCode: { $ref: '#/components/schemas/FinancialInstitutionCode' }
+        businessDate: { type: string, format: date }
+        paymentReference: { $ref: '#/components/schemas/PaymentReference' }
+        bankPostingReference: { $ref: '#/components/schemas/BankPostingReference' }
+        tfjBatchReference: { type: [string, 'null'], maxLength: 100 }
+        tfjStatus:
+          type: string
+          enum: [PENDING, INTEGRATED, FAILED]
+        confirmedAt: { type: string, format: date-time }
+
+    Problem:
+      type: object
+      additionalProperties: true
+      required: [status, title]
+      properties:
+        status: { type: integer, minimum: 400, maximum: 599 }
+        title: { type: string }
+        detail: { type: [string, 'null'] }
+        code: { type: [string, 'null'] }
+        correlationId: { type: [string, 'null'] }
+
+  responses:
+    ProblemResponse:
+      description: Regional Core Banking API error response.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }

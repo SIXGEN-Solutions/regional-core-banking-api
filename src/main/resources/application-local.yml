@@ -23,3 +23,7 @@ regional:
       enabled: true
       sender: no-reply@regional-test.local
       test-recipient: customer@regional-test.local
+springdoc:
+  swagger-ui:
+    url: /openapi/regional-core-banking-api-v1.yaml
+    disable-swagger-default-url: true

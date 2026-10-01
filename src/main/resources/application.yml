@@ -12,6 +12,11 @@ spring:
       mail.smtp.timeout: ${REGIONAL_OTP_EMAIL_READ_TIMEOUT_MS:5000}
       mail.smtp.writetimeout: ${REGIONAL_OTP_EMAIL_WRITE_TIMEOUT_MS:5000}
 
+springdoc:
+  swagger-ui:
+    url: /openapi/regional-core-banking-api-v1.yaml
+    disable-swagger-default-url: true
+
 server:
   shutdown: graceful
 
