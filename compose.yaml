@@ -44,12 +44,8 @@ services:
     restart: unless-stopped
 
   regional-core-banking-api:
-    build:
-      context: .
-      args:
-        APP_JAR: ${REGIONAL_APP_JAR:-target/regional-core-banking-api-1.0.0-SNAPSHOT.jar}
-
-    image: regional-core-banking-api:local
+    image: ${REGIONAL_API_IMAGE:-d22002/regional-core-banking-api:latest}
+    pull_policy: always
     container_name: regional-core-banking-api
 
     depends_on:

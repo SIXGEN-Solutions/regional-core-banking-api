@@ -1,7 +1,7 @@
 # Local Docker Compose Runbook
 
 ## Purpose
-This runbook describes how to build, start, inspect and stop the local Docker Compose environment for the Regional Core Banking API. It applies to local integration only and does not define production or authoritative Amplitude/Informix settings.
+This runbook describes how to pull, start, inspect and stop the local Docker Compose environment for the Regional Core Banking API. The API image is published by GitHub Actions to Docker Hub and is not built by local Compose. This applies to local integration only and does not define production or authoritative Amplitude/Informix settings.
 
 ## Runtime services
 | Service | Host port | Container port |
@@ -14,37 +14,32 @@ Container-to-container PostgreSQL access uses `postgres:5432`, not host port `15
 
 ## Prerequisites
 - Docker Desktop running.
-- Java 21 and Maven available.
-- Local `.env` containing required secrets and SMTP configuration.
+- Access to the Docker Hub repository `d22002/regional-core-banking-api`.
+- Local `.env` containing required secrets, SMTP configuration and optionally an explicit `REGIONAL_API_IMAGE` tag.
 - `.env` must remain uncommitted.
 - Oracle JDBC is a standard runtime dependency; no Oracle-specific Maven profile is required.
 
-## 1. Build
-```powershell
-mvn clean package -DskipTests
-```
+## 1. Select the API image
+By default, Compose uses:
 
-Optional Oracle driver verification:
-```powershell
-jar tf target/regional-core-banking-api-1.0.0-SNAPSHOT.jar | Select-String "ojdbc"
-```
-
-Expected entry similar to:
 ```text
-BOOT-INF/lib/ojdbc11-23.26.1.0.0.jar
+d22002/regional-core-banking-api:latest
 ```
 
-Do not combine `clean` with `r3-no-openapi-generation` unless generated OpenAPI sources are supplied by another approved mechanism.
+For reproducible testing, set an immutable image tag in `.env`, for example:
 
-## 2. Build Docker image
+```text
+REGIONAL_API_IMAGE=d22002/regional-core-banking-api:sha-<commit>
+```
+
+`latest` is reserved for images published from `main`.
+
+## 2. Pull Docker image
 ```powershell
-docker compose build regional-core-banking-api
+docker compose pull regional-core-banking-api
 ```
 
-Force a full rebuild when required:
-```powershell
-docker compose build --no-cache regional-core-banking-api
-```
+Local Compose must not run `docker compose build` for the API service.
 
 ## 3. Start
 ```powershell
@@ -123,10 +118,12 @@ If startup reports `Failed to load driver class oracle.jdbc.OracleDriver`, verif
 jar tf target/regional-core-banking-api-1.0.0-SNAPSHOT.jar | Select-String "ojdbc"
 ```
 
-Then rebuild:
+If the published image is missing the Oracle JDBC driver, do not rebuild it through
+local Compose. Validate the CI artifact/build configuration, publish a corrected image,
+then pull it again:
+
 ```powershell
-mvn clean package -DskipTests
-docker compose build --no-cache regional-core-banking-api
+docker compose pull regional-core-banking-api
 docker compose up -d
 ```
 

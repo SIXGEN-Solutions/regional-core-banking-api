@@ -102,11 +102,20 @@ To inspect only the non-generation bootstrap/tests while preparing the R3 patch:
 
 ## Container
 
+GitHub Actions runs the Maven verification/build and builds the Docker image.
+For branch pushes, the image is published to Docker Hub under
+`d22002/regional-core-banking-api`; `latest` is published only from `main`.
+
+Local Docker Compose consumes the published image and does not build the API image:
+
 ```bash
-./mvnw package
-docker build .
-docker compose config
+docker compose pull regional-core-banking-api
+docker compose up -d
+docker compose ps
 ```
+
+To run a specific immutable CI image, set `REGIONAL_API_IMAGE` in the local `.env`
+to the required `d22002/regional-core-banking-api:sha-<commit>` tag.
 
 Environment-specific endpoints, credentials, certificates, private keys and trust material remain external configuration.
 
@@ -310,22 +319,18 @@ PostgreSQL technical persistence, and the existing Oracle Customer/Account mock.
 The Oracle service remains test infrastructure only. It does not establish or
 replace production Amplitude/Informix mappings.
 
-### Build prerequisite
+### Image prerequisite
 
-This Docker increment does not execute OpenAPI generation. The Docker image
-therefore consumes the already-built application JAR:
-
-`target/regional-core-banking-api-1.0.0-SNAPSHOT.jar`
-
-Because the Docker runtime connects to the Oracle mock, the prebuilt artifact must
-contain the Oracle JDBC runtime dependency supplied by the existing
-`customer-oracle-mock` Maven profile.
+The API image is built by GitHub Actions after Maven verification and published to
+Docker Hub as `d22002/regional-core-banking-api`. Local Compose pulls that image;
+it does not build the API container from the local workspace.
 
 ### Start
 
-Optionally copy `.env.example` to `.env`, then start:
+Optionally copy `.env.example` to `.env`, then pull and start:
 
-    docker compose up --build
+    docker compose pull regional-core-banking-api
+    docker compose up -d
 
 Application: `http://localhost:8080`
 
