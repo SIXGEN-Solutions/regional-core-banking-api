@@ -19,4 +19,11 @@ public final class BankingConfirmationRecipientAdapter implements ConfirmationRe
         if (customer == null) return Optional.empty();
         return Optional.ofNullable(customer.email()).map(String::strip).filter(v -> !v.isEmpty());
     }
+
+    @Override
+    public Optional<String> findPhone(String financialInstitutionCode, String customerReference) {
+        CustomerIdentity customer = customers.getCustomer(financialInstitutionCode, customerReference);
+        if (customer == null) return Optional.empty();
+        return Optional.ofNullable(customer.phoneNumber()).map(String::strip).filter(v -> !v.isEmpty());
+    }
 }

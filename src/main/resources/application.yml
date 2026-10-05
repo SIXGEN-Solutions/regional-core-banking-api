@@ -44,3 +44,9 @@ regional:
     email:
       enabled: ${REGIONAL_OTP_EMAIL_ENABLED:false}
       sender: ${REGIONAL_OTP_EMAIL_SENDER:}
+    sms:
+      enabled: ${REGIONAL_OTP_SMS_ENABLED:false}
+      base-url: ${REGIONAL_OTP_SMS_BASE_URL:}
+      username: ${REGIONAL_OTP_SMS_USERNAME:}
+      password: ${REGIONAL_OTP_SMS_PASSWORD:}
+      sender: ${REGIONAL_OTP_SMS_SENDER:LAREGIONALE}

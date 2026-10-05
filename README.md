@@ -228,7 +228,7 @@ R5.2 has validated the target infrastructure direction:
 - multi-instance correctness relies primarily on PostgreSQL transactions and database uniqueness/concurrency guarantees;
 - HMAC and SMTP secrets remain external to source control and PostgreSQL;
 - EMAIL uses a Regional-owned outbound mail adapter with environment configuration;
-- SMS follows the confirmed bank database -> Kannel -> M-Target path and awaits authoritative physical mapping.
+- SMS OTP uses the bank-confirmed direct HTTP `sendsms` call to Kannel; Kannel then forwards to M-Target over SMPP. Amplitude and BKSMS/BKMSMS are not part of the OTP SMS path.
 
 The approved OpenAPI still exposes singular `deliveryChannel`, while Regional
 configuration may enable SMS and EMAIL simultaneously. R5.2.0 records this known
@@ -280,7 +280,7 @@ R5.2.6 strengthens Payment Confirmation robustness tests for restart/recovery, c
 
 R5.2.3b validated the EMAIL OTP path with a real SMTP connection against a Mailtrap Email Sandbox. The observed end-to-end result was: challenge creation -> EMAIL delivery accepted -> message captured by Mailtrap -> OTP submitted to the verification endpoint -> `VERIFIED` / `OTP_VERIFIED`. A separate test submitted after the five-minute TTL returned `EXPIRED` / `CHALLENGE_EXPIRED`, confirming expiry enforcement.
 
-This validation proves the Regional SMTP adapter and OTP EMAIL flow against test SMTP infrastructure. Production recipient resolution is now wired through the existing Customer banking capability, which exposes the first `bkemacli.email` row for the customer reference. It does not establish La Régionale production SMTP/relay, network or security parameters. SMS/BKSMS remains deferred pending authoritative physical bank mapping evidence.
+This validation proves the Regional SMTP adapter and OTP EMAIL flow against test SMTP infrastructure. Production recipient resolution is now wired through the existing Customer banking capability, which exposes the first `bkemacli.email` row for the customer reference. It does not establish La Régionale production SMTP/relay, network or security parameters. R5.2.5 SMS evidence is now bank-confirmed: direct HTTP `sendsms` to Kannel, authenticated with `user`/`password`, sender `LAREGIONALE`, destination format `2376XXXXXXXX`, `0: Accepted for delivery` mapped as accepted, and timeout/no-response treated as indeterminate without automatic replay.
 
 For local development, activate only the `local` profile. It contains the dedicated PostgreSQL technical datasource and Mailtrap Sandbox connection and also selects the real EMAIL delivery adapter used for local SMTP testing.
 
