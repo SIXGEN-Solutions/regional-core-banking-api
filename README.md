@@ -388,3 +388,15 @@ docker compose -f compose.test-postgres.yml up -d
 The runtime `regional_core_banking` database must not be used by
 `JdbcConfirmationPersistenceTest`.
 
+
+
+## R5.2.5.1 — Kannel SMS hardening (pending local validation)
+
+A dedicated RestClient transport now configures Kannel HTTP connect/read timeouts
+and refuses redirects, with no automatic SMS retry. Ambiguous transport/HTTP
+outcomes are fail-safe `UNKNOWN`. In-memory mock HTTP tests cover request fields,
+acceptance, rejection and timeout uncertainty. The two-channel aggregate
+preserves `UNKNOWN` if either channel is indeterminate; per-channel result
+representation remains an unresolved contract decision. No OpenAPI changes.
+
+See `documentation/architecture/R5_2_5_KANNEL_SMS_ADAPTER.md`.

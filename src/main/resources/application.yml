@@ -50,3 +50,5 @@ regional:
       username: ${REGIONAL_OTP_SMS_USERNAME:}
       password: ${REGIONAL_OTP_SMS_PASSWORD:}
       sender: ${REGIONAL_OTP_SMS_SENDER:LAREGIONALE}
+      connect-timeout-ms: ${REGIONAL_OTP_SMS_CONNECT_TIMEOUT_MS:5000}
+      read-timeout-ms: ${REGIONAL_OTP_SMS_READ_TIMEOUT_MS:5000}

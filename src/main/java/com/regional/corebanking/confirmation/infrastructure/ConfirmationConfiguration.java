@@ -25,6 +25,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestClient;
 
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
@@ -123,8 +124,22 @@ public class ConfirmationConfiguration {
     }
 
     @Bean
-    RestClient kannelRestClient(RestClient.Builder builder) {
-        return builder.build();
+    RestClient kannelRestClient(
+            RestClient.Builder builder,
+            @Value("${regional.confirmation.sms.connect-timeout-ms:5000}") int connectTimeoutMs,
+            @Value("${regional.confirmation.sms.read-timeout-ms:5000}") int readTimeoutMs) {
+        if (connectTimeoutMs <= 0 || readTimeoutMs <= 0) {
+            throw new IllegalArgumentException("Kannel timeouts must be positive");
+        }
+        // This is a separate HTTP transport; no redirect, no retry, no URI/body logging.
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(connectTimeoutMs))
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
+        org.springframework.http.client.JdkClientHttpRequestFactory factory =
+                new org.springframework.http.client.JdkClientHttpRequestFactory(httpClient);
+        factory.setReadTimeout(Duration.ofMillis(readTimeoutMs));
+        return builder.requestFactory(factory).build();
     }
 
     @Bean

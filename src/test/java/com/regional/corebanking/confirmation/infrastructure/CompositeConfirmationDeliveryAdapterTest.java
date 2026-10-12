@@ -23,7 +23,22 @@ class CompositeConfirmationDeliveryAdapterTest {
                 .containsExactlyInAnyOrder(DeliveryChannel.EMAIL, DeliveryChannel.SMS);
     }
 
+    @Test
+    void unknown_on_sms_is_not_hidden_by_accepted_email() {
+        var composite = new CompositeConfirmationDeliveryAdapter(List.of(
+                stub(Set.of(DeliveryChannel.EMAIL), ConfirmationDeliveryPort.Outcome.ACCEPTED),
+                stub(Set.of(DeliveryChannel.SMS), ConfirmationDeliveryPort.Outcome.UNKNOWN)
+        ));
+        assertThat(composite.dispatch("REGIONAL", null, "123456".toCharArray()))
+                .isEqualTo(ConfirmationDeliveryPort.Outcome.UNKNOWN);
+    }
+
     private static ConfirmationDeliveryPort stub(Set<DeliveryChannel> channels) {
+        return stub(channels, ConfirmationDeliveryPort.Outcome.ACCEPTED);
+    }
+
+    private static ConfirmationDeliveryPort stub(Set<DeliveryChannel> channels,
+                                                 ConfirmationDeliveryPort.Outcome outcome) {
         return new ConfirmationDeliveryPort() {
             @Override
             public Set<DeliveryChannel> enabledChannels() {
@@ -34,7 +49,7 @@ class CompositeConfirmationDeliveryAdapterTest {
             public Outcome dispatch(String financialInstitutionCode,
                                     ConfirmationChallenge challenge,
                                     char[] otp) {
-                return Outcome.ACCEPTED;
+                return outcome;
             }
         };
     }

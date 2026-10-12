@@ -4,8 +4,10 @@ import com.regional.corebanking.confirmation.application.port.out.ConfirmationDe
 import com.regional.corebanking.confirmation.application.port.out.ConfirmationRecipientPort;
 import com.regional.corebanking.confirmation.domain.ConfirmationChallenge;
 import com.regional.corebanking.confirmation.domain.DeliveryChannel;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.net.URI;
 import java.util.Optional;
@@ -34,7 +36,7 @@ public final class KannelSmsConfirmationDeliveryAdapter implements ConfirmationD
     ) {
         this.restClient = restClient;
         this.recipients = recipients;
-        this.baseUri = enabled ? URI.create(require(baseUrl, "Kannel base URL")) : URI.create("http://localhost");
+        this.baseUri = enabled ? validatedBaseUri(require(baseUrl, "Kannel base URL")) : URI.create("http://localhost");
         this.username = enabled ? require(username, "Kannel username") : username;
         this.password = enabled ? require(password, "Kannel password") : password;
         this.sender = enabled ? require(sender, "Kannel sender") : sender;
@@ -65,7 +67,6 @@ public final class KannelSmsConfirmationDeliveryAdapter implements ConfirmationD
         }
 
         String message = "Votre code est " + new String(otp);
-
         try {
             String response = restClient.get()
                     .uri(uriBuilder -> uriBuilder
@@ -80,15 +81,42 @@ public final class KannelSmsConfirmationDeliveryAdapter implements ConfirmationD
                             .queryParam("text", message)
                             .build())
                     .retrieve()
+                    .onStatus(HttpStatusCode::isError, (request, httpResponse) -> {
+                        // Even an HTTP error does not establish that Kannel did not accept
+                        // the SMS before an intermediary produced the response.
+                        throw new KannelUncertainHttpStatusException();
+                    })
                     .body(String.class);
-
-            return response != null && response.trim().startsWith(ACCEPTED_RESPONSE)
-                    ? Outcome.ACCEPTED
-                    : Outcome.CONFIRMED_FAILURE;
-        } catch (ResourceAccessException uncertainTransportFailure) {
+            if (response == null || response.isBlank()) {
+                return Outcome.UNKNOWN;
+            }
+            return ACCEPTED_RESPONSE.equals(response.strip())
+                    ? Outcome.ACCEPTED : Outcome.CONFIRMED_FAILURE;
+        } catch (KannelUncertainHttpStatusException | ResourceAccessException transportFailure) {
+            // Never send automatically again: Kannel may already have accepted it.
             return Outcome.UNKNOWN;
-        } catch (RuntimeException explicitFailure) {
-            return Outcome.CONFIRMED_FAILURE;
+        } catch (RestClientResponseException uncertainHttpFailure) {
+            return Outcome.UNKNOWN;
+        } catch (RuntimeException uncertainFailure) {
+            // Fail conservatively: runtime failures during transport do not prove a rejection.
+            return Outcome.UNKNOWN;
+        }
+    }
+
+    private static URI validatedBaseUri(String raw) {
+        URI uri = URI.create(raw);
+        if (!"http".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null
+                || uri.getRawQuery() != null || uri.getRawFragment() != null
+                || uri.getUserInfo() != null || (uri.getPath() != null
+                && !uri.getPath().isBlank() && !"/".equals(uri.getPath()))) {
+            throw new IllegalArgumentException("Kannel base URL must be an HTTP origin without credentials, path or query");
+        }
+        return uri;
+    }
+
+    private static final class KannelUncertainHttpStatusException extends RuntimeException {
+        private KannelUncertainHttpStatusException() {
+            super("Kannel HTTP response does not establish delivery outcome", null, false, false);
         }
     }
 

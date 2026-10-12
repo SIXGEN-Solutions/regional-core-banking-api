@@ -39,7 +39,10 @@ public final class CompositeConfirmationDeliveryAdapter implements ConfirmationD
             if (outcome == Outcome.UNKNOWN) unknown = true;
         }
 
-        if (accepted) return Outcome.ACCEPTED;
-        return unknown ? Outcome.UNKNOWN : Outcome.CONFIRMED_FAILURE;
+        // A positive outcome on one channel must not hide an indeterminate
+        // submission on another channel. Channel-level results are not yet
+        // represented by the approved singular OpenAPI deliveryChannel.
+        if (unknown) return Outcome.UNKNOWN;
+        return accepted ? Outcome.ACCEPTED : Outcome.CONFIRMED_FAILURE;
     }
 }
