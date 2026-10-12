@@ -1,0 +1,234 @@
+Position,Colonne,Type Java legacy,Valeur par défaut legacy,Affectation observée,Responsabilité proposée,Statut de preuve,Description legacy,Référence source
+1,AGSA,String,"""00001""",aucune affectation directe prouvée,CLIENT_PROPOSE,CONSTRUCTION_CLIENT_OU_DEFAULT,"agence de saisie CHAR 5; valeur par défaut héritée, approbation métier en attente",payment(1).java:L1138
+2,AGE,String,"""00001""",aucune affectation directe prouvée,CLIENT_PROPOSE,CONSTRUCTION_CLIENT_OU_DEFAULT,"Agence CHAR 5 1 t001Agence cacc; valeur par défaut héritée, approbation métier en attente",payment(1).java:L1139
+3,OPE,String,,aucune affectation directe prouvée,CLIENT_PROPOSE,CONSTRUCTION_CLIENT_OU_DEFAULT,Code opération CHAR 3 2 bkope ope,payment(1).java:L1140
+4,EVE,String,"""""",processPOST,REGIONAL_AUTORITATIF,CORE_SET_EXPLICITE,"Numéro d'évènement CHAR 6 3; client demande lastNumEveOpe, API réattribue EVE",payment(1).java:L1141
+5,TYP,String,"""100""",processPOST,CONDITIONNEL_LEGACY,REGLE_NON_GENERALISABLE,Type rattaché CHAR 3,payment(1).java:L1142
+6,NDOS,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 15, "" "");",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de dossier rattaché CHAR 15,payment(1).java:L1143
+7,AGE1,String,,setDebiteur,CLIENT_DEBIT,CLIENT_SETTER_EXPLICITE,Agence compte 1 CHAR 5 t001Agence cacc,payment(1).java:L1144
+8,DEV1,String,,setDebiteur,CLIENT_DEBIT,CLIENT_SETTER_EXPLICITE,Code devise compte 1 CHAR 3 bkcom dev,payment(1).java:L1145
+9,NCP1,String,,setDebiteur,CLIENT_DEBIT,CLIENT_SETTER_EXPLICITE,Numéro de compte 1 CHAR 11 bkcom ncp,payment(1).java:L1146
+10,SUF1,String,,setDebiteur,CLIENT_DEBIT,CLIENT_SETTER_EXPLICITE,Suffixe compte 1 CHAR 2 bkcom suf,payment(1).java:L1147
+11,CLC1,String,,setDebiteur,CLIENT_DEBIT,CLIENT_SETTER_EXPLICITE,Clé de contrôle compte 1 CHAR 2,payment(1).java:L1148
+12,CLI1,String,,setDebiteur,CLIENT_DEBIT,CLIENT_SETTER_EXPLICITE,Code client compte 1 CHAR 15 bkcli cli,payment(1).java:L1149
+13,NOM1,String,,setDebiteur,CLIENT_DEBIT,CLIENT_SETTER_EXPLICITE,Nom client compte 1 CHAR 36,payment(1).java:L1150
+14,GES1,String,,setDebiteur,CLIENT_DEBIT,CLIENT_SETTER_EXPLICITE,Code gestionnaire compte 1 CHAR 3 t035Gestionnaires cacc,payment(1).java:L1151
+15,SEN1,String,"""D""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Sens opération compte 1 (D/C) CHAR 1,payment(1).java:L1152
+16,MHT1,Double,,setDebiteur,CLIENT_DEBIT,CLIENT_SETTER_EXPLICITE,Montant nominal en devise du compte à débiter DECIMAL 19 - 4,payment(1).java:L1153
+17,MON1,Double,0d,setDebiteur+processPOST,CLIENT_DEBIT,CLIENT_SETTER_EXPLICITE,Montant net compte 1 DECIMAL 19 - 4,payment(1).java:L1154
+18,DVA1,Date,new Date(),processPOST,REGIONAL_AUTORITATIF,CORE_SET_EXPLICITE,Date de valeur compte 1 DATE,payment(1).java:L1156
+19,EXO1,String,"""N""",processPOST,REGIONAL_AUTORITATIF,CORE_SET_EXPLICITE,Exonération de commission de mouvement compte 1 CHAR 1,payment(1).java:L1157
+20,SOL1,Double,0d,setDebiteur,CLIENT_DEBIT,CLIENT_SETTER_EXPLICITE,Solde compte 1 avant opération DECIMAL 19 - 4,payment(1).java:L1158
+21,INDH1,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Indisponible hors SBF compte 1 avant opération DECIMAL 19 - 4,payment(1).java:L1159
+22,INDS1,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Indisponible SBF compte 1 avant opération DECIMAL 19 - 4,payment(1).java:L1160
+23,DESA1,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 4, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code désaccord 1 à la saisie CHAR 4 t058Desaccords cacc,payment(1).java:L1161
+24,DESA2,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 4, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code désaccord 2 à la saisie CHAR 4 t058Desaccords cacc,payment(1).java:L1162
+25,DESA3,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 4, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code désaccord 3 à la saisie CHAR 4 t058Desaccords cacc,payment(1).java:L1163
+26,DESA4,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 4, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code désaccord 4 à la saisie CHAR 4 t058Desaccords cacc,payment(1).java:L1164
+27,DESA5,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 4, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code désaccord 5 à la saisie CHAR 4 t058Desaccords cacc,payment(1).java:L1165
+28,AGE2,String,,setCrediteur,CLIENT_CREDIT,CLIENT_SETTER_EXPLICITE,Agence compte 2 CHAR 5 bkcom age,payment(1).java:L1166
+29,DEV2,String,,setCrediteur,CLIENT_CREDIT,CLIENT_SETTER_EXPLICITE,Code devise compte 2 CHAR 3 bkcom dev,payment(1).java:L1167
+30,NCP2,String,,setCrediteur,CLIENT_CREDIT,CLIENT_SETTER_EXPLICITE,Numéro de compte 2 CHAR 11 bkcom ncp,payment(1).java:L1168
+31,SUF2,String,,setCrediteur,CLIENT_CREDIT,CLIENT_SETTER_EXPLICITE,Suffixe compte 2 CHAR 2 bkcom suf,payment(1).java:L1169
+32,CLC2,String,,setCrediteur,CLIENT_CREDIT,CLIENT_SETTER_EXPLICITE,Clé de contrôle compte 2 CHAR 2,payment(1).java:L1170
+33,CLI2,String,,setCrediteur,CLIENT_CREDIT,CLIENT_SETTER_EXPLICITE,Code client compte 2 CHAR 15 bkcli cli,payment(1).java:L1171
+34,NOM2,String,,setCrediteur,CLIENT_CREDIT,CLIENT_SETTER_EXPLICITE,Nom client compte 2 CHAR 36,payment(1).java:L1172
+35,GES2,String,,setCrediteur,CLIENT_CREDIT,CLIENT_SETTER_EXPLICITE,Code gestionnaire compte 2 CHAR 3 t035Gestionnaires cacc,payment(1).java:L1173
+36,SEN2,String,"""C""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Sens opération compte 2 (D/C) CHAR 1,payment(1).java:L1174
+37,MHT2,Double,0d,setCrediteur,CLIENT_CREDIT,CLIENT_SETTER_EXPLICITE,Montant nominal en devise du compte à créditer DECIMAL 19 - 4,payment(1).java:L1175
+38,MON2,Double,0d,setCrediteur,CLIENT_CREDIT,CLIENT_SETTER_EXPLICITE,Montant net compte 2 DECIMAL 19 - 4,payment(1).java:L1176
+39,DVA2,Date,new Date(),processPOST,REGIONAL_AUTORITATIF,CORE_SET_EXPLICITE,Date de valeur compte 2 DATE,payment(1).java:L1178
+40,DIN,Date,new Date(),processPOST,CONDITIONNEL_LEGACY,REGLE_NON_GENERALISABLE,Date d'indisponible DATE,payment(1).java:L1180
+41,EXO2,String,"""O""",processPOST,REGIONAL_AUTORITATIF,CORE_SET_EXPLICITE,Exonération de commission de mouvement compte 2 CHAR 1,payment(1).java:L1181
+42,SOL2,Double,0d,setCrediteur,CLIENT_CREDIT,CLIENT_SETTER_EXPLICITE,Solde compte 2 avant opération DECIMAL 19 - 4,payment(1).java:L1182
+43,INDH2,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Indisponible hors SBF compte 2 avant opération DECIMAL 19 - 4,payment(1).java:L1183
+44,INDS2,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Indisponible SBF compte 2 avant opération DECIMAL 19 - 4,payment(1).java:L1184
+45,DESC1,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 4, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code désaccord 1 compte à créditer CHAR 4 t058Desaccords cacc,payment(1).java:L1185
+46,DESC2,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 4, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code désaccord 2 compte à créditer CHAR 4 t058Desaccords cacc,payment(1).java:L1186
+47,DESC3,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 4, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,3 compte à créditer CHAR 4 t058Desaccords cacc,payment(1).java:L1187
+48,DESC4,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 4, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code désaccord 4 compte à créditer CHAR 4 t058Desaccords cacc,payment(1).java:L1188
+49,DESC5,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 4, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code désaccord 5 compte à créditer CHAR 4 t058Desaccords cacc,payment(1).java:L1189
+50,ETAB,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 5, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code établissement bancaire de règlement CHAR 5 bkbqe etab,payment(1).java:L1190
+51,GUIB,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 5, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code guichet CHAR 5,payment(1).java:L1191
+52,NOME,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 40, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Nom de l'établissement bancaire CHAR 40,payment(1).java:L1192
+53,DOMI,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 30, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Domiciliation CHAR 30,payment(1).java:L1193
+54,ADB1,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 30, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Adresse banque 1 CHAR 30,payment(1).java:L1194
+55,ADB2,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 30, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Adresse banque 2 CHAR 30,payment(1).java:L1195
+56,ADB3,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 30, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Adresse banque 3 CHAR 30,payment(1).java:L1196
+57,VILB,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 30, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Ville banque CHAR 30,payment(1).java:L1197
+58,CPOB,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 6, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code postal CHAR 6,payment(1).java:L1198
+59,CPAY,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 3, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code pays banque CHAR 3,payment(1).java:L1199
+60,ETABR,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 5, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code établissement de règlement CHAR 5,payment(1).java:L1200
+61,GUIBR,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 5, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code guichet de règlement CHAR 5,payment(1).java:L1201
+62,COMB,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 25, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de compte CHAR 25,payment(1).java:L1202
+63,CLEB,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 2, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Clé RIB CHAR 2,payment(1).java:L1203
+64,NOMB,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 30, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Nom client autre banque CHAR 30,payment(1).java:L1204
+65,MBAN,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant net banque DECIMAL 19 - 4,payment(1).java:L1205
+66,DVAB,Date,,processPOST,CONDITIONNEL_LEGACY,REGLE_NON_GENERALISABLE,Date de valeur banque DATE,payment(1).java:L1207
+67,CAI1,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 3, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de caisse devise nationale CHAR 3 t004Caisses cacc,payment(1).java:L1208
+68,TYC1,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Type de caisse à débiter CHAR 1,payment(1).java:L1209
+69,DCAI1,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 3, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code devise caisse à débiter CHAR 3,payment(1).java:L1210
+70,SCAI1,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Sens caisse devise nationale (D/C) CHAR 1,payment(1).java:L1211
+71,MCAI1,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant caisse devise nationale DECIMAL 19 - 4,payment(1).java:L1212
+72,ARRC1,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant arrondi caisse à débiter (retrait) DECIMAL 19 - 4,payment(1).java:L1213
+73,CAI2,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 3, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,; //Numéro de caisse autres devises CHAR 3 t004Caisses cacc,payment(1).java:L1214
+74,TYC2,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Type de caisse à créditer CHAR 1,payment(1).java:L1215
+75,DCAI2,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 3, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code devise caisse à créditer CHAR 3,payment(1).java:L1216
+76,SCAI2,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Sens caisse autre devise (D/C) CHAR 1,payment(1).java:L1217
+77,MCAI2,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant caisse autre devise DECIMAL 19 - 4,payment(1).java:L1218
+78,ARRC2,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant arrondi caisse à créditer DECIMAL 19 - 4,payment(1).java:L1219
+79,DEV,String,,aucune affectation directe prouvée,CLIENT_CONSTRUCTEUR_A_VERIFIER,EFFET_CONSTRUCTEUR_NON_VISIBLE,Code devise de la transaction CHAR 3 t005DevisesN cacc,payment(1).java:L1220
+80,MHT,Double,0d,aucune affectation directe prouvée,CLIENT_CONSTRUCTEUR_A_VERIFIER,EFFET_CONSTRUCTEUR_NON_VISIBLE,Montant nominal opération (hors taxes) DECIMAL 19 - 4,payment(1).java:L1221
+81,MNAT,Double,0d,aucune affectation directe prouvée,CLIENT_CONSTRUCTEUR_A_VERIFIER,EFFET_CONSTRUCTEUR_NON_VISIBLE,Contrevaleur en devise nationale DECIMAL 19 - 4,payment(1).java:L1222
+82,MBOR,Double,0d,aucune affectation directe prouvée,CLIENT_CONSTRUCTEUR_A_VERIFIER,EFFET_CONSTRUCTEUR_NON_VISIBLE,Montant du bordereau DECIMAL 19 - 4,payment(1).java:L1223
+83,NBOR,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 6, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de bordereau CHAR 6,payment(1).java:L1224
+84,NBLIG,Integer,0,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Nombre de lignes constituant un lot saisi SMALLINT,payment(1).java:L1225
+85,TCAI2,Double,1d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Taux de change devise transaction/devise compte DECIMAL 15 - 7,payment(1).java:L1226
+86,TCAI3,Double,1d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Taux de change devise transaction/devise nationale DECIMAL 15 - 7,payment(1).java:L1227
+87,NAT,String,"""VIR""",aucune affectation directe prouvée,CLIENT_PROPOSE,CONSTRUCTION_CLIENT_OU_DEFAULT,Nature de la transaction CHAR 6 t052NaturOper cacc,payment(1).java:L1228
+88,NATO,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 6, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Nature d'origine CHAR 6,payment(1).java:L1229
+89,OPEO,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 3, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code opération d'origine CHAR 3,payment(1).java:L1230
+90,EVEO,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 6, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro d'évènement d'origine CHAR 6,payment(1).java:L1231
+91,PIEO,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 11, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de pièce comptable d'origine CHAR 11,payment(1).java:L1232
+92,DOU,Date,new Date(),processPOST,REGIONAL_AUTORITATIF,CORE_SET_EXPLICITE,Date de création DATE,payment(1).java:L1234
+93,DCO,Date,,processPOST,REGIONAL_AUTORITATIF,CORE_SET_EXPLICITE,Date comptable DATE,payment(1).java:L1236
+94,ETA,String,"""VA""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Etat de l'évènement (VA/AT/FO/VF/IG/IF/AB) CHAR 2,payment(1).java:L1237
+95,ETAP,String,"""  """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Etat précédent de l'évènement CHAR 2,payment(1).java:L1238
+96,NBV,Integer,0,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Nombre de validations requises DECIMAL 1 - 0,payment(1).java:L1239
+97,NVAL,Integer,0,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,validation effectué DECIMAL 1 - 0,payment(1).java:L1240
+98,UTI,String,"""APIAUTO""",aucune affectation directe prouvée,CLIENT_PROPOSE,CONSTRUCTION_CLIENT_OU_DEFAULT,Code utilisateur ayant initié l'évènement CHAR 10 evuti cuti,payment(1).java:L1241
+99,UTF,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 10, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code utilisateur ayant rappelé pour forcer CHAR 10 evuti cuti,payment(1).java:L1242
+100,UTA,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 10, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code utilisateur ayant autorisé CHAR 10 evuti cuti,payment(1).java:L1243
+101,MOA,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Clé de forçage DECIMAL 6 - 0,payment(1).java:L1244
+102,MOF,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Clé de forçage retrait déplacé DECIMAL 6 - 0,payment(1).java:L1245
+103,LIB1,String,"""OPERATION BUS """,buildEvenement,CLIENT_METIER,CLIENT_SET_EXPLICITE,Libellé libre CHAR 40,payment(1).java:L1246
+104,LIB2,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 40, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Idem CHAR 40,payment(1).java:L1247
+105,LIB3,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 40, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Idem CHAR 40,payment(1).java:L1248
+106,LIB4,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 40, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Idem CHAR 40,payment(1).java:L1249
+107,LIB5,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 40, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Idem CHAR 40,payment(1).java:L1250
+108,LIB6,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 50, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Libellé libre CHAR 50,payment(1).java:L1251
+109,LIB7,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 50, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Idem CHAR 50,payment(1).java:L1252
+110,LIB8,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 50, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Idem CHAR 50,payment(1).java:L1253
+111,LIB9,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 50, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Libellé réservé pour mémorisation du code lettrage CHAR 50,payment(1).java:L1254
+112,LIB10,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 50, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Libellé libre CHAR 50,payment(1).java:L1255
+113,AGEC,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 5, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Agence de centralisation pour service étranger CHAR 5 t001Agence cacc,payment(1).java:L1256
+114,AGEP,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 5, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Agence de provenance CHAR 5,payment(1).java:L1257
+115,INTR,String,"""C""",processPOST,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code édition livret CHAR 1,payment(1).java:L1258
+116,ORIG,String,"""S""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,"= ""I"";",payment(1).java:L1259
+117,RLET,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 8, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Référence de lettrage CHAR 8,payment(1).java:L1260
+118,CATR,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code évènement à transférer CHAR 1,payment(1).java:L1261
+119,CEB,String,"""N""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Opération compensable (O/N) CHAR 1,payment(1).java:L1262
+120,PLB,String,,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Place bancable (O/N) CHAR 1,payment(1).java:L1263
+121,CCO,String,"""0""",processPOST,CONDITIONNEL_LEGACY,REGLE_NON_GENERALISABLE,Code compensation (0/1/2/3/4/5) CHAR 1,payment(1).java:L1264
+122,DRET,Date,,processPOST,CONDITIONNEL_LEGACY,REGLE_NON_GENERALISABLE,Date de retour compensation DATE,payment(1).java:L1266
+123,NATP,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 10, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Nature pièce d'identité CHAR 10,payment(1).java:L1267
+124,NUMP,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 20, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de pièce d'identité CHAR 20,payment(1).java:L1268
+125,DATP,String,,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Date de délivrance de la pièce d'identité DATE,payment(1).java:L1269
+126,NOMP,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 36, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Nom du porteur CHAR 36,payment(1).java:L1270
+127,AD1P,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 30, "" "")",processPOST,REGIONAL_AUTORITATIF,CORE_SET_EXPLICITE,Adresse 1 du porteur CHAR 30,payment(1).java:L1271
+128,AD2P,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 30, "" "")",processPOST,REGIONAL_AUTORITATIF,CORE_SET_EXPLICITE,Adresse 2 du porteur CHAR 30,payment(1).java:L1272
+129,DELP,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 30, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Lieu de délivrance de la pièce d'identité porteur CHAR 30,payment(1).java:L1273
+130,SERIE,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 2, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Série de numéro de chèque CHAR 2,payment(1).java:L1274
+131,NCHE,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 14, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de chèque CHAR 14 bkchq nche,payment(1).java:L1275
+132,CHQL,String,"""N""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Chèque client (O/N) CHAR 1,payment(1).java:L1276
+133,CHQC,String,"""N""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code chèque certifié (O/N) CHAR 1,payment(1).java:L1277
+134,CAB,String,"""N""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Chèque autre banque (O/N) CHAR 1,payment(1).java:L1278
+135,NCFF,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 8, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,émis en devise CHAR 8,payment(1).java:L1279
+136,CSA,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Type de chèque (S/A) CHAR 1,payment(1).java:L1280
+137,DECH,Date,,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Date d'échéance DATE,payment(1).java:L1282
+138,TIRE,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 6, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code tiré autre banque CHAR 6 bktir cod,payment(1).java:L1283
+139,AGTI,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Agios à la charge du tiré (O/N) CHAR 1,payment(1).java:L1284
+140,AGRE,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Agios à la charge du tiré à rétrocéder (O/N) CHAR 1,payment(1).java:L1285
+141,NBJI,Integer,0,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Nombre de jours d'intérêts DECIMAL 3 - 0,payment(1).java:L1286
+142,PTFC,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Effet généré en portefeuille centralisé (O/N) CHAR 1,payment(1).java:L1287
+143,EFAV,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Effet avalisé (O/N) CHAR 1,payment(1).java:L1288
+144,NAVL,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 6, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro d'aval (caution) CHAR 6,payment(1).java:L1289
+145,EDOM,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Effet domicilié (O/N) CHAR 1,payment(1).java:L1290
+146,EOPP,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Effet en opposition (O/N) CHAR 1,payment(1).java:L1291
+147,EFAC,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Effet accepté (O/N) CHAR 1,payment(1).java:L1292
+148,MOTI,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 4, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Motif de non acceptation CHAR 4,payment(1).java:L1293
+149,ENVACC,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Effet à envoyer à l'acceptation (O/n) CHAR 1,payment(1).java:L1294
+150,ENOM,String,"""N""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Edition du nom CHAR 1,payment(1).java:L1295
+151,VICL,String,"""N""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Virement même client CHAR 1,payment(1).java:L1296
+152,TECO,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Télex ou courrier CHAR 1,payment(1).java:L1297
+153,TENV,String,""" """,processPOST,CONDITIONNEL_LEGACY,REGLE_NON_GENERALISABLE,Télex envoyé (O/N) CHAR 1,payment(1).java:L1298
+154,EXJO,String,"""N""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Virement à exécution jour (O/N) CHAR 1,payment(1).java:L1299
+155,ORG,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 5, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code organisme domiciliateur de prélèvements CHAR 5,payment(1).java:L1300
+156,CAI3,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 3, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de caisse T.C. CHAR 3 t004Caisses cacc,payment(1).java:L1301
+157,MCAI3,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant caisse T.C. DECIMAL 19 - 4,payment(1).java:L1302
+158,FORC,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Opération pouvant être forcée CHAR 1,payment(1).java:L1303
+159,OCAI3,String,"""  """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Organisme T.C. CHAR 2 t053OrganismeTC cacc,payment(1).java:L1304
+160,NCAI3,Integer,0,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Nombre de T.C. DECIMAL 3 - 0,payment(1).java:L1305
+161,CSP1,String,"""VBUSS""",aucune affectation directe prouvée,CLIENT_PROPOSE,CONSTRUCTION_CLIENT_OU_DEFAULT,"Code spécifique CHAR 10; VBUSS dans BkeveBase fourni, VMoMo dans autre extrait legacy; divergence",payment(1).java:L1306
+162,CSP2,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 10, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Idem CHAR 10,payment(1).java:L1307
+163,CSP3,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 10, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Idem CHAR 10,payment(1).java:L1308
+164,CSP4,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 10, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Idem CHAR 10,payment(1).java:L1309
+165,CSP5,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 10, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Idem CHAR 10,payment(1).java:L1310
+166,NDOM,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 25, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de domiciliation (étranger) CHAR 25,payment(1).java:L1311
+167,CMOD,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 10, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code motif déclaré CHAR 10,payment(1).java:L1312
+168,DEVF,String,"""001""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Devise compte de frais CHAR 3 bkcom dev,payment(1).java:L1313
+169,NCPF,String,,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de compte de frais CHAR 11 bkcom ncp,payment(1).java:L1314
+170,SUFF,String,"""  """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Suffixe du compte de frais CHAR 2 bkcom suf,payment(1).java:L1315
+171,MONF,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant du compte de frais DECIMAL 19 - 4,payment(1).java:L1316
+172,DVAF,Date,,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Date de valeur du compte de frais DATE,payment(1).java:L1318
+173,EXOF,String,""" """,processPOST,REGIONAL_AUTORITATIF,CORE_SET_EXPLICITE,Exonération de commission compte de frais CHAR 1,payment(1).java:L1319
+174,AGEE,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 5, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Compte d'encaissement/engagement : agence CHAR 5 bkcom ncp,payment(1).java:L1320
+175,DEVE,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 3, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Compte d'encaissement/engagement : code devise CHAR 3 bkcom dev,payment(1).java:L1321
+176,NCPE,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 11, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Compte d'encaissement/engagement : numéro CHAR 11 bkcom ncp,payment(1).java:L1322
+177,SUFE,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 2, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Compte d'encaissement/engagement : suffixe CHAR 2 bkcom suf,payment(1).java:L1323
+178,CLCE,String,"""  """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,: clé de contrôl CHAR 2,payment(1).java:L1324
+179,NCPI,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 11, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de compte d'impayé CHAR 11,payment(1).java:L1325
+180,SUFI,String,"""  """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Suffixe compte d'impayé CHAR 2,payment(1).java:L1326
+181,MIMP,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant frais d'impayés DECIMAL 19 - 4,payment(1).java:L1327
+182,DVAI,Date,,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Date de valeur impayé DATE,payment(1).java:L1329
+183,NCPP,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 11, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de compte de provision CHAR 11,payment(1).java:L1330
+184,SUFP,String,"""  """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Suffixe compte de provision CHAR 2,payment(1).java:L1331
+185,PRGA,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Pourcentage retenue de garantie DECIMAL 10 - 7,payment(1).java:L1332
+186,MRGA,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant provision en devise du compte DECIMAL 19 - 4,payment(1).java:L1333
+187,TERM,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Terme du dossier CHAR 1,payment(1).java:L1334
+188,TVAR,String,"""O""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,TVA récupérée (O/N) CHAR 1,payment(1).java:L1335
+189,INTP,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Intérêts précomptés (O/N) CHAR 1,payment(1).java:L1336
+190,CAP,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Capitalisation des intérêts (O/N) CHAR 1,payment(1).java:L1337
+191,PRLL,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Prélèvements libératoires CHAR 1,payment(1).java:L1338
+192,ANO,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,BDC anonyme (O/N) CHAR 1,payment(1).java:L1339
+193,ETAB1,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 5, "" "")",processPOST,CONDITIONNEL_LEGACY,REGLE_NON_GENERALISABLE,Code établissement bancaire 1 CHAR 5 bkbqe etab,payment(1).java:L1340
+194,GUIB1,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 5, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code guichet bancaire 1 CHAR 5 bkbqe guib,payment(1).java:L1341
+195,COM1B,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 15, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de compte 1 client autre banque CHAR 15,payment(1).java:L1342
+196,ETAB2,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 5, "" "")",processPOST,CONDITIONNEL_LEGACY,REGLE_NON_GENERALISABLE,Code établissement bancaire 2 CHAR 5 bkbqe etab,payment(1).java:L1343
+197,GUIB2,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 5, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code guichet bancaire 2 CHAR 5 bkbqe guib,payment(1).java:L1344
+198,COM2B,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 15, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Numéro de compte client 2 autre banque CHAR 15,payment(1).java:L1345
+199,TCOM1,Double,0d,aucune affectation directe prouvée,CLIENT_CONSTRUCTEUR_A_VERIFIER,EFFET_CONSTRUCTEUR_NON_VISIBLE,Taux de commission 1 DECIMAL 15 - 7,payment(1).java:L1346
+200,MCOM1,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant commission 1 en devise nationale DECIMAL 19 - 4,payment(1).java:L1347
+201,TCOM2,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Taux de commission 2 DECIMAL 15 - 7,payment(1).java:L1348
+202,MCOM2,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant commission 2 en devise nationale DECIMAL 19 - 4,payment(1).java:L1349
+203,TCOM3,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Taux de commission 3 DECIMAL 15 - 7,payment(1).java:L1350
+204,MCOM3,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant commission 3 en devise nationale DECIMAL 19 - 4,payment(1).java:L1351
+205,FRAI1,Double,0d,processPOST,CONDITIONNEL_LEGACY,REGLE_NON_GENERALISABLE,Montant frais 1 en devise nationale DECIMAL 19 - 4,payment(1).java:L1352
+206,FRAI2,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant frais 2 en devise nationale DECIMAL 19 - 4,payment(1).java:L1353
+207,FRAI3,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant frais 3 en devise nationale DECIMAL 19 - 4,payment(1).java:L1354
+208,TTAX1,Double,0d,aucune affectation directe prouvée,CLIENT_CONSTRUCTEUR_A_VERIFIER,EFFET_CONSTRUCTEUR_NON_VISIBLE,Taux de taxe 1 DECIMAL 15 - 7,payment(1).java:L1355
+209,MTAX1,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant taxe 1 en devise nationale DECIMAL 19 - 4,payment(1).java:L1356
+210,TTAX2,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Taux de taxe 2 DECIMAL 15 - 7,payment(1).java:L1357
+211,MTAX2,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant taxe 2 en devise nationale DECIMAL 19 - 4,payment(1).java:L1358
+212,TTAX3,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Taux de taxe 3 DECIMAL 15 - 7,payment(1).java:L1359
+213,MTAX3,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Montant taxe 3 en devise nationale DECIMAL 19 - 4,payment(1).java:L1360
+214,MNT1,Double,0d,aucune affectation directe prouvée,CLIENT_CONSTRUCTEUR_A_VERIFIER,EFFET_CONSTRUCTEUR_NON_VISIBLE,Montant libre DECIMAL 19 - 4,payment(1).java:L1361
+215,MNT2,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Idem DECIMAL 19 - 4,payment(1).java:L1362
+216,MNT3,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Idem DECIMAL 19 - 4,payment(1).java:L1363
+217,MNT4,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Idem DECIMAL 19 - 4,payment(1).java:L1364
+218,MNT5,Double,0d,processPOST,REGIONAL_AUTORITATIF,CORE_SET_EXPLICITE,Idem DECIMAL 19 - 4,payment(1).java:L1365
+219,TYC3,String,"""N""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,,payment(1).java:L1366
+220,DCAI3,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 3, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Devise numérique de la caisse CHAR 3 t002DevisesA dev,payment(1).java:L1367
+221,SCAI3,String,""" """,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Sens de la caisse CHAR 1,payment(1).java:L1368
+222,ARRC3,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Arrondi caisse DECIMAL 19 - 4,payment(1).java:L1369
+223,MHTD,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Différence entre le net à créditer et le montant DECIMAL 19 - 4,payment(1).java:L1370
+224,TCAI4,Double,1d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Taux de change entre la devise des billets DECIMAL 15 - 7,payment(1).java:L1371
+225,TOPE,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 3, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,la télécompensation CHAR 3,payment(1).java:L1372
+226,IMG,String,"""N""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,,payment(1).java:L1373
+227,DSAI,Date,new Date(),aucune affectation directe prouvée,CLIENT_CONSTRUCTEUR_A_VERIFIER,EFFET_CONSTRUCTEUR_NON_VISIBLE,Date de saisie DATE,payment(1).java:L1375
+228,HSAI,String,"new SimpleDateFormat(""HH':'mm':'ss"").format(new Date())",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Heure de saisie CHAR 12,payment(1).java:L1376
+229,PAYSP,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 3, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Code pays du remettant et du porteur CHAR 3,payment(1).java:L1377
+230,PDELP,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 30, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Pièce délivrée par CHAR 30,payment(1).java:L1378
+231,MANDA,String,"""N""",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Mandataire (O/N) CHAR 1,payment(1).java:L1379
+232,REFDOS,String,"HelperQuerry.padText("""", HelperQuerry.RIGHT, 1, "" "")",aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Référence de la procuration VARCHAR 0 - 20,payment(1).java:L1380
+233,TCHFR,Double,0d,aucune affectation directe prouvée,CLIENT_DEFAUT_LEGACY,DEFAULT_OU_NULL_NON_VALIDÉ,Taux de change francophone DECIMAL 15 - 7,payment(1).java:L1381
