@@ -1,5 +1,19 @@
 # R6.6.2 — Consolidation des décisions MVP et gates du contrat événementiel
 
+> **ADDENDUM R6.6.2 — CONTRAT APPROUVÉ ET INTÉGRÉ (14 octobre 2026)**  
+> Les sections historiques ci-dessous consignent l'état *avant* l'approbation et ne doivent
+> pas être interprétées comme le statut actuel du contrat. La version exacte de
+> `PaymentProviderEvent` a été approuvée par le propriétaire du projet puis
+> intégrée au contrat canonique à la révision de base `e4c9d17a0ff88c6b2af6895d8d3711607db3a814`.
+> `amount` métier est absent de l'événement ; `debitAmount` = MON1 = MHT1 ;
+> `creditAmount` = MON2 = MHT2. Les deux montants sont indépendants et transmis
+> par le client. `agsa`, `age`, `csp1` sont requis et fournis par le client.
+> Enrichissement bancaire Regional, MVP mono-agence sans comptes de liaison,
+> écritures BKMVTI stockées côté client jusqu'à T1. Aucun nouveau postage bancaire
+> ou mécanisme de recovery n'est autorisé par cet alignement Java.
+> Compatibilité avec le JSON réel de SIXPAY et décisions bancaires de postage :
+> **toujours à vérifier** avant activation financière.
+
 **État : DRAFT / PENDING_APPROVAL.** Document de revue, pas une approbation du contrat canonique ni une autorisation de génération ou d'implémentation bancaire.
 
 ## Révision et source

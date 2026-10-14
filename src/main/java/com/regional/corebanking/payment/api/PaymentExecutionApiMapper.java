@@ -38,8 +38,12 @@ public class PaymentExecutionApiMapper {
                 source.getTechnicalUser(),
                 source.getDebtorAccountReference(),
                 source.getCreditorAccountReference(),
-                source.getAmount(),
-                source.getLabel());
+                source.getDebitAmount(),
+                source.getCreditAmount(),
+                source.getLabel(),
+                source.getAgsa(),
+                source.getAge(),
+                source.getCsp1());
     }
 
     private PaymentExecutionCheck toApi(com.regional.corebanking.payment.domain.PaymentExecutionCheck source) {

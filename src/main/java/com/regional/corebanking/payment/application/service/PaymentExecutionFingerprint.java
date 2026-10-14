@@ -26,8 +26,12 @@ final class PaymentExecutionFingerprint {
             add(digest, event.technicalUser());
             add(digest, event.debtorAccountReference());
             add(digest, event.creditorAccountReference());
-            add(digest, normalize(event.amount()));
+            add(digest, normalize(event.debitAmount()));
+            add(digest, normalize(event.creditAmount()));
             add(digest, event.label());
+            add(digest, event.agsa());
+            add(digest, event.age());
+            add(digest, event.csp1());
             add(digest, command.requestedAt() == null ? null : command.requestedAt().toInstant().toString());
             return HexFormat.of().formatHex(digest.digest());
         } catch (NoSuchAlgorithmException exception) {

@@ -980,11 +980,11 @@ components:
       type: object
       additionalProperties: false
       description: |
-        Regional caller-supplied data required to request creation of the Core
-        Banking BKEVE event. `eventNumber`, `accountingDate` and `nightMode` are
-        deliberately absent because they are authoritative Core Banking values
-        resolved during execution. Additional provider fields require a future
-        approved contract evolution.
+        Données de l'événement bancaire BKEVE préparé par l'application cliente
+        pour le postage T0. Le montant métier de la transaction de paiement
+        n'est pas un champ de ce schéma. MVP mono-agence, sans comptes de liaison.
+        Regional enrichit les données bancaires autoritatives des comptes.
+        Les écritures BKMVTI restent conservées chez le client jusqu'à T1.
       required:
         - paymentReference
         - operationCode
@@ -993,8 +993,12 @@ components:
         - technicalUser
         - debtorAccountReference
         - creditorAccountReference
-        - amount
+        - debitAmount
+        - creditAmount
         - label
+        - agsa
+        - age
+        - csp1
       properties:
         paymentReference:
           $ref: '#/components/schemas/PaymentReference'
@@ -1002,21 +1006,17 @@ components:
           type: string
           minLength: 1
           maxLength: 3
-          description: |
-            Value supplied/configured by the calling application. Core Banking
-            validates it against the Amplitude reference table.
+          description: Code fourni par le client et validé contre la référence bancaire.
         currency:
           type: string
           minLength: 1
           maxLength: 3
           description: |
-            Current Regional Core Banking scope uses XAF. Currency handling is
-            Core-Banking-authoritative; the representation of this caller field
-            remains subject to the R6 contract review.
+            Code déclaré par le client; la devise autoritative est celle du compte.
+            L'équivalence éventuelle entre codes ISO et codes bancaires reste à valider.
         nature:
           type: string
           minLength: 1
-          description: Value supplied/configured by the calling application.
         technicalUser:
           type: string
           minLength: 1
@@ -1024,12 +1024,41 @@ components:
           $ref: '#/components/schemas/CoreBankingAccountReferenceString'
         creditorAccountReference:
           $ref: '#/components/schemas/CoreBankingAccountReferenceString'
-        amount:
+        debitAmount:
           type: number
           exclusiveMinimum: 0
+          description: |
+            Montant transmis par le client pour débiter son compte.
+            Mapping BKEVE confirmé: MON1 = MHT1 = debitAmount.
+            Ne se déduit pas du montant métier du paiement.
+        creditAmount:
+          type: number
+          exclusiveMinimum: 0
+          description: |
+            Montant transmis par le client pour créditer le bénéficiaire.
+            Mapping BKEVE confirmé: MON2 = MHT2 = creditAmount.
+            Peut être différent de debitAmount.
         label:
           type: string
           minLength: 1
+        agsa:
+          type: string
+          minLength: 1
+          description: |
+            Valeur explicitement fournie par le client; 00001 observé pour le cas
+            décrit, sans présumer d'une valeur universelle ni d'une longueur validée.
+        age:
+          type: string
+          minLength: 1
+          description: |
+            Valeur explicitement fournie par le client; 00001 observé pour le cas
+            décrit. Ne pas confondre avec l'agence du compte sans validation bancaire.
+        csp1:
+          type: string
+          minLength: 1
+          description: |
+            Valeur explicitement fournie par le client; VSixpay est spécifique
+            au consommateur SIXPAY et n'est pas un défaut global.
 
     PaymentEventEnvelope:
       type: object

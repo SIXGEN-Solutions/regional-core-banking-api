@@ -10,6 +10,10 @@ public record PaymentProviderEvent(
         String technicalUser,
         String debtorAccountReference,
         String creditorAccountReference,
-        BigDecimal amount,
-        String label) {
+        BigDecimal debitAmount,
+        BigDecimal creditAmount,
+        String label,
+        String agsa,
+        String age,
+        String csp1) {
 }

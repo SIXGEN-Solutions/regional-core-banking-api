@@ -124,7 +124,8 @@ class JdbcPaymentExecutionPersistenceAdapterTest {
                 new PaymentProviderEvent(
                         "PAY-1", "001", "XAF", "PAYMENT", "SYSTEM",
                         "00001-12345678901-42", "00001-12345678902-40",
-                        new BigDecimal("1000"), "Payment"),
+                        new BigDecimal("1000"), new BigDecimal("990"), "Payment",
+                        "00001", "00001", "VSixpay"),
                 OffsetDateTime.parse("2026-09-28T20:00:00-04:00"));
     }
 

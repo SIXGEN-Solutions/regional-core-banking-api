@@ -77,10 +77,33 @@ class PaymentExecutionServiceTest {
                 new PaymentProviderEvent(
                         event.paymentReference(), event.operationCode(), event.currency(), event.nature(),
                         event.technicalUser(), event.debtorAccountReference(), event.creditorAccountReference(),
-                        new BigDecimal("1000.00"), event.label()),
+                        new BigDecimal("1000.00"), event.creditAmount(), event.label(),
+                        event.agsa(), event.age(), event.csp1()),
                 first.requestedAt());
 
         assertEquals(PaymentExecutionFingerprint.sha256(first), PaymentExecutionFingerprint.sha256(equivalent));
+    }
+
+    @Test
+    void fingerprintChangesForCreditAmountAndClientMarkers() {
+        var first = command();
+        var event = first.providerEvent();
+        var changedCredit = new PaymentProviderEvent(
+                event.paymentReference(), event.operationCode(), event.currency(), event.nature(),
+                event.technicalUser(), event.debtorAccountReference(), event.creditorAccountReference(),
+                event.debitAmount(), new BigDecimal("991"), event.label(),
+                event.agsa(), event.age(), event.csp1());
+        var changedCsp = new PaymentProviderEvent(
+                event.paymentReference(), event.operationCode(), event.currency(), event.nature(),
+                event.technicalUser(), event.debtorAccountReference(), event.creditorAccountReference(),
+                event.debitAmount(), event.creditAmount(), event.label(),
+                event.agsa(), event.age(), "OTHER");
+        assertNotEquals(PaymentExecutionFingerprint.sha256(first),
+                PaymentExecutionFingerprint.sha256(new PaymentExecutionCommand(
+                        first.paymentReference(), first.snapshotVersion(), changedCredit, first.requestedAt())));
+        assertNotEquals(PaymentExecutionFingerprint.sha256(first),
+                PaymentExecutionFingerprint.sha256(new PaymentExecutionCommand(
+                        first.paymentReference(), first.snapshotVersion(), changedCsp, first.requestedAt())));
     }
 
     @Test
@@ -89,7 +112,8 @@ class PaymentExecutionServiceTest {
         var badEvent = new PaymentProviderEvent(
                 "OTHER", "001", "XAF", "PAYMENT", "SYSTEM",
                 "00001-12345678901-42", "00001-12345678902-40",
-                new BigDecimal("1000"), "Payment");
+                new BigDecimal("1000"), new BigDecimal("990"), "Payment",
+                "00001", "00001", "VSixpay");
         var invalid = new PaymentExecutionCommand(
                 base.paymentReference(), base.snapshotVersion(), badEvent, base.requestedAt());
 
@@ -106,7 +130,8 @@ class PaymentExecutionServiceTest {
                 new PaymentProviderEvent(
                         paymentReference, "001", "XAF", "PAYMENT", "SYSTEM",
                         "00001-12345678901-42", "00001-12345678902-40",
-                        new BigDecimal("1000"), "Payment"),
+                        new BigDecimal("1000"), new BigDecimal("990"), "Payment",
+                        "00001", "00001", "VSixpay"),
                 OffsetDateTime.parse("2026-09-28T20:00:00-04:00"));
     }
 

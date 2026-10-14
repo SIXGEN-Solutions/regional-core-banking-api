@@ -66,8 +66,11 @@ final class JdbcPaymentExecutionBankingAdapter implements PaymentExecutionBankin
             var da = pass(PaymentExecutionCheckType.DEBIT_ALLOWED);
             BigDecimal s = funds(x, a, ac.dev);
             if (s == null) throw un("Available funds could not be determined from Core Banking");
-            if (e.amount() == null) throw new IllegalArgumentException("providerEvent.amount is required");
-            if (s.compareTo(e.amount()) < 0)
+            if (e.debitAmount() == null || e.debitAmount().signum() <= 0)
+                throw new IllegalArgumentException("providerEvent.debitAmount must be positive");
+            // Only the debit leg impacts the customer's available funds check.
+            // Credit amount is independently supplied and retained in the command.
+            if (s.compareTo(e.debitAmount()) < 0)
                 return reject(c.paymentReference(), av, da, fail(PaymentExecutionCheckType.AVAILABLE_FUNDS_SUFFICIENT, "INSUFFICIENT_FUNDS"), "INSUFFICIENT_FUNDS");
             throw un("R6.5 authoritative BKEVE context calculated: eventNumber=" + ctx.eventNumber() + ", accountingDate=" + ctx.accountingDate() + ", nightMode=" + ctx.nightMode() + ", eventTable=" + ctx.eventTable() + ", debitValueDate=" + ctx.debitValueDate() + ", creditValueDate=" + ctx.creditValueDate() + ", currency=" + ctx.currency() + "; BKEVE financial execution is not implemented in this lot");
         } catch (SQLException z) {
