@@ -12,6 +12,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
 import java.security.MessageDigest;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -82,23 +85,46 @@ public class JdbcPaymentExecutionPersistenceAdapter implements PaymentExecutionP
     @Override
     public Optional<PaymentExecutionResult> findByPaymentReference(String institution, String paymentReference) {
         return jdbc.query("""
-                SELECT result_json::text
+                SELECT payment_reference, outcome, result_json::text
                   FROM regional_payment_execution
                  WHERE institution_code = ? AND payment_reference = ?
                 """,
-                (rs, row) -> deserialize(rs.getString(1)),
-                institution, paymentReference).stream().findFirst().flatMap(Optional::ofNullable);
+                (rs, row) -> recoverableResult(rs.getString(1), rs.getString(2), rs.getString(3)),
+                institution, paymentReference).stream().findFirst();
     }
 
     @Override
     public Optional<PaymentExecutionResult> findByIdempotencyKey(String institution, String key) {
         return jdbc.query("""
-                SELECT result_json::text
+                SELECT payment_reference, outcome, result_json::text
                   FROM regional_payment_execution
                  WHERE institution_code = ? AND idempotency_key = ?
                 """,
-                (rs, row) -> deserialize(rs.getString(1)),
-                institution, key).stream().findFirst().flatMap(Optional::ofNullable);
+                (rs, row) -> recoverableResult(rs.getString(1), rs.getString(2), rs.getString(3)),
+                institution, key).stream().findFirst();
+    }
+
+    /**
+     * A durable idempotency claim with no result JSON is NOT a missing payment.
+     * UNKNOWN (or a still-pending NULL outcome) means the financial result has
+     * not been established. This technical projection is never banking proof.
+     * An inconsistent terminal state must fail closed instead of inventing it.
+     */
+    private PaymentExecutionResult recoverableResult(String reference, String outcome, String resultJson) {
+        if (resultJson != null) {
+            PaymentExecutionResult result = deserialize(resultJson);
+            if (!reference.equals(result.paymentReference())) {
+                throw new PaymentExecutionUnavailableException("Stored payment execution reference mismatch");
+            }
+            return result;
+        }
+        if (outcome == null || "UNKNOWN".equals(outcome)) {
+            return new PaymentExecutionResult(reference,
+                    com.regional.corebanking.payment.domain.PaymentExecutionOutcome.UNKNOWN,
+                    List.of(), null, null, OffsetDateTime.now(ZoneOffset.UTC));
+        }
+        throw new PaymentExecutionUnavailableException(
+                "Payment execution claim has terminal outcome without a recoverable result");
     }
 
     private Optional<StoredExecution> findStoredByIdempotencyKey(String institution, String key) {

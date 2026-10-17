@@ -98,6 +98,75 @@ class JdbcPaymentExecutionPersistenceAdapterTest {
     }
 
     @Test
+    void unknownClaimWithoutJsonIsRecoverableByBothIdentifiersAndNeverReposts() {
+        AtomicInteger executions = new AtomicInteger();
+        assertThrows(IllegalStateException.class,
+                () -> repository.executeIdempotent(
+                        "REGIONAL", "idem-unknown", "a".repeat(64), command(),
+                        () -> {
+                            executions.incrementAndGet();
+                            throw new IllegalStateException("simulated uncertain bank commit");
+                        }));
+
+        var row = jdbc.queryForMap("""
+                SELECT outcome, result_json FROM regional_payment_execution
+                 WHERE institution_code = ? AND idempotency_key = ?
+                """, "REGIONAL", "idem-unknown");
+        assertEquals("UNKNOWN", row.get("outcome"));
+        assertNull(row.get("result_json"));
+
+        var byReference = repository.findByPaymentReference("REGIONAL", "PAY-1").orElseThrow();
+        var byKey = repository.findByIdempotencyKey("REGIONAL", "idem-unknown").orElseThrow();
+        assertEquals(PaymentExecutionOutcome.UNKNOWN, byReference.outcome());
+        assertEquals(PaymentExecutionOutcome.UNKNOWN, byKey.outcome());
+        assertEquals("PAY-1", byReference.paymentReference());
+        assertEquals("PAY-1", byKey.paymentReference());
+        assertNull(byReference.bankReference());
+        assertNull(byKey.bankReference());
+
+        assertThrows(PaymentExecutionUnavailableException.class,
+                () -> repository.executeIdempotent(
+                        "REGIONAL", "idem-unknown", "a".repeat(64), command(),
+                        () -> { executions.incrementAndGet(); return completed(); }));
+        assertEquals(1, executions.get());
+    }
+
+    @Test
+    void pendingClaimWithoutJsonIsUnknownNotNotFound() {
+        jdbc.update("""
+                INSERT INTO regional_payment_execution
+                    (institution_code, payment_reference, idempotency_key,
+                     request_fingerprint, operation_code)
+                VALUES (?, ?, ?, ?, ?)
+                """, "REGIONAL", "PAY-PENDING", "idem-pending", "b".repeat(64), "001");
+        assertEquals(PaymentExecutionOutcome.UNKNOWN,
+                repository.findByPaymentReference("REGIONAL", "PAY-PENDING").orElseThrow().outcome());
+        assertEquals(PaymentExecutionOutcome.UNKNOWN,
+                repository.findByIdempotencyKey("REGIONAL", "idem-pending").orElseThrow().outcome());
+    }
+
+    @Test
+    void terminalClaimWithMissingJsonFailsClosed() {
+        jdbc.update("""
+                INSERT INTO regional_payment_execution
+                    (institution_code, payment_reference, idempotency_key,
+                     request_fingerprint, operation_code, outcome)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """, "REGIONAL", "PAY-INCONSISTENT", "idem-inconsistent",
+                "c".repeat(64), "001", "COMPLETED");
+        assertThrows(PaymentExecutionUnavailableException.class,
+                () -> repository.findByPaymentReference("REGIONAL", "PAY-INCONSISTENT"));
+        assertThrows(PaymentExecutionUnavailableException.class,
+                () -> repository.findByIdempotencyKey("REGIONAL", "idem-inconsistent"));
+    }
+
+    @Test
+    void noClaimRemainsNotFound() {
+        assertTrue(repository.findByPaymentReference("REGIONAL", "missing").isEmpty());
+        assertTrue(repository.findByIdempotencyKey("REGIONAL", "missing").isEmpty());
+    }
+
+    @Test
     void schemaStoresRequiredCorrelationColumnsAndLeavesBankContextNullableUntilKnown() {
         repository.executeIdempotent(
                 "REGIONAL", "idem-5", "f".repeat(64), command(), JdbcPaymentExecutionPersistenceAdapterTest::completed);
