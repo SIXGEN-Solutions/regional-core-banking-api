@@ -1,6 +1,5 @@
 package com.regional.corebanking.payment.application.service;
 
-import com.regional.corebanking.payment.application.exception.PaymentExecutionNotFoundException;
 import com.regional.corebanking.payment.application.port.in.PaymentExecutionUseCase;
 import com.regional.corebanking.payment.application.port.out.PaymentExecutionBankingPort;
 import com.regional.corebanking.payment.application.port.out.PaymentExecutionPersistencePort;
@@ -13,12 +12,14 @@ public class PaymentExecutionService implements PaymentExecutionUseCase {
 
     private final PaymentExecutionBankingPort bankingPort;
     private final PaymentExecutionPersistencePort persistencePort;
+    private final PaymentExecutionRecoveryCoordinator recovery;
 
     public PaymentExecutionService(
             PaymentExecutionBankingPort bankingPort,
             PaymentExecutionPersistencePort persistencePort) {
         this.bankingPort = bankingPort;
         this.persistencePort = persistencePort;
+        this.recovery = new PaymentExecutionRecoveryCoordinator(persistencePort, bankingPort);
     }
 
     @Override
@@ -46,10 +47,7 @@ public class PaymentExecutionService implements PaymentExecutionUseCase {
         requireText(financialInstitutionCode, "financialInstitutionCode");
         requireText(paymentReference, "paymentReference");
 
-        return persistencePort.findByPaymentReference(financialInstitutionCode, paymentReference)
-                .or(() -> bankingPort.findByPaymentReference(financialInstitutionCode, paymentReference))
-                .orElseThrow(() -> new PaymentExecutionNotFoundException(
-                        "No authoritative payment execution result for paymentReference"));
+        return recovery.byPaymentReference(financialInstitutionCode, paymentReference);
     }
 
     @Override
@@ -59,10 +57,7 @@ public class PaymentExecutionService implements PaymentExecutionUseCase {
         requireText(financialInstitutionCode, "financialInstitutionCode");
         requireText(idempotencyKey, "idempotencyKey");
 
-        return persistencePort.findByIdempotencyKey(financialInstitutionCode, idempotencyKey)
-                .or(() -> bankingPort.findByIdempotencyKey(financialInstitutionCode, idempotencyKey))
-                .orElseThrow(() -> new PaymentExecutionNotFoundException(
-                        "No authoritative payment execution result for idempotencyKey"));
+        return recovery.byIdempotencyKey(financialInstitutionCode, idempotencyKey);
     }
 
     private static void validate(PaymentExecutionCommand command) {
