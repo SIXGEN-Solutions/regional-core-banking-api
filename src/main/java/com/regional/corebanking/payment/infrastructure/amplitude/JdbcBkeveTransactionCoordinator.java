@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Banking JDBC transaction scope shared conceptually by ALL API instances.
@@ -15,6 +16,9 @@ import java.util.Objects;
  * Never connect this coordinator to production until bank evidence is approved.
  */
 final class JdbcBkeveTransactionCoordinator {
+    // TEMPORARY SINGLE-JVM MODE ONLY: shared by all coordinator objects in this process.
+    // This does NOT protect against other application processes or Amplitude producers.
+    private static final ReentrantLock SINGLE_INSTANCE_LOCK = new ReentrantLock(true);
     @FunctionalInterface
     interface LockedAllocator {
         String allocate(Connection connection, String operationCode, String eventTable,
@@ -42,6 +46,9 @@ final class JdbcBkeveTransactionCoordinator {
             throw new IllegalArgumentException("Unsupported BKEVE event table");
         Objects.requireNonNull(accountingDate, "accountingDate");
         Objects.requireNonNull(write, "write");
+        // Serialize the entire allocation + write + commit/rollback scope in this JVM.
+        // All production callers MUST use this coordinator; no direct MAX(eve) posting.
+        SINGLE_INSTANCE_LOCK.lock();
         try (Connection connection = dataSource.getConnection()) {
             if (!connection.getAutoCommit())
                 throw new PaymentExecutionUnavailableException("BKEVE coordinator requires an independently owned JDBC transaction");
@@ -77,6 +84,8 @@ final class JdbcBkeveTransactionCoordinator {
                 "BKEVE JDBC transaction could not be opened or closed; authoritative recovery may be required");
             unavailable.initCause(failure);
             throw unavailable;
+        } finally {
+            SINGLE_INSTANCE_LOCK.unlock();
         }
     }
 }

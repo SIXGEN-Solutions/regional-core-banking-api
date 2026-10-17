@@ -6,6 +6,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -78,5 +84,50 @@ class JdbcBkeveTransactionCoordinatorTest {
             () -> coordinator.allocateAndWrite("001", "BKEVE", DATE, (cx, eve) -> {writes.incrementAndGet();return eve;}));
         assertEquals(0, writes.get());
         verify(c).rollback();
+    }
+
+    @Test void distinctCoordinatorsSerializeWholeTransactionWithinSingleJvm() throws Exception {
+        var ds = mock(DataSource.class);
+        AtomicInteger currentlyInTransaction = new AtomicInteger();
+        AtomicInteger maximumConcurrent = new AtomicInteger();
+        AtomicInteger sequence = new AtomicInteger();
+        AtomicInteger commits = new AtomicInteger();
+        when(ds.getConnection()).thenAnswer(invocation -> {
+            Connection c = mock(Connection.class);
+            when(c.getAutoCommit()).thenReturn(true);
+            doAnswer(x -> {
+                commits.incrementAndGet();
+                currentlyInTransaction.decrementAndGet();
+                return null;
+            }).when(c).commit();
+            return c;
+        });
+        JdbcBkeveTransactionCoordinator.LockedAllocator testOnly = (connection, op, table, date) -> {
+            int active = currentlyInTransaction.incrementAndGet();
+            maximumConcurrent.accumulateAndGet(active, Math::max);
+            // Widen the race window without relying on the ordering of threads.
+            Thread.sleep(2);
+            return "%06d".formatted(sequence.incrementAndGet());
+        };
+        var instanceA = new JdbcBkeveTransactionCoordinator(ds, testOnly);
+        var instanceB = new JdbcBkeveTransactionCoordinator(ds, testOnly);
+        var workers = Executors.newFixedThreadPool(8);
+        try {
+            List<Callable<String>> operations = new ArrayList<>();
+            for (int i = 0; i < 64; i++) {
+                var coordinator = i % 2 == 0 ? instanceA : instanceB;
+                operations.add(() -> coordinator.allocateAndWrite("001", "BKEVE", DATE,
+                        (connection, eve) -> eve));
+            }
+            List<Future<String>> results = workers.invokeAll(operations);
+            var numbers = new HashSet<String>();
+            for (var f : results) numbers.add(f.get());
+            assertEquals(64, numbers.size());
+            assertEquals(64, commits.get());
+            assertEquals(0, currentlyInTransaction.get());
+            assertEquals(1, maximumConcurrent.get());
+        } finally {
+            workers.shutdownNow();
+        }
     }
 }
