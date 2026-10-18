@@ -2,6 +2,7 @@ package com.regional.corebanking.payment.infrastructure.amplitude;
 
 import com.regional.corebanking.payment.application.exception.PaymentExecutionUnavailableException;
 import com.regional.corebanking.payment.application.port.out.PaymentExecutionBankingPort;
+import com.regional.corebanking.payment.application.port.out.PaymentEventNumberReservationPort;
 import com.regional.corebanking.payment.domain.*;
 
 import javax.sql.DataSource;
@@ -17,13 +18,21 @@ final class JdbcPaymentExecutionBankingAdapter implements PaymentExecutionBankin
     private final PaymentExecutionSqlDialect q;
     private final String fic;
     private final BkeveIndicativeBalanceUpdate indicativeBalances;
+    private final PaymentEventNumberReservationPort reservations;
 
     JdbcPaymentExecutionBankingAdapter(DataSource ds, PaymentExecutionSqlDialect q, String fic) {
-        this(ds, q, fic, BkeveIndicativeBalanceUpdate.unconfigured());
+        this(ds, q, fic, BkeveIndicativeBalanceUpdate.unconfigured(), null);
     }
 
     JdbcPaymentExecutionBankingAdapter(DataSource ds, PaymentExecutionSqlDialect q,
                                        String fic, BkeveIndicativeBalanceUpdate balances) {
+        this(ds, q, fic, balances, null);
+    }
+
+    JdbcPaymentExecutionBankingAdapter(DataSource ds, PaymentExecutionSqlDialect q,
+                                       String fic, BkeveIndicativeBalanceUpdate balances,
+                                       PaymentEventNumberReservationPort reservations) {
+        this.reservations = reservations;
         this.ds = Objects.requireNonNull(ds, "ds");
         this.q = Objects.requireNonNull(q, "q");
         if (fic == null || fic.isBlank()) throw new IllegalArgumentException("financialInstitutionCode is required");
@@ -82,13 +91,13 @@ final class JdbcPaymentExecutionBankingAdapter implements PaymentExecutionBankin
             // Controls have passed. Allocate, map and post on one writable
             // JDBC connection; do not reuse the read-only precheck connection.
             // The bank update policy is fail-closed until configured from approved evidence.
-            return executeFinancialTransaction(c, e, ctx, av, da);
+            return executeFinancialTransaction(k, c, e, ctx, av, da);
         } catch (SQLException z) {
             throw un("Unable to execute Amplitude pre-execution controls: " + z.getMessage());
         }
     }
 
-    private PaymentExecutionResult executeFinancialTransaction(PaymentExecutionCommand command,
+    private PaymentExecutionResult executeFinancialTransaction(String reservationKey, PaymentExecutionCommand command,
             PaymentProviderEvent event, PaymentExecutionBankingContext observed,
             PaymentExecutionCheck accountValid, PaymentExecutionCheck debitAllowed) {
         var mapper = new BkeveJdbcParameterMapper();
@@ -105,7 +114,11 @@ final class JdbcPaymentExecutionBankingAdapter implements PaymentExecutionBankin
                     if (!actual.accountingDate().equals(accountingDate)
                             || !actual.eventTable().equals(table))
                         throw new SQLException("Accounting period changed before financial posting");
-                    return actual.eventNumber();
+                    if (reservations == null)
+                        throw new SQLException("PostgreSQL EVE reservation is not configured");
+                    // Atomic durable PostgreSQL reservation BEFORE BKEVE INSERT.
+                    // A reserved EVE is not evidence of financial execution.
+                    return reservations.reserve(fic, reservationKey, operation, actual.eventNumber());
                 });
         return coordinator.allocateAndWrite(event.operationCode(), observed.eventTable(),
                 observed.accountingDate(), (connection, eve) -> {

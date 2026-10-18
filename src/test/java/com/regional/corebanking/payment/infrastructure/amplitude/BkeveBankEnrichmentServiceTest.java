@@ -74,6 +74,15 @@ class BkeveBankEnrichmentServiceTest {
                 "Payment", "00001", "00001", "VSixpay");
         var partial = service.enrich(context(), Map.of("CLI1", "BANK-CLIENT"));
         var mapper = new BkeveJdbcParameterMapper();
-        assertThrows(IllegalStateException.class, () -> mapper.map(event, partial));
+        var parameters = mapper.map(event, partial);
+
+        assertEquals(233, parameters.values().size());
+        assertEquals(
+                "BANK-CLIENT",
+                parameters.valueAt(BkeveJdbcColumnOrder.COLUMNS.indexOf("CLI1") + 1)
+        );
+        assertNull(
+                parameters.valueAt(BkeveJdbcColumnOrder.COLUMNS.indexOf("DEV1") + 1)
+        );
     }
 }

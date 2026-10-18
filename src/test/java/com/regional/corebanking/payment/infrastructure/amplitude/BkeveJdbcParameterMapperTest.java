@@ -65,14 +65,24 @@ class BkeveJdbcParameterMapperTest {
     }
 
     @Test
-    void failsClosedForMissingBankEvidenceAndRejectsOverrides() {
+    void missingBankValuesBecomeNullAndOverridesAreRejected() {
         var mapper = new BkeveJdbcParameterMapper();
         var bank = bankValues();
+
         bank.remove("EVE");
-        assertThrows(IllegalStateException.class, () -> mapper.map(event(), bank));
+
+        var parameters = mapper.map(event(), bank);
+
+        assertEquals(233, parameters.values().size());
+        assertNull(at(parameters, "EVE"));
+
         bank.put("EVE", "BANK-EVE");
         bank.put("MON1", BigDecimal.ONE);
-        assertThrows(IllegalArgumentException.class, () -> mapper.map(event(), bank));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> mapper.map(event(), bank)
+        );
     }
 
     private static Object at(BkeveJdbcParameterMapper.Parameters p, String column) {

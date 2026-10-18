@@ -100,12 +100,42 @@ class BkeveTransactionWriteAssemblyTest {
         verify(cx, never()).rollback();
     }
 
-    @Test void missingApprovedBankValuesCannotPrepareFinancialSql() throws Exception {
-        Connection cx = mock(Connection.class);
-        var assembled = assembly(table -> "not-used", (c, t, e) -> fail("balances must not run"));
-        assertThrows(IllegalStateException.class,
-                () -> assembled.execute(cx, "000421", event(), context("000421", "BKEVE"), Map.of()));
-        verify(cx, never()).prepareStatement(anyString());
+    @Test
+    void missingBankValuesAreBoundAsSqlNulls() throws Exception {
+        Connection connection = mock(Connection.class);
+        PreparedStatement statement = mock(PreparedStatement.class);
+
+        when(connection.getAutoCommit()).thenReturn(false);
+        when(connection.prepareStatement("bank-test-sql"))
+                .thenReturn(statement);
+        when(statement.executeUpdate()).thenReturn(1);
+
+        AtomicInteger balanceCalls = new AtomicInteger();
+
+        var assembled = assembly(
+                table -> "bank-test-sql",
+                (conn, table, eve) -> balanceCalls.incrementAndGet()
+        );
+
+        assertDoesNotThrow(() ->
+                assembled.execute(
+                        connection,
+                        "000421",
+                        event(),
+                        context("000421", "BKEVE"),
+                        Map.of()
+                )
+        );
+
+        verify(statement).setString(4, "000421");
+
+        verify(statement).setNull(
+                eq(BkeveJdbcColumnOrder.COLUMNS.indexOf("DEV1") + 1),
+                anyInt()
+        );
+
+        verify(statement, times(1)).executeUpdate();
+        assertEquals(1, balanceCalls.get());
     }
 
     @Test void staleNonreservedContextEveIsRefusedBeforeInsert() throws Exception {

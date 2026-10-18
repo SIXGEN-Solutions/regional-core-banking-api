@@ -11,6 +11,14 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
 public class PaymentExecutionPersistenceConfiguration {
+    @Bean
+    @ConditionalOnProperty(name = "regional.confirmation.persistence", havingValue = "jdbc", matchIfMissing = true)
+    com.regional.corebanking.payment.application.port.out.PaymentEventNumberReservationPort paymentEventNumberReservationPort(
+            @Qualifier("technicalJdbcTemplate") JdbcTemplate jdbc,
+            @Qualifier("technicalTransactionManager") PlatformTransactionManager manager) {
+        return new JdbcPaymentEventNumberReservationAdapter(jdbc, manager);
+    }
+
 
     @Bean
     @ConditionalOnProperty(
