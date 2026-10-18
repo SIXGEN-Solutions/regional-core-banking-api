@@ -108,12 +108,10 @@ public final class BkeveJdbcParameterMapper {
             values.put("CSP1", event.csp1());
         }
 
-        Set<String> missing = new HashSet<>(ALL_COLUMNS);
-        missing.removeAll(values.keySet());
-        if (!missing.isEmpty()) {
-            // No fallback to uncertain legacy default values.
-            throw new IllegalStateException("Unresolved BKEVE columns (bank evidence required): "
-                    + missing.stream().sorted().toList());
+        // Regional rule: all missing BKEVE fields are explicitly SQL NULL.
+        // Preserve values provided by the caller or resolved from the bank.
+        for (String column : BkeveJdbcColumnOrder.COLUMNS) {
+            values.putIfAbsent(column, null);
         }
         List<Object> ordered = new ArrayList<>(233);
         for (String column : BkeveJdbcColumnOrder.COLUMNS) {
