@@ -28,7 +28,7 @@
 - `payment(1).java` (transmis par l'utilisateur) : `LEGACY_IMPLEMENTATION_EVIDENCE / REFERENCE_ONLY` tant que son applicabilité n'est pas confirmée.
 - `BKEVE(1).txt` (transmis par l'utilisateur) : `LEGACY_IMPLEMENTATION_EVIDENCE / REFERENCE_ONLY` ; conserver divergences.
 - `contracts/openapi/regional-core-banking-api-v1.yaml` : `REGIONAL_CANONICAL`, état approuvé pour la version actuellement présente ; **aucun changement implicite**.
-- `documentation/architecture/R6_PAYMENT_EXECUTION_DECISION_MATRIX.md` : état/observations du programme à conserver, avec résolution formelle des conflits.
+- `documentation/evidence/r6/R6_PAYMENT_EXECUTION_DECISION_MATRIX.md` : état/observations du programme à conserver, avec résolution formelle des conflits.
 - SIXPAY : `SIXPAY_REFERENCE`, lecture seule ; identité Java jamais reprise comme modèle Regional.
 
 ## Décisions nécessaires avant R6.6.2

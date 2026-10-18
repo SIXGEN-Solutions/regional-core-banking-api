@@ -2,7 +2,7 @@
 
 ## Objectif et garde-fous
 
-Procédure opératoire **proposée**, non ordre d'activation. Ne l'utiliser pour des écritures réelles qu'après le GO signé décrit dans `documentation/architecture/R6_6_10_ACTIVATION_DECISION.md`.
+Procédure opératoire **proposée**, non ordre d'activation. Ne l'utiliser pour des écritures réelles qu'après le GO signé décrit dans `documentation/evidence/r6/R6_6_10_ACTIVATION_DECISION.md`.
 
 **Interdictions permanentes** : aucun rejeu automatique d'un paiement `UNKNOWN`, aucune déduction de succès à partir du seul PostgreSQL, aucun changement implicite de contrat OpenAPI, aucun secret/certificat dans Git, aucune action sur SIXPAY et aucun paiement réel dans une base non expressément autorisée.
 

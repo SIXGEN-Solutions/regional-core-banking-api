@@ -21,11 +21,11 @@
 
 ## Références historiques conservées
 
-- `documentation/architecture/R6_6_5_BKEVE_EVE_ALLOCATION.md` : `BkeveAtomicEventNumberPort`
-- `documentation/architecture/R6_6_5_BKEVE_EVE_ALLOCATION.md` : `BkeveEventNumberAllocationService`
-- `documentation/architecture/R6_6_5_BKEVE_EVE_ALLOCATION.md` : `BkeveEventNumberAllocationServiceTest`
-- `documentation/architecture/R6_6_5_BKEVE_EVE_ALLOCATION.md` : `UnconfiguredBkeveAtomicEventNumberPort`
-- `documentation/architecture/R6_6_5_TRANSACTION_SCOPED_EVE_DESIGN.md` : `BkeveTransactionScopedAllocationPort`
+- `documentation/archive/r6/R6_6_5_BKEVE_EVE_ALLOCATION.md` : `BkeveAtomicEventNumberPort`
+- `documentation/archive/r6/R6_6_5_BKEVE_EVE_ALLOCATION.md` : `BkeveEventNumberAllocationService`
+- `documentation/archive/r6/R6_6_5_BKEVE_EVE_ALLOCATION.md` : `BkeveEventNumberAllocationServiceTest`
+- `documentation/archive/r6/R6_6_5_BKEVE_EVE_ALLOCATION.md` : `UnconfiguredBkeveAtomicEventNumberPort`
+- `documentation/archive/r6/R6_6_5_TRANSACTION_SCOPED_EVE_DESIGN.md` : `BkeveTransactionScopedAllocationPort`
 - `documentation/maintenance/CLEANUP_LOT1_REPORT.md` : `BkeveAtomicEventNumberPort`
 - `documentation/maintenance/CLEANUP_LOT1_REPORT.md` : `BkeveEventNumberAllocationService`
 - `documentation/maintenance/CLEANUP_LOT1_REPORT.md` : `BkeveTransactionScopedAllocationPort`
