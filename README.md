@@ -352,23 +352,19 @@ The example passwords and HMAC material are local-development values only.
 Production database, HMAC, SMTP, OAuth2, mTLS and banking connectivity parameters
 remain external deployment configuration.
 
-## R6 — Payment Execution / Recovery
+## Payment Execution / Recovery — T0
 
-R6 wires the three approved Regional Payment Execution operations behind the generated
-HTTP boundary and adds a Regional domain/application model for execution and authoritative
-recovery. Financial execution is never blindly replayed: an `UNKNOWN` result is returned
-as HTTP 202 and must be resolved through the payment-reference or original-idempotency-key
-lookup before any retry.
+Le chemin applicatif T0 est décrit dans
+[`Payment Execution and Recovery`](documentation/architecture/PAYMENT_EXECUTION_AND_RECOVERY.md).
+Les décisions et preuves, avec leurs statuts d'approbation, sont distinguées dans
+[`Payment Execution — décisions et preuves`](documentation/architecture/PAYMENT_EXECUTION_DECISIONS_AND_EVIDENCE.md).
+La procédure de validation/activation bancaire contrôlée reste
+[`Controlled Activation`](documentation/runbooks/R6_6_10_CONTROLLED_ACTIVATION.md).
 
-The approved Regional V1 does not expose the historical SIXPAY context endpoints
-(event-number allocation, accounting date, night mode), so R6 does not invent them.
-
-Physical Amplitude/Informix posting remains fail-closed until La Régionale supplies and
-approves the exact execution/recovery mapping, transaction boundary, execution checks,
-bank-reference source and authoritative idempotency lookup. The current adapter therefore
-returns service unavailable rather than simulating a financial result.
-
-See `documentation/architecture/R6_PAYMENT_EXECUTION_RECOVERY_BASELINE.md`.
+La persistance technique PostgreSQL ne constitue pas la preuve d'une écriture bancaire.
+Les résultats `UNKNOWN` ne doivent jamais être rejoués aveuglément.
+Le schéma Oracle Docker est synthétique ; aucune activation financière réelle n'est
+autorisée par la seule présence du code ou des tests.
 
 ## Dedicated PostgreSQL integration-test datasource
 
