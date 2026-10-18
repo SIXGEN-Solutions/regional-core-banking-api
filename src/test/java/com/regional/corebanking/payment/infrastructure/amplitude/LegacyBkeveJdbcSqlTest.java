@@ -32,7 +32,7 @@ class LegacyBkeveJdbcSqlTest {
         when(c.prepareStatement(contains("sin = sin -"))).thenReturn(debit);
         when(credit.executeUpdate()).thenReturn(1);
         when(debit.executeUpdate()).thenReturn(1);
-        new LegacyBkeveIndicativeBalanceUpdate(leg("12345678902", "990"), leg("12345678901", "1000"), true)
+        new LegacyBkeveIndicativeBalanceUpdate(leg("12345678901", "1000"), leg("12345678902", "990"), true)
                 .update(c, "BKEVE", "000123");
         var ordered = inOrder(credit, debit);
         ordered.verify(credit).executeUpdate();

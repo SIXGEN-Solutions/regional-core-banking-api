@@ -32,6 +32,19 @@ final class PaymentExecutionFingerprint {
             add(digest, event.agsa());
             add(digest, event.age());
             add(digest, event.csp1());
+            // Append only supplied BKEVE properties; the existing fingerprint of
+            // a 13-property payment remains stable.
+            event.bkeveEvent().values().entrySet().stream()
+                    .sorted(java.util.Map.Entry.comparingByKey())
+                    .filter(entry -> !((entry.getKey().equals("AGSA") && java.util.Objects.equals(entry.getValue(), event.agsa()))
+                            || (entry.getKey().equals("AGE") && java.util.Objects.equals(entry.getValue(), event.age()))
+                            || (entry.getKey().equals("CSP1") && java.util.Objects.equals(entry.getValue(), event.csp1()))))
+                    .forEach(entry -> {
+                        add(digest, entry.getKey());
+                        Object value = entry.getValue();
+                        if (value instanceof BigDecimal decimal) add(digest, normalize(decimal));
+                        else add(digest, value == null ? null : value.toString());
+                    });
             add(digest, command.requestedAt() == null ? null : command.requestedAt().toInstant().toString());
             return HexFormat.of().formatHex(digest.digest());
         } catch (NoSuchAlgorithmException exception) {

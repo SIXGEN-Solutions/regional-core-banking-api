@@ -28,7 +28,7 @@ class BkeveJdbcPostingAdapterTest {
                 ? "approved-day-sql" : null, new BkeveJdbcParameterMapper());
         writer.insert(c, "BKEVE", parameters());
         verify(c).prepareStatement("approved-day-sql");
-        verify(stmt, times(233)).setObject(anyInt(), isNull());
+        verify(stmt, times(233)).setNull(anyInt(), anyInt());
         verify(stmt).executeUpdate();
         verify(stmt).close();
         verify(c, never()).commit();

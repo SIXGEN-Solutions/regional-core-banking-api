@@ -53,7 +53,7 @@ class BkeveJdbcParameterMapperTest {
         var statement = (PreparedStatement) Proxy.newProxyInstance(
                 getClass().getClassLoader(), new Class<?>[]{PreparedStatement.class},
                 (proxy, method, args) -> {
-                    if (method.getName().equals("setObject")) {
+                    if (method.getName().startsWith("set") && args != null && args.length >= 2) {
                         bound.put((Integer) args[0], args[1]);
                         calls.incrementAndGet();
                     }

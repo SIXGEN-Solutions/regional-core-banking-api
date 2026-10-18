@@ -75,7 +75,18 @@ class BkeveTransactionWriteAssemblyTest {
             assertSame(cx, conn);
             assertEquals("BKEVE", table);
             assertEquals("000421", eve);
-            verify(statement, times(233)).setObject(anyInt(), nullable(Object.class));
+            long bindings = mockingDetails(statement).getInvocations().stream()
+                    .filter(invocation -> invocation.getMethod().getName().matches(
+                            "setString|setNull|setBigDecimal|setDate|setInt|setLong|setDouble|setObject"))
+                    .count();
+
+            assertEquals(233, bindings, "Les 233 paramètres BKEVE doivent être liés");
+
+            verify(statement).setString(4, "000421");
+            verify(statement).setBigDecimal(16, new BigDecimal("1000"));
+            verify(statement).setBigDecimal(37, new BigDecimal("990"));
+            verify(statement).setDate(93, java.sql.Date.valueOf(DAY));
+            verify(statement).executeUpdate();
             verify(statement).executeUpdate();
             balanceCalls.incrementAndGet();
         });
