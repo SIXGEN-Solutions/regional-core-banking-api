@@ -2,6 +2,7 @@ package com.regional.corebanking.payment.infrastructure.persistence;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.regional.corebanking.payment.application.port.out.PaymentExecutionPersistencePort;
+import com.regional.corebanking.payment.application.port.out.PaymentBankEventTrackingPort;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -33,6 +34,13 @@ public class PaymentExecutionPersistenceConfiguration {
                 jdbc,
                 transactionManager,
                 objectMapper);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "regional.confirmation.persistence", havingValue = "jdbc", matchIfMissing = true)
+    PaymentBankEventTrackingPort jdbcPaymentBankEventTrackingPort(
+            @Qualifier("technicalJdbcTemplate") JdbcTemplate jdbc) {
+        return new JdbcPaymentBankEventTrackingAdapter(jdbc);
     }
 
     @Bean

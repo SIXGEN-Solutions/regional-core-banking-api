@@ -3,6 +3,7 @@ package com.regional.corebanking.payment.infrastructure.amplitude;
 import com.regional.corebanking.payment.application.exception.PaymentExecutionUnavailableException;
 import com.regional.corebanking.payment.application.port.out.PaymentExecutionBankingPort;
 import com.regional.corebanking.payment.application.port.out.PaymentEventNumberReservationPort;
+import com.regional.corebanking.payment.application.port.out.PaymentBankEventTrackingPort;
 import com.regional.corebanking.payment.domain.*;
 
 import javax.sql.DataSource;
@@ -19,20 +20,29 @@ final class JdbcPaymentExecutionBankingAdapter implements PaymentExecutionBankin
     private final String fic;
     private final BkeveIndicativeBalanceUpdate indicativeBalances;
     private final PaymentEventNumberReservationPort reservations;
+    private final PaymentBankEventTrackingPort tracking;
 
     JdbcPaymentExecutionBankingAdapter(DataSource ds, PaymentExecutionSqlDialect q, String fic) {
-        this(ds, q, fic, BkeveIndicativeBalanceUpdate.unconfigured(), null);
+        this(ds, q, fic, BkeveIndicativeBalanceUpdate.unconfigured(), null, null);
     }
 
     JdbcPaymentExecutionBankingAdapter(DataSource ds, PaymentExecutionSqlDialect q,
                                        String fic, BkeveIndicativeBalanceUpdate balances) {
-        this(ds, q, fic, balances, null);
+        this(ds, q, fic, balances, null, null);
     }
 
     JdbcPaymentExecutionBankingAdapter(DataSource ds, PaymentExecutionSqlDialect q,
                                        String fic, BkeveIndicativeBalanceUpdate balances,
                                        PaymentEventNumberReservationPort reservations) {
+        this(ds, q, fic, balances, reservations, null);
+    }
+
+    JdbcPaymentExecutionBankingAdapter(DataSource ds, PaymentExecutionSqlDialect q,
+                                       String fic, BkeveIndicativeBalanceUpdate balances,
+                                       PaymentEventNumberReservationPort reservations,
+                                       PaymentBankEventTrackingPort tracking) {
         this.reservations = reservations;
+        this.tracking = tracking;
         this.ds = Objects.requireNonNull(ds, "ds");
         this.q = Objects.requireNonNull(q, "q");
         if (fic == null || fic.isBlank()) throw new IllegalArgumentException("financialInstitutionCode is required");
@@ -102,7 +112,10 @@ final class JdbcPaymentExecutionBankingAdapter implements PaymentExecutionBankin
             PaymentExecutionCheck accountValid, PaymentExecutionCheck debitAllowed) {
         var mapper = new BkeveJdbcParameterMapper();
         var posting = new BkeveJdbcPostingAdapter(mapper);
-        var writer = new BkevePostingAndBalanceWrite(posting, indicativeBalances);
+        // Production uses the R6.7 rule taken from processPOST.
+        // Explicit non-default constructor injection can still override for tests.
+        var writer = new BkevePostingAndBalanceWrite(posting,
+                tracking != null ? new BkeveExecutionBalanceUpdate(event, observed) : indicativeBalances);
         var assembly = new BkeveTransactionWriteAssembly(
                 new BkeveBankEnrichmentService(), mapper, writer);
         var coordinator = new JdbcBkeveTransactionCoordinator(ds,
@@ -139,12 +152,42 @@ final class JdbcPaymentExecutionBankingAdapter implements PaymentExecutionBankin
 
     public Optional<PaymentExecutionResult> findByPaymentReference(String f, String p) {
         institution(f);
-        return Optional.empty();
+        return tracking == null ? Optional.empty() : tracking.findByPaymentReference(f, p)
+                .flatMap(this::verifiedBankEvent);
     }
 
     public Optional<PaymentExecutionResult> findByIdempotencyKey(String f, String k) {
         institution(f);
-        return Optional.empty();
+        return tracking == null ? Optional.empty() : tracking.findByIdempotencyKey(f, k)
+                .flatMap(this::verifiedBankEvent);
+    }
+
+    private Optional<PaymentExecutionResult> verifiedBankEvent(PaymentBankEventTrackingPort.TrackedEvent event) {
+        // A PostgreSQL reservation is NEVER proof of banking execution.
+        // The result is COMPLETED only after a real banking BKEVE/BKEVE_EOD lookup.
+        try (Connection connection = open()) {
+            long count = 0;
+            for (String table : List.of("BKEVE", "BKEVE_EOD")) {
+                try (PreparedStatement stmt = connection.prepareStatement(q.countEventNumber(table))) {
+                    stmt.setString(1, event.eventNumber());
+                    stmt.setString(2, event.operationCode());
+                    try (ResultSet rs = stmt.executeQuery()) {
+                        if (!rs.next()) throw un("Bank event verification returned no count");
+                        count += rs.getLong("nbr");
+                    }
+                }
+            }
+            if (count == 0) return Optional.empty(); // Absence is not financial rejection.
+            if (count != 1) throw un("Ambiguous banking event; manual reconciliation required");
+            return Optional.of(new PaymentExecutionResult(event.paymentReference(),
+                    PaymentExecutionOutcome.COMPLETED, List.of(),
+                    event.operationCode() + "/" + event.eventNumber(), null,
+                    OffsetDateTime.now(ZoneOffset.UTC)));
+        } catch (SQLException failure) {
+            var ex = un("Bank event recovery lookup failed; outcome remains UNKNOWN");
+            ex.initCause(failure);
+            throw ex;
+        }
     }
 
     private Connection open() throws SQLException {
