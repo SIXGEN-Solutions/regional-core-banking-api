@@ -25,7 +25,7 @@
 - `R6_PAYMENT_EXECUTION_DECISION_MATRIX.md` contient des questions `OPEN`
   établies à un stade antérieur. Ne pas les qualifier automatiquement de
   décisions encore ouvertes ou fermées sans pièce de validation ultérieure.
-- `documentation/archive/r6/R6_6_5_SINGLE_INSTANCE_TEMPORARY_GUARD.md` décrit un état préparatoire
+- Le verrou JVM par OPE reste local à une instance et ne prouve pas l'unicité EVE inter-producteurs; aucune activation Informix réelle sans preuve bancaire et décision GO
   avant branchement du postage ; il ne décrit pas à lui seul le code actuel.
 - Les constats de validation intermédiaires ne prouvent pas un GO sur une
   base Oracle/Informix réelle.

@@ -211,7 +211,7 @@ idempotency/recovery ports and lifecycle tests behind the six approved Regional 
 It does not implement BKSMS SQL or physical email transport; those require approved Regional
 infrastructure evidence. No OpenAPI generation is performed by this patch.
 
-See `documentation/architecture/R5_1_PAYMENT_CONFIRMATION_OTP_BASELINE.md`.
+See `documentation/architecture/README.md`.
 
 
 ### R5.1 closure increment
