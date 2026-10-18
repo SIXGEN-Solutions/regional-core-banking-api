@@ -31,6 +31,10 @@ final class BkeveJdbcPostingAdapter {
         this.mapper = Objects.requireNonNull(mapper, "mapper");
     }
 
+    BkeveJdbcPostingAdapter(BkeveJdbcParameterMapper mapper) {
+        this(BkeveInsertSql::insertFor, mapper);
+    }
+
     /**
      * Caller must supply the SAME transaction-scoped connection used for EVE
      * allocation; caller is responsible for commit and authoritative recovery.
