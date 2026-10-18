@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Test Oracle schema is synthetic, not authoritative Amplitude evidence.
  */
 @EnabledIfEnvironmentVariable(named = "RUN_R6610_ORACLE_IT", matches = "true")
-class R6610OraclePaymentIT {
+class OraclePaymentExecutionIT {
     private static final String FIC="REGIONAL", OPE="582";
     private JdbcTemplate pg, oracle;
     private JdbcPaymentExecutionPersistenceAdapter repository;

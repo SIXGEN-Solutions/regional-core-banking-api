@@ -14,7 +14,7 @@
 | Contexte comptable et EVE | Responsabilité du CBS / traitement Regional | `R6_PAYMENT_EXECUTION_DECISION_MATRIX.md` ; valider le comportement sur la cible réelle |
 | EVE par OPE | Décision de mono-instance et exclusivité OPE énoncée dans le document d'activation | `R6_6_10_ACTIVATION_DECISION.md` ; verrou JVM non distribué |
 | Idempotence et `UNKNOWN` | Sûreté financière du code et du contrat | Pas de rejeu aveugle ; rechercher une preuve bancaire |
-| Simulation Oracle Docker | Infrastructure de test synthétique | `R6610OraclePaymentIT.java` ; aucun GO bancaire réel |
+| Simulation Oracle Docker | Infrastructure de test synthétique | `OraclePaymentExecutionIT.java` ; aucun GO bancaire réel |
 | Activation réelle | **NO-GO** consigné au 18 octobre 2026 | `R6_6_10_ACTIVATION_DECISION.md` ; décisions G1 à G8 à vérifier sur révision/environnement cible |
 | SIXPAY | `SIXPAY_REFERENCE` / `REFERENCE_ONLY` | Vérification de compatibilité, pas modèle source Regional |
 

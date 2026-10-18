@@ -156,14 +156,14 @@ ainsi que la persistance technique PostgreSQL réelle dans une base **jetable**.
 
 Cette procédure est distincte du lancement de l'image publiée décrit plus haut :
 le test Oracle est exécuté par Maven sur les sources locales. Un `docker compose up`
-standard ou le démarrage de l'API seule **ne lance pas** `R6610OraclePaymentIT`.
+standard ou le démarrage de l'API seule **ne lance pas** `OraclePaymentExecutionIT`.
 
 ### A. Vérifier que le correctif d'intégration Oracle a été appliqué
 
 Les fichiers suivants doivent exister dans le workspace local :
 
 - `docker/customer-oracle/002_payment_schema.sql` (fixture TEST ONLY) ;
-- `src/test/java/com/regional/corebanking/payment/infrastructure/amplitude/R6610OraclePaymentIT.java` ;
+- `src/test/java/com/regional/corebanking/payment/infrastructure/amplitude/OraclePaymentExecutionIT.java` ;
 - `compose.customer-oracle.yml` doit monter `002_payment_schema.sql`, en plus de `001_customer_schema.sql`.
 
 Au SHA de référence `18fe5c7bd0ac949f139186fc9a93331b9401b75d`, ces
@@ -176,7 +176,7 @@ n'applique ni la fixture ni les modifications Java.
 git branch --show-current
 git rev-parse HEAD
 Test-Path .\docker\customer-oracle\002_payment_schema.sql
-Test-Path .\src\test\java\com\regional\corebanking\payment\infrastructure\amplitude\R6610OraclePaymentIT.java
+Test-Path .\src\test\java\com\regional\corebanking\payment\infrastructure\amplitude\OraclePaymentExecutionIT.java
 Select-String -Path .\compose.customer-oracle.yml -Pattern '002_payment_schema.sql'
 ```
 
@@ -237,7 +237,7 @@ technique runtime `regional_core_banking`, ou une instance Oracle bancaire réel
 Test d'intégration JDBC avec Oracle Free + PostgreSQL jetable :
 
 ```powershell
-.\mvnw.cmd '-Dtest=R6610OraclePaymentIT' test
+.\mvnw.cmd '-Dtest=OraclePaymentExecutionIT' test
 ```
 
 Le test doit démontrer, sur le véritable adapter bancaire Spring Java :

@@ -30,7 +30,7 @@ import static org.mockito.Mockito.*;
  * This test is never a test of Informix/Oracle physical SQL or bank authorization.
  * Run ONLY against a disposable database named regional_core_banking_test.
  */
-class R6610SimulatedPaymentPostgresIT {
+class SimulatedPaymentPostgresIT {
     private static final String FIC = "REGIONAL";
     private static final String OPE = "582";
     private static final LocalDate DAY = LocalDate.of(2026, 10, 18);
