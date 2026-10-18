@@ -129,7 +129,6 @@ final class PaymentExecutionBankingContextResolver {
             try (ResultSet r = s.executeQuery()) {
                 while (r.next()) {
                     java.sql.Date x = r.getDate("jourfer");
-                    ;
                     if (x != null) h.add(x.toLocalDate());
                 }
             }

@@ -355,11 +355,11 @@ remain external deployment configuration.
 ## Payment Execution / Recovery — T0
 
 Le chemin applicatif T0 est décrit dans
-[`Payment Execution and Recovery`](documentation\architecture\PAYMENT_EXECUTION_AND_RECOVERY.md).
+[`Payment Execution and Recovery`](documentation/architecture/PAYMENT_EXECUTION_AND_RECOVERY.md).
 Les décisions et preuves, avec leurs statuts d'approbation, sont distinguées dans
-[`Payment Execution — décisions et preuves`](documentation\architecture\PAYMENT_EXECUTION_DECISIONS_AND_EVIDENCE.md).
+[`Payment Execution — décisions et preuves`](documentation/architecture/PAYMENT_EXECUTION_DECISIONS_AND_EVIDENCE.md).
 La procédure de validation/activation bancaire contrôlée reste
-[`Controlled Activation`](documentation\runbooks\R6_6_10_CONTROLLED_ACTIVATION.md).
+[`Controlled Activation`](documentation/runbooks/R6_6_10_CONTROLLED_ACTIVATION.md).
 
 La persistance technique PostgreSQL ne constitue pas la preuve d'une écriture bancaire.
 Les résultats `UNKNOWN` ne doivent jamais être rejoués aveuglément.

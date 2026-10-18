@@ -7,25 +7,25 @@
 | Sujet | Statut et propriété | Référence / restriction |
 | --- | --- | --- |
 | Contrat de transport | `REGIONAL_CANONICAL` uniquement dans sa version explicitement approuvée | `contracts/openapi/regional-core-banking-api-v1.yaml` ; vérifier sa métadonnée |
-| T0 BKEVE / T1 BKMVTI | Décisions MVP consignées dans les sources Regional | `R6_6_2_MVP_CONTRACT_DECISIONS.md` ; aucun BKMVTI posté à T0 |
-| Montants débit/crédit indépendants | Addendum de contrat approuvé dans la source MVP | `R6_6_2_MVP_CONTRACT_DECISIONS.md` ; distinguer de ses sections historiques `DRAFT` |
-| Mono-agence / sans compte de liaison | Périmètre MVP indiqué par les décisions | `R6_6_2_MVP_CONTRACT_DECISIONS.md` |
-| Mapping 233 positions | `BANK_REFERENCE` / extraction legacy : preuve de correspondance, **pas** validation du schéma physique | `R6_6_1_BKEVE_MAPPING_233.csv`, `R6_6_1_BKEVE_ANALYSIS.md` |
+| T0 BKEVE / T1 BKMVTI | Décisions MVP consignées dans les sources Regional | `documentation/evidence/r6/R6_6_2_MVP_CONTRACT_DECISIONS.md` ; aucun BKMVTI posté à T0 |
+| Montants débit/crédit indépendants | Addendum de contrat approuvé dans la source MVP | `documentation/evidence/r6/R6_6_2_MVP_CONTRACT_DECISIONS.md` ; distinguer de ses sections historiques `DRAFT` |
+| Mono-agence / sans compte de liaison | Périmètre MVP indiqué par les décisions | `documentation/evidence/r6/R6_6_2_MVP_CONTRACT_DECISIONS.md` |
+| Mapping 233 positions | `BANK_REFERENCE` / extraction legacy : preuve de correspondance, **pas** validation du schéma physique | `documentation/architecture/R6_6_1_BKEVE_MAPPING_233.csv`, `documentation/evidence/r6/R6_6_1_BKEVE_ANALYSIS.md` |
 | Contexte comptable et EVE | Responsabilité du CBS / traitement Regional | `R6_PAYMENT_EXECUTION_DECISION_MATRIX.md` ; valider le comportement sur la cible réelle |
-| EVE par OPE | Décision de mono-instance et exclusivité OPE énoncée dans le document d'activation | `R6_6_10_ACTIVATION_DECISION.md` ; verrou JVM non distribué |
+| EVE par OPE | Décision de mono-instance et exclusivité OPE énoncée dans le document d'activation | `documentation/evidence/r6/R6_6_10_ACTIVATION_DECISION.md` ; verrou JVM non distribué |
 | Idempotence et `UNKNOWN` | Sûreté financière du code et du contrat | Pas de rejeu aveugle ; rechercher une preuve bancaire |
 | Simulation Oracle Docker | Infrastructure de test synthétique | `OraclePaymentExecutionIT.java` ; aucun GO bancaire réel |
-| Activation réelle | **NO-GO** consigné au 18 octobre 2026 | `R6_6_10_ACTIVATION_DECISION.md` ; décisions G1 à G8 à vérifier sur révision/environnement cible |
+| Activation réelle | **NO-GO** consigné au 18 octobre 2026 | `documentation/evidence/r6/R6_6_10_ACTIVATION_DECISION.md` ; décisions G1 à G8 à vérifier sur révision/environnement cible |
 | SIXPAY | `SIXPAY_REFERENCE` / `REFERENCE_ONLY` | Vérification de compatibilité, pas modèle source Regional |
 
 ## Contradictions et limites de temporalité
-- `R6_6_2_MVP_CONTRACT_DECISIONS.md` comporte un addendum d'approbation
+- `documentation/evidence/r6/R6_6_2_MVP_CONTRACT_DECISIONS.md` comporte un addendum d'approbation
   et conserve des sections `DRAFT / PENDING_APPROVAL`. Celles-ci sont
   **historiques** et ne doivent pas prévaloir sur le contrat approuvé.
 - `R6_PAYMENT_EXECUTION_DECISION_MATRIX.md` contient des questions `OPEN`
   établies à un stade antérieur. Ne pas les qualifier automatiquement de
   décisions encore ouvertes ou fermées sans pièce de validation ultérieure.
-- `R6_6_5_SINGLE_INSTANCE_TEMPORARY_GUARD.md` décrit un état préparatoire
+- `documentation/archive/r6/R6_6_5_SINGLE_INSTANCE_TEMPORARY_GUARD.md` décrit un état préparatoire
   avant branchement du postage ; il ne décrit pas à lui seul le code actuel.
 - Les constats de validation intermédiaires ne prouvent pas un GO sur une
   base Oracle/Informix réelle.

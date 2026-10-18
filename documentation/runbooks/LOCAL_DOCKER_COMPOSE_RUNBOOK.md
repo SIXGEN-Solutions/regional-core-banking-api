@@ -158,31 +158,19 @@ Cette procédure est distincte du lancement de l'image publiée décrit plus hau
 le test Oracle est exécuté par Maven sur les sources locales. Un `docker compose up`
 standard ou le démarrage de l'API seule **ne lance pas** `OraclePaymentExecutionIT`.
 
-### A. Vérifier que le correctif d'intégration Oracle a été appliqué
+### A. Vérifier les fixtures Oracle présentes
 
-Les fichiers suivants doivent exister dans le workspace local :
-
-- `docker/customer-oracle/002_payment_schema.sql` (fixture TEST ONLY) ;
-- `src/test/java/com/regional/corebanking/payment/infrastructure/amplitude/OraclePaymentExecutionIT.java` ;
-- `compose.customer-oracle.yml` doit monter `002_payment_schema.sql`, en plus de `001_customer_schema.sql`.
-
-Au SHA de référence `18fe5c7bd0ac949f139186fc9a93331b9401b75d`, ces
-modifications n'existent pas encore sur GitHub. Si elles ne sont pas présentes
-localement, appliquer d'abord le correctif local `apply_r6610_oracle_payment.py`
-fourni séparément ; **ne pas exécuter le test avant cette étape**. Ce runbook
-n'applique ni la fixture ni les modifications Java.
+Vérifier que `docker/customer-oracle/002_payment_schema.sql` et
+`src/test/java/com/regional/corebanking/payment/infrastructure/amplitude/OraclePaymentExecutionIT.java`
+existent et que `compose.customer-oracle.yml` monte la fixture Payment.
+Ne pas appliquer d'anciens scripts de correction R6 sur la révision actuelle.
 
 ```powershell
-git branch --show-current
 git rev-parse HEAD
 Test-Path .\docker\customer-oracle\002_payment_schema.sql
 Test-Path .\src\test\java\com\regional\corebanking\payment\infrastructure\amplitude\OraclePaymentExecutionIT.java
 Select-String -Path .\compose.customer-oracle.yml -Pattern '002_payment_schema.sql'
 ```
-
-Les deux commandes `Test-Path` doivent retourner `True` et `Select-String`
-doit trouver le montage. La vérification Git permet d'enregistrer la révision
-réellement testée ; elle ne remplace pas l'inspection des modifications locales.
 
 ### B. Démarrer les bases de test isolées (PowerShell)
 
