@@ -26,7 +26,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * R6.6.10: actual PostgreSQL technical persistence + mock Amplitude JDBC.
+ * Actual PostgreSQL technical persistence + mock Amplitude JDBC.
  * This test is never a test of Informix/Oracle physical SQL or bank authorization.
  * Run ONLY against a disposable database named regional_core_banking_test.
  */

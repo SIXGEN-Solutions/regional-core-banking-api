@@ -112,7 +112,7 @@ final class JdbcPaymentExecutionBankingAdapter implements PaymentExecutionBankin
             PaymentExecutionCheck accountValid, PaymentExecutionCheck debitAllowed) {
         var mapper = new BkeveJdbcParameterMapper();
         var posting = new BkeveJdbcPostingAdapter(mapper);
-        // Production uses the R6.7 rule taken from processPOST.
+        // Balance updates follow the validated bank operation/nature policy.
         // Explicit non-default constructor injection can still override for tests.
         var writer = new BkevePostingAndBalanceWrite(posting,
                 tracking != null ? new BkeveExecutionBalanceUpdate(event, observed) : indicativeBalances);

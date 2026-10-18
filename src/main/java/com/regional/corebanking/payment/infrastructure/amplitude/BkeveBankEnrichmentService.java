@@ -8,7 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * R6.6.4: non-posting enrichment from the already resolved R6.5 banking context.
+ * Bank event enrichment from the authoritative banking context.
  * It does NOT allocate EVE, query accounts, derive currencies or approve INSERT.
  * Remaining BKEVE columns must come from separate validated banking evidence.
  */
@@ -31,14 +31,14 @@ final class BkeveBankEnrichmentService {
         requireDate(context.accountingDate(), "accountingDate");
         requireDate(context.debitValueDate(), "debitValueDate");
         requireDate(context.creditValueDate(), "creditValueDate");
-        // The existing R6.5 context resolver supplies these values. Currency is
+        // The banking context resolver supplies these values. Currency is
         // deliberately not mapped to DEV/DEV1/DEV2 without validated code conversion.
         for (String column : validatedBankValues.keySet()) {
             if (!ALL_COLUMNS.contains(column)) {
                 throw new IllegalArgumentException("Unknown BKEVE column: " + column);
             }
             if (CONTEXT_COLUMNS.contains(column)) {
-                throw new IllegalArgumentException("R6.5 authoritative context cannot be overridden: " + column);
+                throw new IllegalArgumentException("Authoritative banking context cannot be overridden: " + column);
             }
             if (CLIENT_COLUMNS.contains(column)) {
                 throw new IllegalArgumentException("Caller-owned BKEVE column cannot be overridden: " + column);
@@ -54,13 +54,13 @@ final class BkeveBankEnrichmentService {
 
     private static void requireText(String value, String name) {
         if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Missing R6.5 banking context: " + name);
+            throw new IllegalArgumentException("Missing authoritative banking context: " + name);
         }
     }
 
     private static void requireDate(LocalDate value, String name) {
         if (value == null) {
-            throw new IllegalArgumentException("Missing R6.5 banking context: " + name);
+            throw new IllegalArgumentException("Missing authoritative banking context: " + name);
         }
     }
 }

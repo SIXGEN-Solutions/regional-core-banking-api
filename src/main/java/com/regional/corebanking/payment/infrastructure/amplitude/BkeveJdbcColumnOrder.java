@@ -3,7 +3,7 @@ package com.regional.corebanking.payment.infrastructure.amplitude;
 import java.util.List;
 
 /**
- * Positional order of 233 BKEVE columns, transcribed from R6.6.1 mapping evidence.
+ * Positional order of 233 BKEVE columns, transcribed from the bank reference mapping.
  * Reference evidence only until La Regionale validates the physical mapping.
  * This class must not be treated as authorization to execute INSERT.
  */

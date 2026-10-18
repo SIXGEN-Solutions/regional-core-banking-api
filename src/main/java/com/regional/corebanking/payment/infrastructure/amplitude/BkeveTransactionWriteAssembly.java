@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * R6.6: assembles existing bank context enrichment, 233-position mapping,
+ * Assembles banking context enrichment, 233-position mapping,
  * BKEVE INSERT, and indicative balance update in one caller-owned transaction.
  * This does NOT allocate EVE, authorize SQL, commit, retry or activate posting.
  * Must be invoked within JdbcBkeveTransactionCoordinator.FinancialWrite only.

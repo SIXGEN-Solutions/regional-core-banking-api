@@ -15,7 +15,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * R6.6.3: complete positional mapping, not an executable Amplitude posting adapter.
+ * Complete positional BKEVE mapping, not an executable Amplitude posting adapter.
  * Values not supported by the approved client contract must come from a separate
  * bank-authoritative resolver and MUST be explicitly present, including SQL NULLs.
  * Legacy defaults are intentionally NOT inferred or applied.
@@ -69,7 +69,7 @@ public final class BkeveJdbcParameterMapper {
             }
             values.put(entry.getKey(), entry.getValue());
         }
-        // Approved R6.6.2 semantic equivalences. No payment-domain amount is used.
+        // Approved banking contract semantic equivalences. No payment-domain amount is used.
         if (event.agsa() != null) {
             if (values.containsKey("AGSA") && !sameBankValue(values.get("AGSA"), event.agsa()))
                 throw new IllegalArgumentException("Conflicting BKEVE AGSA value");

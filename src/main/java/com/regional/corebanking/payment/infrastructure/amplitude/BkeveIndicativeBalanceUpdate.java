@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.util.Objects;
 
 /**
- * R6.6.7: bank-owned indicative balance update on the BKEVE transaction connection.
+ * Bank-owned indicative balance update on the BKEVE transaction connection.
  * No SQL, target table, banking operation rules or financial calculations are assumed.
  * Implement only after La Regionale approves the physical mutation and semantics.
  */

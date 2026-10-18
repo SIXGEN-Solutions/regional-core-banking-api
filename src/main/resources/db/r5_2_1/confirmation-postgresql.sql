@@ -1,4 +1,4 @@
--- R5.2.1 Regional-owned technical persistence. Not an Amplitude schema.
+-- Regional-owned technical persistence. Not an Amplitude schema.
 CREATE TABLE IF NOT EXISTS regional_confirmation_challenge (
   institution_code varchar(35) NOT NULL,
   challenge_reference varchar(128) NOT NULL,

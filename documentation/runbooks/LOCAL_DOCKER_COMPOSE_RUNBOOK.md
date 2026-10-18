@@ -146,7 +146,7 @@ Expected mapping:
 - Local Oracle and SMTP values are integration-test configuration only.
 - Local configuration does not establish production banking, security or Amplitude/Informix settings.
 
-## R6.6.10 — Paiement simulé Oracle Docker + PostgreSQL de test
+## Paiement simulé Oracle Docker et PostgreSQL de test
 
 **Périmètre : intégration locale uniquement.** Les commandes de cette section
 ne réalisent aucune opération sur Amplitude/Informix et ne constituent pas
@@ -163,7 +163,7 @@ standard ou le démarrage de l'API seule **ne lance pas** `OraclePaymentExecutio
 Vérifier que `docker/customer-oracle/002_payment_schema.sql` et
 `src/test/java/com/regional/corebanking/payment/infrastructure/amplitude/OraclePaymentExecutionIT.java`
 existent et que `compose.customer-oracle.yml` monte la fixture Payment.
-Ne pas appliquer d'anciens scripts de correction R6 sur la révision actuelle.
+Ne pas appliquer de correctifs historiques sur une révision déjà intégrée.
 
 ```powershell
 git rev-parse HEAD
@@ -238,7 +238,7 @@ Le test doit démontrer, sur le véritable adapter bancaire Spring Java :
 | Échec d'écriture de solde | Rollback Oracle (pas de ligne BKEVE committée), `UNKNOWN` technique, réservation EVE conservée dans PostgreSQL |
 
 Les résultats ci-dessus sont **attendus**, et non attestés tant que le test
-n'a pas terminé avec succès. Le jeu de tests R6.6.10 actuel traverse
+n'a pas terminé avec succès. Le jeu de tests d'intégration courant traverse
 `JdbcPaymentExecutionBankingAdapter.execute()` mais ne constitue pas encore
 un test HTTP MockMvc traversant l'endpoint Payment Execution.
 
@@ -288,10 +288,10 @@ Le volume Oracle persiste après `down` (sans `-v`). Aucun service de production
 n'est concerné par ces commandes, à condition de cibler uniquement ces fichiers
 Compose de test.
 
-### Critère de sortie R6.6.10
+### Critère de sortie des tests d'intégration
 
 **GO Spring Boot simulé** seulement si les tests ciblés réellement exécutés
 sont verts, les assertions PostgreSQL/Oracle satisfaites, et les anomalies
 résiduelles documentées. **Ce GO n'est pas un GO d'écriture Amplitude réelle.**
 Les contrôles sur un environnement bancaire autorisé restent couverts par
-`documentation/runbooks/R6_6_10_CONTROLLED_ACTIVATION.md`.
+`documentation/runbooks/PAYMENT_EXECUTION_CONTROLLED_ACTIVATION.md`.

@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** R6.6.9: JVM-only non-replay validation. NOT a PostgreSQL or Informix integration test. */
+/** JVM-only non-replay validation. NOT a PostgreSQL or Informix integration test. */
 class PaymentExecutionNonReplayTest {
     private static PaymentExecutionCommand command() {
         return new PaymentExecutionCommand("P-R669", "v1",

@@ -11,7 +11,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Read-only R6.6.8 recovery coordination. Never invokes financial execution.
+ * Read-only financial recovery coordination. Never invokes financial execution.
  * BankingPort lookups MUST be authoritative before they can resolve UNKNOWN.
  * A missing bank row does not prove that no financial posting occurred.
  */

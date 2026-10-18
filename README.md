@@ -235,7 +235,7 @@ configuration may enable SMS and EMAIL simultaneously. R5.2.0 records this known
 contract divergence without modifying the canonical OpenAPI; a separately approved
 contract evolution and compatibility review are required first.
 
-See `documentation/architecture/R5_2_PAYMENT_CONFIRMATION_BANK_INTEGRATION_DECISIONS.md`.
+See `documentation/architecture/PAYMENT_CONFIRMATION_BANK_INTEGRATION_DECISIONS.md`.
 
 ### R5.2.1 — Durable PostgreSQL persistence
 
@@ -359,7 +359,7 @@ Le chemin applicatif T0 est décrit dans
 Les décisions et preuves, avec leurs statuts d'approbation, sont distinguées dans
 [`Payment Execution — décisions et preuves`](documentation/architecture/PAYMENT_EXECUTION_DECISIONS_AND_EVIDENCE.md).
 La procédure de validation/activation bancaire contrôlée reste
-[`Controlled Activation`](documentation/runbooks/R6_6_10_CONTROLLED_ACTIVATION.md).
+[`Controlled Activation`](documentation/runbooks/PAYMENT_EXECUTION_CONTROLLED_ACTIVATION.md).
 
 La persistance technique PostgreSQL ne constitue pas la preuve d'une écriture bancaire.
 Les résultats `UNKNOWN` ne doivent jamais être rejoués aveuglément.
@@ -395,4 +395,4 @@ acceptance, rejection and timeout uncertainty. The two-channel aggregate
 preserves `UNKNOWN` if either channel is indeterminate; per-channel result
 representation remains an unresolved contract decision. No OpenAPI changes.
 
-See `documentation/architecture/R5_2_5_KANNEL_SMS_ADAPTER.md`.
+See `documentation/architecture/KANNEL_SMS_INTEGRATION.md`.

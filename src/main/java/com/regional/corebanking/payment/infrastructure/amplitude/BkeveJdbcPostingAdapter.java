@@ -6,10 +6,10 @@ import java.sql.SQLException;
 import java.util.Objects;
 
 /**
- * R6.6.6 preparatory, transaction-participating BKEVE JDBC writer.
+ * Transaction-participating BKEVE JDBC writer.
  * Never creates SQL from unapproved historical schema evidence.
  * Never opens its own connection, commits, rolls back or retries.
- * Unwired: production posting remains fail-closed.
+ * Financial activation remains subject to the authorized banking deployment decision.
  */
 final class BkeveJdbcPostingAdapter {
     @FunctionalInterface
