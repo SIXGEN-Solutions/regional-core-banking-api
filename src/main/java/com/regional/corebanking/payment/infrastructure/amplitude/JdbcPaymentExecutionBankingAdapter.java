@@ -16,12 +16,19 @@ final class JdbcPaymentExecutionBankingAdapter implements PaymentExecutionBankin
     private final DataSource ds;
     private final PaymentExecutionSqlDialect q;
     private final String fic;
+    private final BkeveIndicativeBalanceUpdate indicativeBalances;
 
     JdbcPaymentExecutionBankingAdapter(DataSource ds, PaymentExecutionSqlDialect q, String fic) {
-        this.ds = ds;
-        this.q = q;
+        this(ds, q, fic, BkeveIndicativeBalanceUpdate.unconfigured());
+    }
+
+    JdbcPaymentExecutionBankingAdapter(DataSource ds, PaymentExecutionSqlDialect q,
+                                       String fic, BkeveIndicativeBalanceUpdate balances) {
+        this.ds = Objects.requireNonNull(ds, "ds");
+        this.q = Objects.requireNonNull(q, "q");
         if (fic == null || fic.isBlank()) throw new IllegalArgumentException("financialInstitutionCode is required");
         this.fic = fic.strip();
+        this.indicativeBalances = Objects.requireNonNull(balances, "balances");
     }
 
     private static boolean row(PreparedStatement s) throws SQLException {
@@ -72,10 +79,49 @@ final class JdbcPaymentExecutionBankingAdapter implements PaymentExecutionBankin
             // Credit amount is independently supplied and retained in the command.
             if (s.compareTo(e.debitAmount()) < 0)
                 return reject(c.paymentReference(), av, da, fail(PaymentExecutionCheckType.AVAILABLE_FUNDS_SUFFICIENT, "INSUFFICIENT_FUNDS"), "INSUFFICIENT_FUNDS");
-            throw un("R6.5 authoritative BKEVE context calculated: eventNumber=" + ctx.eventNumber() + ", accountingDate=" + ctx.accountingDate() + ", nightMode=" + ctx.nightMode() + ", eventTable=" + ctx.eventTable() + ", debitValueDate=" + ctx.debitValueDate() + ", creditValueDate=" + ctx.creditValueDate() + ", currency=" + ctx.currency() + "; BKEVE financial execution is not implemented in this lot");
+            // Controls have passed. Allocate, map and post on one writable
+            // JDBC connection; do not reuse the read-only precheck connection.
+            // The bank update policy is fail-closed until configured from approved evidence.
+            return executeFinancialTransaction(c, e, ctx, av, da);
         } catch (SQLException z) {
             throw un("Unable to execute Amplitude pre-execution controls: " + z.getMessage());
         }
+    }
+
+    private PaymentExecutionResult executeFinancialTransaction(PaymentExecutionCommand command,
+            PaymentProviderEvent event, PaymentExecutionBankingContext observed,
+            PaymentExecutionCheck accountValid, PaymentExecutionCheck debitAllowed) {
+        var mapper = new BkeveJdbcParameterMapper();
+        var posting = new BkeveJdbcPostingAdapter(mapper);
+        var writer = new BkevePostingAndBalanceWrite(posting, indicativeBalances);
+        var assembly = new BkeveTransactionWriteAssembly(
+                new BkeveBankEnrichmentService(), mapper, writer);
+        var coordinator = new JdbcBkeveTransactionCoordinator(ds,
+                (connection, operation, table, accountingDate) -> {
+                    // This allocator executes while the OPE-specific JVM mutex
+                    // is held, on the same transaction connection as INSERT.
+                    var actual = new PaymentExecutionBankingContextResolver(q)
+                            .resolve(connection, operation, event.currency());
+                    if (!actual.accountingDate().equals(accountingDate)
+                            || !actual.eventTable().equals(table))
+                        throw new SQLException("Accounting period changed before financial posting");
+                    return actual.eventNumber();
+                });
+        return coordinator.allocateAndWrite(event.operationCode(), observed.eventTable(),
+                observed.accountingDate(), (connection, eve) -> {
+                    var bankContext = new PaymentExecutionBankingContext(eve,
+                            observed.accountingDate(), observed.nightMode(),
+                            observed.eventTable(), observed.debitValueDate(),
+                            observed.creditValueDate(), observed.currency());
+                    // Any unresolved BKEVE column fails before INSERT.
+                    assembly.execute(connection, eve, event, bankContext, Map.of());
+                    return new PaymentExecutionResult(command.paymentReference(),
+                            PaymentExecutionOutcome.COMPLETED,
+                            List.of(accountValid, debitAllowed,
+                                pass(PaymentExecutionCheckType.AVAILABLE_FUNDS_SUFFICIENT)),
+                            event.operationCode() + "/" + eve, null,
+                            OffsetDateTime.now(ZoneOffset.UTC));
+                });
     }
 
     public Optional<PaymentExecutionResult> findByPaymentReference(String f, String p) {

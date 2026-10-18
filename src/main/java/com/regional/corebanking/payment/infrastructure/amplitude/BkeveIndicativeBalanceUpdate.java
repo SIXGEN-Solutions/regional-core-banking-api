@@ -18,9 +18,21 @@ interface BkeveIndicativeBalanceUpdate {
      */
     void update(Connection connection, String eventTable, String eventNumber) throws SQLException;
 
+    /** Check configuration before the first bank write. Implementations may
+     * check operation/nature eligibility here without mutating the connection. */
+    default void validateBeforeWrite(String eventTable, String eventNumber) {
+    }
+
     static BkeveIndicativeBalanceUpdate unconfigured() {
-        return (connection, eventTable, eventNumber) -> {
-            throw new IllegalStateException("Bank-approved indicative balance update is not configured");
+        return new BkeveIndicativeBalanceUpdate() {
+            @Override
+            public void validateBeforeWrite(String eventTable, String eventNumber) {
+                throw new IllegalStateException("Bank-approved indicative balance update is not configured");
+            }
+            @Override
+            public void update(Connection connection, String eventTable, String eventNumber) {
+                throw new IllegalStateException("Bank-approved indicative balance update is not configured");
+            }
         };
     }
 }

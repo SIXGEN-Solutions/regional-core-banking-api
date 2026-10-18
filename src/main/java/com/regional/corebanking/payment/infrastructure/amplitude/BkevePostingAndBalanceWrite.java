@@ -28,6 +28,7 @@ final class BkevePostingAndBalanceWrite {
         }
         // Refuse unknown balance rules BEFORE creating a bank side effect when possible:
         // actual configuration is an explicit dependency, not inferred from legacy SQL.
+        balances.validateBeforeWrite(eventTable, eventNumber);
         posting.insert(connection, eventTable, parameters);
         balances.update(connection, eventTable, eventNumber);
     }
