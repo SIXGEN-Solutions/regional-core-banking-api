@@ -7,6 +7,6 @@ L'état courant est décrit dans :
 
 Les décisions et preuves bancaires toujours applicables sont dans `documentation/evidence/r6/`.
 
-Le mapping positionnel `R6_6_1_BKEVE_MAPPING_233.csv` reste ici,
+Le mapping positionnel `BKEVE_COLUMN_MAPPING_233.csv` reste ici,
 car il est consommé par un test du code Java.
 Ne pas interpréter une pièce archivée comme une approbation de postage réel.

@@ -51,6 +51,6 @@ postage. Une absence immédiate d'événement ne garantit pas l'absence d'effet.
 
 ## Références
 - Contrat : `contracts/openapi/regional-core-banking-api-v1.yaml`
-- Évidence BKEVE : `documentation/architecture/R6_6_1_BKEVE_MAPPING_233.csv`
+- Évidence BKEVE : `documentation/architecture/BKEVE_COLUMN_MAPPING_233.csv`
 - Décision d'activation : `documentation/evidence/PAYMENT_EXECUTION_ACTIVATION_DECISION.md`
 - Procédure : `documentation/runbooks/PAYMENT_EXECUTION_CONTROLLED_ACTIVATION.md`

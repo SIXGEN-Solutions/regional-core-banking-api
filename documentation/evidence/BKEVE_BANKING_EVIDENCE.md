@@ -14,7 +14,7 @@
 
 ## Règles de lecture de la matrice
 
-Le tableau exhaustif est conservé dans `R6_6_1_BKEVE_MAPPING_233.csv` (UTF-8, import Excel possible).
+Le tableau exhaustif est conservé dans `BKEVE_COLUMN_MAPPING_233.csv` (UTF-8, import Excel possible).
 
 - `CLIENT_DEBIT` / `CLIENT_CREDIT` : appel explicite à `setDebiteur` / `setCrediteur` dans `buildEvenement`, avec les affectations réellement montrées dans `BkeveBase`.
 - `CLIENT_METIER` : affectation explicite dans `buildEvenement` (`LIB1`).

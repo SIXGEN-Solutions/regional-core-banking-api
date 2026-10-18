@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BkeveJdbcParameterMapperTest {
-    private static final String CSV = "documentation/architecture/R6_6_1_BKEVE_MAPPING_233.csv";
+    private static final String CSV = "documentation/architecture/BKEVE_COLUMN_MAPPING_233.csv";
     private static final java.util.Set<String> CLIENT = java.util.Set.of(
             "AGSA", "AGE", "OPE", "MHT1", "MON1", "MHT2", "MON2", "LIB1", "CSP1");
 

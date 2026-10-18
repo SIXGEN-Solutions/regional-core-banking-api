@@ -10,7 +10,7 @@
 | T0 BKEVE / T1 BKMVTI | Décisions MVP consignées dans les sources Regional | `documentation/evidence/PAYMENT_EXECUTION_CONTRACT_DECISIONS.md` ; aucun BKMVTI posté à T0 |
 | Montants débit/crédit indépendants | Addendum de contrat approuvé dans la source MVP | `documentation/evidence/PAYMENT_EXECUTION_CONTRACT_DECISIONS.md` ; distinguer de ses sections historiques `DRAFT` |
 | Mono-agence / sans compte de liaison | Périmètre MVP indiqué par les décisions | `documentation/evidence/PAYMENT_EXECUTION_CONTRACT_DECISIONS.md` |
-| Mapping 233 positions | `BANK_REFERENCE` / extraction legacy : preuve de correspondance, **pas** validation du schéma physique | `documentation/architecture/R6_6_1_BKEVE_MAPPING_233.csv`, `documentation/evidence/BKEVE_BANKING_EVIDENCE.md` |
+| Mapping 233 positions | `BANK_REFERENCE` / extraction legacy : preuve de correspondance, **pas** validation du schéma physique | `documentation/architecture/BKEVE_COLUMN_MAPPING_233.csv`, `documentation/evidence/BKEVE_BANKING_EVIDENCE.md` |
 | Contexte comptable et EVE | Responsabilité du CBS / traitement Regional | `PAYMENT_EXECUTION_DECISION_MATRIX.md` ; valider le comportement sur la cible réelle |
 | EVE par OPE | Décision de mono-instance et exclusivité OPE énoncée dans le document d'activation | `documentation/evidence/PAYMENT_EXECUTION_ACTIVATION_DECISION.md` ; verrou JVM non distribué |
 | Idempotence et `UNKNOWN` | Sûreté financière du code et du contrat | Pas de rejeu aveugle ; rechercher une preuve bancaire |

@@ -1,7 +1,7 @@
 # R6.6 — BKEVE 233-property transport
 
 Source: bank-supplied `bkeve_short.java` (`getQueryValues()`), with repository
-`R6_6_1_BKEVE_MAPPING_233.csv` as the checked 233-position matrix.
+`BKEVE_COLUMN_MAPPING_233.csv` as the checked 233-position matrix.
 
 This change extends `PaymentProviderEvent` in the approved Regional envelope with
 all 233 named BKEVE properties. The former 13 property names remain readable;
