@@ -270,11 +270,55 @@ public final class JdbcCustomerBankingAdapter implements CustomerBankingPort {
                 trim(rs.getString("ife")),
                 trim(rs.getString("cfe")),
                 rs.getDate("dou") == null ? null : rs.getDate("dou").toLocalDate(),
-                numberOrZero(rs, "sin"),
+                availableBalance(trim(rs.getString("age")), trim(rs.getString("ncp"))),
                 trim(rs.getString("typ")),
                 numberOrZero(rs, "sde"),
                 trim(rs.getString("suf"))
         );
+    }
+
+    /**
+     * Historical getSolde: SIN - NVL(MINDS,0) + NVL(MAUT,0).
+     * The supplied legacy routine binds age, ncp, and literal currency 001.
+     * Errors and missing/ambiguous results fail closed rather than exposing a fabricated zero.
+     */
+    private BigDecimal availableBalance(String age, String ncp) throws SQLException {
+        try (Connection connection = openConnection()) {
+            boolean night = isNightMode(connection);
+            String sql = night ? dialect.availableBalanceNight() : dialect.availableBalanceNormal();
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, age);
+                statement.setString(2, ncp);
+                statement.setString(3, "001");
+                try (ResultSet rs = statement.executeQuery()) {
+                    if (!rs.next()) {
+                        throw new SQLException("No authoritative available balance for account");
+                    }
+                    BigDecimal amount = rs.getBigDecimal(1);
+                    if (amount == null) {
+                        throw new SQLException("Null authoritative available balance");
+                    }
+                    if (rs.next()) {
+                        throw new SQLException("Ambiguous available balance: multiple rows");
+                    }
+                    return amount;
+                }
+            }
+        }
+    }
+
+    private boolean isNightMode(Connection connection) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(dialect.checkNightMode());
+             ResultSet rs = statement.executeQuery()) {
+            if (!rs.next()) {
+                return false; // Legacy default when the configuration row is absent.
+            }
+            boolean night = rs.getInt("mnt4") == 1;
+            if (rs.next()) {
+                throw new SQLException("Ambiguous BKNOM night-mode configuration");
+            }
+            return night;
+        }
     }
 
     private static BigDecimal numberOrZero(ResultSet rs, String column) throws SQLException {

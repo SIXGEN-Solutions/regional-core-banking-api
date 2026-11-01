@@ -46,6 +46,29 @@ abstract class AbstractAnsiCustomerSqlDialect implements CustomerSqlDialect {
     }
 
     @Override
+    public String checkNightMode() {
+        return "select mnt4 from bknom where trim(ctab)='098' and trim(cacc)='SITE-CENT'";
+    }
+
+    @Override
+    public String availableBalanceNormal() {
+        return "select a.sin-nvl(a.minds,0)+nvl(maut,0) as solde,cha from bkcom a "
+                + "left join bkautc b on a.age=b.age and a.dev=b.dev and a.ncp=b.ncp "
+                + "and eta in ('VA','VF','FO') and SYSDATE between b.debut and b.fin "
+                + "where a.cfe='N' and a.ife='N' and trim(a.age)= ? "
+                + "and trim(a.ncp)= ? and trim(a.dev)= ? ";
+    }
+
+    @Override
+    public String availableBalanceNight() {
+        return "select a.sin-nvl(a.minds,0)+nvl(maut,0) as solde,cha from bkcom a "
+                + "left join bkautc b on a.age=b.age and a.dev=b.dev and a.ncp=b.ncp "
+                + "and eta in ('VA','VF','FO') and SYSDATE between b.debut and b.fin "
+                + "where trim(a.cfe)='N' and trim(a.ife)='N' and trim(a.age)= ? "
+                + "and trim(a.ncp)= ? and trim(a.dev)= ? ";
+    }
+
+    @Override
     public String findPhonesByCustomerReference() {
         return "select num from bktelcli where cli = ?";
     }

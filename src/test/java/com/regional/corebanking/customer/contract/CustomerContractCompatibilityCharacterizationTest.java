@@ -37,6 +37,15 @@ class CustomerContractCompatibilityCharacterizationTest {
     }
 
     @Test
+    void verificationAccountUsesSameBankAccountAsAccountListing() throws Exception {
+        String regional = Files.readString(REGIONAL);
+        assertThat(regional).doesNotContain("    AccountSummary:");
+        assertThat(regional).doesNotContain("#/components/schemas/AccountSummary");
+        assertThat(regional).contains("#/components/schemas/BankAccount");
+        assertThat(regional).contains("sin: { type: number");
+    }
+
+    @Test
     void regionalVerificationRequestMakesOnlyHolderOptional() throws Exception {
         String regional = Files.readString(REGIONAL);
         assertThat(regional)

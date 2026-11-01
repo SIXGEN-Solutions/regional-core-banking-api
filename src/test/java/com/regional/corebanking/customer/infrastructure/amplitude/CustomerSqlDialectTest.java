@@ -34,6 +34,24 @@ class CustomerSqlDialectTest {
     }
 
     @Test
+    void availableBalanceUsesBankProvidedSqlForBothDialects() {
+        CustomerSqlDialect informix = new InformixCustomerSqlDialect();
+        CustomerSqlDialect oracle = new OracleCustomerSqlDialect();
+        assertThat(informix.checkNightMode()).contains("from bknom").contains("mnt4");
+        assertThat(informix.availableBalanceNormal())
+                .contains("a.sin-nvl(a.minds,0)+nvl(maut,0)")
+                .contains("left join bkautc")
+                .contains("eta in ('VA','VF','FO')")
+                .contains("a.cfe='N'")
+                .contains("a.ife='N'");
+        assertThat(informix.availableBalanceNight())
+                .contains("trim(a.cfe)='N'")
+                .contains("trim(a.ife)='N'");
+        assertThat(oracle.availableBalanceNormal()).isEqualTo(informix.availableBalanceNormal());
+        assertThat(oracle.availableBalanceNight()).isEqualTo(informix.availableBalanceNight());
+    }
+
+    @Test
     void onlyInformixAppliesDirtyReadSessionInstruction() throws Exception {
         Connection connection = mock(Connection.class);
         Statement statement = mock(Statement.class);

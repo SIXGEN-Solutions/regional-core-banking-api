@@ -87,7 +87,7 @@ public final class CustomerApiMapper {
         payload.put("identity",
                 result.identity() == null ? null : identityPayload(result.identity()));
         payload.put("account",
-                result.account() == null ? null : accountSummary(result.account()));
+                result.account() == null ? null : bankAccount(result.account()));
 
         return objectMapper.convertValue(payload, CustomerVerificationResult.class);
     }
@@ -139,15 +139,6 @@ public final class CustomerApiMapper {
 
     private static String defaultString(String value) {
         return value == null ? "" : value;
-    }
-
-    private Map<String, Object> accountSummary(BankAccount account) {
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("accountReference", account.accountReference());
-        payload.put("customerReference", account.customerReference());
-        payload.put("status", transportStatus(account.status()));
-        payload.put("currency", account.currency());
-        return payload;
     }
 
     private Map<String, Object> check(CustomerVerification.Check check) {

@@ -118,6 +118,34 @@ class CustomerApiMapperTest {
     }
 
     @Test
+    void verificationUsesFullBankAccountWithBalances() throws Exception {
+        var account = new BankAccount(
+                "00001-04942231051-47", "0494223", "REGIONAL", "************1-47",
+                "001", BankAccount.AccountType.UNKNOWN, BankAccount.AccountStatus.ACTIVE,
+                Set.of(), Instant.parse("2026-11-01T12:00:00Z"),
+                "04942231051", "00001", "001", "", "47", "0494223",
+                "YOUVOU NGUELEU JANE", "N", "N", LocalDate.of(2020, 1, 2),
+                new BigDecimal("42000.00"), "", new BigDecimal("10000.00"), "");
+        var verification = new com.regional.corebanking.customer.domain.CustomerVerification.Result(
+                java.util.UUID.fromString("22222222-2222-2222-2222-222222222222"),
+                Instant.parse("2026-11-01T12:00:00Z"),
+                com.regional.corebanking.customer.domain.CustomerVerification.Outcome.INDETERMINATE,
+                "0494223", account.accountReference(),
+                List.of(new com.regional.corebanking.customer.domain.CustomerVerification.Check(
+                        com.regional.corebanking.customer.domain.CustomerVerification.CheckType.ACCOUNT_EXISTS,
+                        com.regional.corebanking.customer.domain.CustomerVerification.CheckResult.PASS,
+                        null, Instant.parse("2026-11-01T12:00:00Z"))),
+                null, account);
+        var response = mapper.toVerificationResult(verification);
+        var json = objectMapper.readTree(objectMapper.writeValueAsString(response));
+        assertThat(json.at("/account/ncp").asText()).isEqualTo("04942231051");
+        assertThat(json.at("/account/age").asText()).isEqualTo("00001");
+        assertThat(json.at("/account/dou").asText()).isEqualTo("2020-01-02");
+        assertThat(json.at("/account/sin").decimalValue()).isEqualByComparingTo("42000.00");
+        assertThat(json.at("/account/sde").decimalValue()).isEqualByComparingTo("10000.00");
+    }
+
+    @Test
     void mapsCustomerSearchToRegionalTransport() throws Exception {
 
         var result = mapper.toSearchResult(

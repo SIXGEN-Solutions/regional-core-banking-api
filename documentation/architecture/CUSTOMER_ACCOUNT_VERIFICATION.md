@@ -143,10 +143,22 @@ closure testing. The unresolved KYC verification source is an explicit banking
 ## Account transport alignment (BKCOM evidence)
 
 - GET customer accounts uses the BankAccount transport projection with BKCOM field names.
-- CustomerVerificationResult.account retains the minimal AccountSummary projection; balances are not included there.
+- CustomerVerificationResult.account uses the same full BankAccount transport schema as AccountSearchResult.accounts; SIN and SDE are exposed (explicit Regional approval, 2026-11-01).
 - Bank-provided strings preserve leading zeros. Null optional strings serialize as empty strings; null numeric values as zero, consistent with the supplied legacy ResultSet getters. Opening date remains null if unavailable.
 - The source mapping follows the supplied Bkcom(ResultSet) constructor.
-- **Important:** the historical `getSolde` overrides `sin` with a computed available balance. This patch does not activate that computation, because the supplied normal/night read SQL and banking error semantics must be validated on the target database before exposing a computed balance as authoritative. `sin` currently reflects BKCOM.SIN.
+- `sin` is the calculated available balance from the supplied historical `getSolde` SQL: `BKCOM.SIN - NVL(BKCOM.MINDS,0) + NVL(BKAUTC.MAUT,0)`; `sde` retains the BKCOM value.
 - The active account filter (IFE/CFE/DEV), verification checks and internal status mapping remain unchanged.
-- Changing AccountSearchResult.accounts from AccountSummary to BankAccount is a breaking JSON response change requiring consumer migration.
+- Changing CustomerVerificationResult.account from AccountSummary to BankAccount is a breaking JSON response change requiring SIXPAY/consumer compatibility verification.
 - Balance exposure is financial data; existing authorization and logging must be reviewed before release.
+
+
+## Regional approved change — single BankAccount and calculated available balance (2026-11-01)
+
+- Human decision: use one Regional transport BankAccount for customer account listing and verification.
+- Verification responses include financial amounts `sin` (calculated available balance) and `sde` (BKCOM balance).
+- The historical balance query joins BKCOM to BKAUTC on AGE, DEV, NCP, filters ETA to VA/VF/FO and SYSDATE within DEBUT/FIN, and binds AGE, NCP, and the historical fixed currency `001`.
+- Night mode is determined by `BKNOM.MNT4` for `CTAB=098`, `CACC=SITE-CENT`; normal/night SQL differ in the TRIM of CFE/IFE.
+- Historical exception behavior returned zero for some SQL errors. The Regional implementation intentionally fails closed instead: missing/ambiguous balances and SQL errors raise a banking access error, never a fabricated zero. This is a financial-safety divergence requiring bank confirmation before production.
+- Multiple matching BKAUTC rows are rejected as ambiguous; bank evidence is still required to validate whether concurrent authorizations can occur and, if so, their correct aggregation rule.
+- Oracle mock adds only bank-evidenced BKAUTC/BKNOM columns and a normal-mode fixture. Real Informix integration, data access rights, and consumer authorization for balances remain deployment gates.
+- No change is made to verification outcomes, account restriction decisions, or payment execution semantics.

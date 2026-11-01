@@ -1,6 +1,8 @@
+
 package com.regional.corebanking.customer.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.regional.corebanking.customer.application.exception.CustomerNotFoundException;
 import com.regional.corebanking.customer.application.port.in.CustomerVerificationUseCase;
 import com.regional.corebanking.customer.domain.BankAccount;
@@ -13,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -32,8 +35,15 @@ class CustomerApiHttpContractTest {
 
     @BeforeEach
     void setUp() {
-        ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
-        var adapter = new CustomerApiAdapter(new StubUseCase(), new CustomerApiMapper(objectMapper));
+        ObjectMapper objectMapper = new ObjectMapper()
+                .findAndRegisterModules()
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        var adapter = new CustomerApiAdapter(
+                new StubUseCase(),
+                new CustomerApiMapper(objectMapper)
+        );
+
         mvc = MockMvcBuilders.standaloneSetup(adapter)
                 .setControllerAdvice(new CustomerApiExceptionHandler())
                 .build();
@@ -47,8 +57,10 @@ class CustomerApiHttpContractTest {
                         .queryParam("niu", "NIU-001"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.resultCount").value(1))
-                .andExpect(jsonPath("$.customers[0].customerReference").value("CUS-001"))
-                .andExpect(jsonPath("$.customers[0].niu").value("NIU-001"));
+                .andExpect(jsonPath("$.customers[0].customerReference")
+                        .value("CUS-001"))
+                .andExpect(jsonPath("$.customers[0].niu")
+                        .value("NIU-001"));
     }
 
     @Test
@@ -57,9 +69,12 @@ class CustomerApiHttpContractTest {
                         .header("X-Correlation-ID", CORRELATION_ID)
                         .header("X-Financial-Institution-Code", "REGIONAL"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.customerReference").value("CUS-001"))
-                .andExpect(jsonPath("$.niu").value("NIU-001"))
-                .andExpect(jsonPath("$.source").value("AMPLITUDE"));
+                .andExpect(jsonPath("$.customerReference")
+                        .value("CUS-001"))
+                .andExpect(jsonPath("$.niu")
+                        .value("NIU-001"))
+                .andExpect(jsonPath("$.source")
+                        .value("AMPLITUDE"));
     }
 
     @Test
@@ -69,7 +84,12 @@ class CustomerApiHttpContractTest {
                   "accountReference": "001-123456-7",
                   "expectedNiu": "NIU-001",
                   "expectedAccountHolder": "Jane Doe",
-                  "requiredKycFields": ["niu", "legalName", "phoneNumber", "email"],
+                  "requiredKycFields": [
+                    "niu",
+                    "legalName",
+                    "phoneNumber",
+                    "email"
+                  ],
                   "requestedAt": "2026-09-13T00:00:00Z"
                 }
                 """;
@@ -79,14 +99,49 @@ class CustomerApiHttpContractTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.outcome").value("INDETERMINATE"))
-                .andExpect(jsonPath("$.customerReference").value("CUS-001"))
-                .andExpect(jsonPath("$.accountReference").value("001-123456-7"))
-                .andExpect(jsonPath("$.source").value("AMPLITUDE"));
+                .andExpect(jsonPath("$.outcome")
+                        .value("INDETERMINATE"))
+                .andExpect(jsonPath("$.customerReference")
+                        .value("CUS-001"))
+                .andExpect(jsonPath("$.accountReference")
+                        .value("001-123456-7"))
+                .andExpect(jsonPath("$.source")
+                        .value("AMPLITUDE"))
+
+                // BankAccount unique : données bancaires complètes.
+                .andExpect(jsonPath("$.account").exists())
+                .andExpect(jsonPath("$.account.ncp")
+                        .value("123456"))
+                .andExpect(jsonPath("$.account.age")
+                        .value("001"))
+                .andExpect(jsonPath("$.account.dev")
+                        .value("001"))
+                .andExpect(jsonPath("$.account.clc")
+                        .value("7"))
+                .andExpect(jsonPath("$.account.cli")
+                        .value("CUS-001"))
+                .andExpect(jsonPath("$.account.inti")
+                        .value("Jane Doe"))
+                .andExpect(jsonPath("$.account.ife")
+                        .value("N"))
+                .andExpect(jsonPath("$.account.cfe")
+                        .value("N"))
+                .andExpect(jsonPath("$.account.status")
+                        .value("ACTIVE"))
+
+                // Soldes : valeurs fictives fournies par le stub.
+                .andExpect(jsonPath("$.account.sin").isNumber())
+                .andExpect(jsonPath("$.account.sin")
+                        .value(50000.00))
+                .andExpect(jsonPath("$.account.sde").isNumber())
+                .andExpect(jsonPath("$.account.sde")
+                        .value(45000.00));
     }
 
     @Test
-    void acceptsSixpayVerificationPayloadWithoutHolderAtHttpBoundary() throws Exception {
+    void acceptsSixpayVerificationPayloadWithoutHolderAtHttpBoundary()
+            throws Exception {
+
         String body = """
                 {
                   "accountReference": "00001-04942231051-47",
@@ -95,12 +150,21 @@ class CustomerApiHttpContractTest {
                   "requestedAt": "2026-11-01T14:35:29Z"
                 }
                 """;
+
         mvc.perform(post("/api/v1/customer-verifications")
                         .header("X-Correlation-ID", CORRELATION_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.outcome").value("INDETERMINATE"));
+                .andExpect(jsonPath("$.outcome")
+                        .value("INDETERMINATE"))
+                .andExpect(jsonPath("$.account").exists())
+                .andExpect(jsonPath("$.account.ncp")
+                        .value("123456"))
+                .andExpect(jsonPath("$.account.sin")
+                        .value(50000.00))
+                .andExpect(jsonPath("$.account.sde")
+                        .value(45000.00));
     }
 
     @Test
@@ -109,67 +173,146 @@ class CustomerApiHttpContractTest {
                         .header("X-Correlation-ID", CORRELATION_ID)
                         .header("X-Financial-Institution-Code", "REGIONAL"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.title").value("Customer not found"))
-                .andExpect(jsonPath("$.code").value("ERROR"))
-                .andExpect(jsonPath("$.correlationId").value(CORRELATION_ID));
+                .andExpect(jsonPath("$.status")
+                        .value(404))
+                .andExpect(jsonPath("$.title")
+                        .value("Customer not found"))
+                .andExpect(jsonPath("$.code")
+                        .value("ERROR"))
+                .andExpect(jsonPath("$.correlationId")
+                        .value(CORRELATION_ID));
     }
 
-    private static final class StubUseCase implements CustomerVerificationUseCase {
+    private static final class StubUseCase
+            implements CustomerVerificationUseCase {
+
         @Override
-        public List<CustomerSummary> searchCustomers(String financialInstitutionCode, String niu, String customerNumber) {
-            return List.of(new CustomerSummary("CUS-001", "CUS-001", "REGIONAL", "NIU-001", "Jane Doe"));
+        public List<CustomerSummary> searchCustomers(
+                String financialInstitutionCode,
+                String niu,
+                String customerNumber
+        ) {
+            return List.of(
+                    new CustomerSummary(
+                            "CUS-001",
+                            "CUS-001",
+                            "REGIONAL",
+                            "NIU-001",
+                            "Jane Doe"
+                    )
+            );
         }
 
         @Override
-        public CustomerIdentity getCustomer(String financialInstitutionCode, String customerReference) {
+        public CustomerIdentity getCustomer(
+                String financialInstitutionCode,
+                String customerReference
+        ) {
             if ("MISSING".equals(customerReference)) {
                 throw new CustomerNotFoundException(customerReference);
             }
+
             return identity();
         }
 
         @Override
-        public List<BankAccount> getCustomerAccounts(String financialInstitutionCode, String customerReference, String rib, String iban) {
+        public List<BankAccount> getCustomerAccounts(
+                String financialInstitutionCode,
+                String customerReference,
+                String rib,
+                String iban
+        ) {
             return List.of(account());
         }
 
         @Override
-        public CustomerVerification.Result verifyCustomer(CustomerVerification.Request request) {
+        public CustomerVerification.Result verifyCustomer(
+                CustomerVerification.Request request
+        ) {
             Instant now = Instant.parse("2026-09-13T00:00:00Z");
+
             return new CustomerVerification.Result(
-                    UUID.fromString("22222222-2222-2222-2222-222222222222"),
+                    UUID.fromString(
+                            "22222222-2222-2222-2222-222222222222"
+                    ),
                     now,
                     CustomerVerification.Outcome.INDETERMINATE,
                     "CUS-001",
                     "001-123456-7",
-                    List.of(new CustomerVerification.Check(
-                            CustomerVerification.CheckType.REQUIRED_KYC_VERIFIED,
-                            CustomerVerification.CheckResult.UNKNOWN,
-                            null,
-                            now)),
+                    List.of(
+                            new CustomerVerification.Check(
+                                    CustomerVerification.CheckType.REQUIRED_KYC_VERIFIED,
+                                    CustomerVerification.CheckResult.UNKNOWN,
+                                    null,
+                                    now
+                            )
+                    ),
                     identity(),
-                    account());
+                    account()
+            );
         }
 
         private static CustomerIdentity identity() {
             Instant now = Instant.parse("2026-09-13T00:00:00Z");
+
             return new CustomerIdentity(
-                    "CUS-001", "CUS-001", "REGIONAL", "NIU-001", "Jane Doe",
-                    "+237600000000", "jane@example.com", CustomerIdentity.KycStatus.UNKNOWN,
+                    "CUS-001",
+                    "CUS-001",
+                    "REGIONAL",
+                    "NIU-001",
+                    "Jane Doe",
+                    "+237600000000",
+                    "jane@example.com",
+                    CustomerIdentity.KycStatus.UNKNOWN,
                     List.of(
-                            new CustomerIdentity.KycField("niu", "NIU-001", true, null, null),
-                            new CustomerIdentity.KycField("legalName", "Jane Doe", true, null, null),
-                            new CustomerIdentity.KycField("phoneNumber", "+237600000000", true, null, null),
-                            new CustomerIdentity.KycField("email", "jane@example.com", true, null, null)),
-                    null, now);
+                            new CustomerIdentity.KycField(
+                                    "niu", "NIU-001", true, null, null
+                            ),
+                            new CustomerIdentity.KycField(
+                                    "legalName", "Jane Doe", true, null, null
+                            ),
+                            new CustomerIdentity.KycField(
+                                    "phoneNumber", "+237600000000",
+                                    true, null, null
+                            ),
+                            new CustomerIdentity.KycField(
+                                    "email", "jane@example.com",
+                                    true, null, null
+                            )
+                    ),
+                    null,
+                    now
+            );
         }
 
         private static BankAccount account() {
             return new BankAccount(
-                    "001-123456-7", "CUS-001", "REGIONAL", "**********56-7", "001",
-                    BankAccount.AccountType.UNKNOWN, BankAccount.AccountStatus.ACTIVE,
-                    Set.of(), Instant.parse("2026-09-13T00:00:00Z"));
+                    "001-123456-7",
+                    "CUS-001",
+                    "REGIONAL",
+                    "**********56-7",
+                    "001",
+                    BankAccount.AccountType.UNKNOWN,
+                    BankAccount.AccountStatus.ACTIVE,
+                    Set.of(),
+                    Instant.parse("2026-09-13T00:00:00Z"),
+
+                    // Champs Amplitude.
+                    "123456",        // ncp
+                    "001",           // age
+                    "001",           // dev
+                    "",              // cha
+                    "7",             // clc
+                    "CUS-001",       // cli
+                    "Jane Doe",      // inti
+                    "N",             // ife
+                    "N",             // cfe
+                    null,            // dou
+                    new BigDecimal("50000.00"), // sin
+                    "",              // typ
+                    new BigDecimal("45000.00"), // sde
+                    ""               // suf
+            );
         }
     }
 }

@@ -68,3 +68,11 @@ implementation.
 No additional Amplitude table, column, SQL statement, transaction rule or
 banking mapping is introduced beyond the implementation evidence supplied for
 this change.
+
+
+## Customer verification account schema evolution — approved 2026-11-01
+
+- Regional approval: AccountSummary is replaced by the canonical BankAccount transport model for CustomerVerificationResult.account.
+- Both account listing and verification now expose `sin` and `sde`. `sin` is the historically calculated available balance, not the raw BKCOM.SIN.
+- This is a breaking response shape and financial-data exposure change; consumer compatibility and authorization must be verified before release.
+- Financial safety: SQL failures or ambiguous balance results must not be reported as zero. This is a deliberate divergence from the supplied legacy error-handling behavior and remains subject to bank confirmation.

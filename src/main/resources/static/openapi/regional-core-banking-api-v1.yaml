@@ -741,19 +741,6 @@ components:
           items: { $ref: '#/components/schemas/BankAccount' }
         resultCount: { type: integer, minimum: 0, maximum: 100 }
 
-    AccountSummary:
-      type: object
-      additionalProperties: false
-      description: Compatibility projection for Customer Verification; no balance is exposed.
-      required: [accountReference, customerReference, status, currency]
-      properties:
-        accountReference: { type: string, minLength: 1, maxLength: 100 }
-        customerReference: { type: string, minLength: 1, maxLength: 100 }
-        status:
-          type: string
-          enum: [ACTIVE, INACTIVE, BLOCKED, CLOSED, UNKNOWN]
-        currency: { type: string, minLength: 3, maxLength: 3 }
-
     BankAccount:
       type: object
       additionalProperties: false
@@ -862,7 +849,7 @@ components:
             - type: 'null'
         account:
           oneOf:
-            - $ref: '#/components/schemas/AccountSummary'
+            - $ref: '#/components/schemas/BankAccount'
             - type: 'null'
 
     CustomerReference:
