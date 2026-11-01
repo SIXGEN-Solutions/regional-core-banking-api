@@ -44,6 +44,50 @@ class CustomerVerificationServiceTest {
                 .anyMatch(check -> check.result() == CustomerVerification.CheckResult.UNKNOWN);
     }
 
+    @Test
+    void acceptsMissingHolderWithoutInventingIdentityComparison() {
+        var result = new CustomerVerificationService(new StubPort()).verifyCustomer(
+                new CustomerVerification.Request("001-123456-7", "NIU-001", null,
+                        List.of("niu"), Instant.parse("2026-09-13T00:00:00Z")));
+        assertThat(result.outcome()).isEqualTo(CustomerVerification.Outcome.INDETERMINATE);
+        assertThat(result.checks()).noneMatch(c -> c.type() == CustomerVerification.CheckType.IDENTITY_MATCHES);
+        assertThat(result.checks()).anyMatch(c -> c.type() == CustomerVerification.CheckType.NIU_MATCHES
+                && c.result() == CustomerVerification.CheckResult.PASS);
+        assertThat(result.checks()).anyMatch(c -> c.type() == CustomerVerification.CheckType.REQUIRED_KYC_VERIFIED
+                && c.result() == CustomerVerification.CheckResult.UNKNOWN);
+    }
+
+    @Test
+    void rejectsIncorrectProvidedHolder() {
+        var result = new CustomerVerificationService(new StubPort()).verifyCustomer(
+                new CustomerVerification.Request("001-123456-7", "NIU-001", "Incorrect Name",
+                        List.of("niu"), Instant.parse("2026-09-13T00:00:00Z")));
+        assertThat(result.outcome()).isEqualTo(CustomerVerification.Outcome.REJECTED);
+        assertThat(result.checks()).anyMatch(c -> c.type() == CustomerVerification.CheckType.IDENTITY_MATCHES
+                && c.result() == CustomerVerification.CheckResult.FAIL);
+    }
+
+    @Test
+    void comparesCorrectProvidedHolderAndTreatsBlankAsAbsent() {
+        var service = new CustomerVerificationService(new StubPort());
+        var correct = service.verifyCustomer(new CustomerVerification.Request(
+                "001-123456-7", "NIU-001", "Jane Doe", List.of(), Instant.now()));
+        assertThat(correct.checks()).anyMatch(c -> c.type() == CustomerVerification.CheckType.IDENTITY_MATCHES
+                && c.result() == CustomerVerification.CheckResult.PASS);
+        var blank = service.verifyCustomer(new CustomerVerification.Request(
+                "001-123456-7", "NIU-001", "  ", List.of(), Instant.now()));
+        assertThat(blank.checks()).noneMatch(c -> c.type() == CustomerVerification.CheckType.IDENTITY_MATCHES);
+        assertThat(blank.outcome()).isEqualTo(CustomerVerification.Outcome.INDETERMINATE);
+    }
+
+    @Test
+    void rejectsMissingMandatoryNiuEvenWhenHolderIsAbsent() {
+        var service = new CustomerVerificationService(new StubPort());
+        assertThatThrownBy(() -> service.verifyCustomer(new CustomerVerification.Request(
+                "001-123456-7", null, null, List.of(), Instant.now())))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
     private static final class StubPort implements CustomerBankingPort {
 
         @Override

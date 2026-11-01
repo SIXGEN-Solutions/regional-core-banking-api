@@ -37,10 +37,11 @@ class CustomerContractCompatibilityCharacterizationTest {
     }
 
     @Test
-    void regionalVerificationRequestRemainsCanonicalAndUnchanged() throws Exception {
+    void regionalVerificationRequestMakesOnlyHolderOptional() throws Exception {
         String regional = Files.readString(REGIONAL);
         assertThat(regional)
-                .contains("required: [accountReference, expectedNiu, expectedAccountHolder, requestedAt]")
+                .contains("required: [accountReference, expectedNiu, requestedAt]")
+                .doesNotContain("required: [accountReference, expectedNiu, expectedAccountHolder, requestedAt]")
                 .contains("accountReference")
                 .contains("expectedNiu")
                 .contains("expectedAccountHolder")

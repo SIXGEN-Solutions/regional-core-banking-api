@@ -79,7 +79,7 @@ public final class CustomerVerificationService implements CustomerVerificationUs
 
         String accountReference = required(request.accountReference(), "accountReference");
         String expectedNiu = required(request.expectedNiu(), "expectedNiu");
-        String expectedHolder = required(request.expectedAccountHolder(), "expectedAccountHolder");
+        String expectedHolder = trimToNull(request.expectedAccountHolder());
         List<String> requiredKyc = request.requiredKycFields() == null
                 ? List.of()
                 : List.copyOf(request.requiredKycFields());
@@ -132,14 +132,18 @@ public final class CustomerVerificationService implements CustomerVerificationUs
                 now
         ));
 
-        checks.add(check(
-                CustomerVerification.CheckType.IDENTITY_MATCHES,
-                equalsNormalized(expectedHolder, identity.legalName())
-                        ? CustomerVerification.CheckResult.PASS
-                        : CustomerVerification.CheckResult.FAIL,
-                equalsNormalized(expectedHolder, identity.legalName()) ? null : "ERROR",
-                now
-        ));
+        // Optional holder comparison: absent name is not a failed identity comparison.
+        // Mandatory NIU, account ownership and bank restrictions remain enforced.
+        if (expectedHolder != null) {
+            checks.add(check(
+                    CustomerVerification.CheckType.IDENTITY_MATCHES,
+                    equalsNormalized(expectedHolder, identity.legalName())
+                            ? CustomerVerification.CheckResult.PASS
+                            : CustomerVerification.CheckResult.FAIL,
+                    equalsNormalized(expectedHolder, identity.legalName()) ? null : "ERROR",
+                    now
+            ));
+        }
 
         checks.add(check(
                 CustomerVerification.CheckType.ACCOUNT_BELONGS_TO_CUSTOMER,
@@ -239,6 +243,9 @@ public final class CustomerVerificationService implements CustomerVerificationUs
         boolean unknown = false;
 
         for (String code : requiredCodes) {
+            if (identity.kycFields() == null) {
+                return CustomerVerification.CheckResult.FAIL;
+            }
             CustomerIdentity.KycField field = identity.kycFields().stream()
                     .filter(value -> code.equals(value.code()))
                     .findFirst()

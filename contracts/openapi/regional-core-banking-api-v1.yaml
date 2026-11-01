@@ -756,7 +756,7 @@ components:
     CustomerVerificationRequest:
       type: object
       additionalProperties: false
-      required: [accountReference, expectedNiu, expectedAccountHolder, requestedAt]
+      required: [accountReference, expectedNiu, requestedAt]
       properties:
         accountReference: { type: string, minLength: 1, maxLength: 100 }
         expectedNiu: { type: string, minLength: 1, maxLength: 50 }

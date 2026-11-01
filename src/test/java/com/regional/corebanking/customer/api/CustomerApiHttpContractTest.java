@@ -86,6 +86,24 @@ class CustomerApiHttpContractTest {
     }
 
     @Test
+    void acceptsSixpayVerificationPayloadWithoutHolderAtHttpBoundary() throws Exception {
+        String body = """
+                {
+                  "accountReference": "00001-04942231051-47",
+                  "expectedNiu": "P02551760811Z",
+                  "requiredKycFields": ["niu"],
+                  "requestedAt": "2026-11-01T14:35:29Z"
+                }
+                """;
+        mvc.perform(post("/api/v1/customer-verifications")
+                        .header("X-Correlation-ID", CORRELATION_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.outcome").value("INDETERMINATE"));
+    }
+
+    @Test
     void mapsMissingCustomerTo404Problem() throws Exception {
         mvc.perform(get("/api/v1/customers/MISSING")
                         .header("X-Correlation-ID", CORRELATION_ID)
