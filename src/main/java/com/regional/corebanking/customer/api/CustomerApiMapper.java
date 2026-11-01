@@ -128,7 +128,7 @@ public final class CustomerApiMapper {
         payload.put("inti", defaultString(account.inti()));
         payload.put("ife", defaultString(account.ife()));
         payload.put("cfe", defaultString(account.cfe()));
-        payload.put("dou", account.dou() == null ? null : account.dou().toString());
+        payload.put("dou", account.dou());
         payload.put("sin", account.sin() == null ? java.math.BigDecimal.ZERO : account.sin());
         payload.put("typ", defaultString(account.typ()));
         payload.put("sde", account.sde() == null ? java.math.BigDecimal.ZERO : account.sde());
