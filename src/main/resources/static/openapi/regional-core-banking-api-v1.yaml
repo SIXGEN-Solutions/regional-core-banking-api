@@ -36,7 +36,7 @@ info:
       - LEGACY_CUSTOMER_DETAIL_FUNCTIONAL_EVIDENCE
 
 servers:
-  - url: https://regional-core-banking-api.example
+  - url: /
     description: Environment-specific placeholder. Runtime endpoint is external configuration.
 
 security:
