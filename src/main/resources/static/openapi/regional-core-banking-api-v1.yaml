@@ -738,12 +738,13 @@ components:
         accounts:
           type: array
           maxItems: 100
-          items: { $ref: '#/components/schemas/AccountSummary' }
+          items: { $ref: '#/components/schemas/BankAccount' }
         resultCount: { type: integer, minimum: 0, maximum: 100 }
 
     AccountSummary:
       type: object
       additionalProperties: false
+      description: Compatibility projection for Customer Verification; no balance is exposed.
       required: [accountReference, customerReference, status, currency]
       properties:
         accountReference: { type: string, minLength: 1, maxLength: 100 }
@@ -752,6 +753,30 @@ components:
           type: string
           enum: [ACTIVE, INACTIVE, BLOCKED, CLOSED, UNKNOWN]
         currency: { type: string, minLength: 3, maxLength: 3 }
+
+    BankAccount:
+      type: object
+      additionalProperties: false
+      description: Amplitude BKCOM account data; numeric balances are financial information.
+      required: [ncp, age, dev, cha, clc, cli, inti, ife, cfe, sin, typ, sde, suf, status]
+      properties:
+        ncp: { type: string }
+        age: { type: string }
+        dev: { type: string }
+        cha: { type: string }
+        clc: { type: string }
+        cli: { type: string }
+        inti: { type: string }
+        ife: { type: string }
+        cfe: { type: string }
+        dou: { type: [string, 'null'], format: date, description: Date d'ouverture du compte }
+        sin: { type: number, description: Solde disponible calculé selon la règle bancaire historique }
+        typ: { type: string }
+        sde: { type: number }
+        suf: { type: string }
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, BLOCKED, CLOSED, UNKNOWN]
 
     CustomerVerificationRequest:
       type: object

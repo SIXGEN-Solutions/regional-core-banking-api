@@ -34,13 +34,13 @@ abstract class AbstractAnsiCustomerSqlDialect implements CustomerSqlDialect {
 
     @Override
     public String findAccountsByCustomerReference() {
-        return "select bkcom.age, bkcom.ncp, bkcom.clc, bkcom.cli, bkcom.dev "
+        return "select bkcom.ncp, bkcom.age, bkcom.dev, bkcom.cha, bkcom.clc, bkcom.cli, bkcom.inti, bkcom.ife, bkcom.dou, bkcom.cfe, bkcom.sde, bkcom.sin, bkcom.typ, bkcom.suf "
                 + "from bkcom where bkcom.cli = ? and" + ACTIVE_ACCOUNT_FILTER;
     }
 
     @Override
     public String findAccountByReferenceParts() {
-        return "select bkcom.age, bkcom.ncp, bkcom.clc, bkcom.cli, bkcom.dev "
+        return "select bkcom.ncp, bkcom.age, bkcom.dev, bkcom.cha, bkcom.clc, bkcom.cli, bkcom.inti, bkcom.ife, bkcom.dou, bkcom.cfe, bkcom.sde, bkcom.sin, bkcom.typ, bkcom.suf "
                 + "from bkcom where bkcom.age = ? and bkcom.ncp = ? and bkcom.clc = ? and"
                 + ACTIVE_ACCOUNT_FILTER;
     }

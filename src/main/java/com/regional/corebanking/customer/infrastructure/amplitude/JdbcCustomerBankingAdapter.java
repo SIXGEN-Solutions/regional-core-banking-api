@@ -12,6 +12,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.math.BigDecimal;
+import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -257,8 +259,27 @@ public final class JdbcCustomerBankingAdapter implements CustomerBankingPort {
                 BankAccount.AccountType.UNKNOWN,
                 BankAccount.AccountStatus.ACTIVE,
                 Set.of(),
-                Instant.now()
+                Instant.now(),
+                trim(rs.getString("ncp")),
+                trim(rs.getString("age")),
+                trim(rs.getString("dev")),
+                trim(rs.getString("cha")),
+                trim(rs.getString("clc")),
+                trim(rs.getString("cli")),
+                trim(rs.getString("inti")),
+                trim(rs.getString("ife")),
+                trim(rs.getString("cfe")),
+                rs.getDate("dou") == null ? null : rs.getDate("dou").toLocalDate(),
+                numberOrZero(rs, "sin"),
+                trim(rs.getString("typ")),
+                numberOrZero(rs, "sde"),
+                trim(rs.getString("suf"))
         );
+    }
+
+    private static BigDecimal numberOrZero(ResultSet rs, String column) throws SQLException {
+        BigDecimal value = rs.getBigDecimal(column);
+        return value == null ? BigDecimal.ZERO : value;
     }
 
     private CustomerIdentity.KycField field(String code, String value) {

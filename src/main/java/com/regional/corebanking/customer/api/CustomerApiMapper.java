@@ -49,7 +49,7 @@ public final class CustomerApiMapper {
 
     public AccountSearchResult toAccountSearchResult(List<BankAccount> accounts) {
         List<Map<String, Object>> payload = accounts.stream()
-                .map(this::accountSummary)
+                .map(this::bankAccount)
                 .toList();
 
         return objectMapper.convertValue(
@@ -115,6 +115,30 @@ public final class CustomerApiMapper {
         payload.put("source", SOURCE);
         payload.put("retrievedAt", identity.retrievedAt());
         return payload;
+    }
+
+    private Map<String, Object> bankAccount(BankAccount account) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("ncp", defaultString(account.ncp()));
+        payload.put("age", defaultString(account.age()));
+        payload.put("dev", defaultString(account.dev()));
+        payload.put("cha", defaultString(account.cha()));
+        payload.put("clc", defaultString(account.clc()));
+        payload.put("cli", defaultString(account.cli()));
+        payload.put("inti", defaultString(account.inti()));
+        payload.put("ife", defaultString(account.ife()));
+        payload.put("cfe", defaultString(account.cfe()));
+        payload.put("dou", account.dou() == null ? null : account.dou().toString());
+        payload.put("sin", account.sin() == null ? java.math.BigDecimal.ZERO : account.sin());
+        payload.put("typ", defaultString(account.typ()));
+        payload.put("sde", account.sde() == null ? java.math.BigDecimal.ZERO : account.sde());
+        payload.put("suf", defaultString(account.suf()));
+        payload.put("status", transportStatus(account.status()));
+        return payload;
+    }
+
+    private static String defaultString(String value) {
+        return value == null ? "" : value;
     }
 
     private Map<String, Object> accountSummary(BankAccount account) {
