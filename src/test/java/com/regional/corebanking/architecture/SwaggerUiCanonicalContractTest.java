@@ -18,8 +18,13 @@ class SwaggerUiCanonicalContractTest {
 
     @Test
     void swaggerUiUsesAnExactCopyOfTheCanonicalRegionalContract() throws IOException {
-        assertThat(Files.readAllBytes(RUNTIME))
-                .isEqualTo(Files.readAllBytes(CANONICAL));
+        // The two tracked YAML files are byte-identical in Git. On Windows,
+        // Git/editor line-ending conversion may create CRLF/LF differences
+        // in a local working tree; these are not a contract divergence.
+        // Only normalize CRLF to LF; all other differences still fail.
+        assertThat(Files.readString(RUNTIME).replace("\r\n", "\n"))
+                .as("Swagger UI must serve the same canonical OpenAPI content")
+                .isEqualTo(Files.readString(CANONICAL).replace("\r\n", "\n"));
 
         String applicationYaml =
                 Files.readString(Path.of("src/main/resources/application.yml"));

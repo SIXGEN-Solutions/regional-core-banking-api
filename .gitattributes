@@ -1,0 +1,3 @@
+# Regional canonical and Swagger OpenAPI: consistent LF on checkout
+contracts/openapi/regional-core-banking-api-v1.yaml text eol=lf
+src/main/resources/static/openapi/regional-core-banking-api-v1.yaml text eol=lf
