@@ -77,6 +77,7 @@ public class CustomerApiAdapter implements CustomersApi {
             UUID xCorrelationID,
             CustomerVerificationRequest customerVerificationRequest
     ) {
+        System.out.println("customerVerificationRequest: " + customerVerificationRequest);
         return ResponseEntity.ok(mapper.toVerificationResult(
                 useCase.verifyCustomer(mapper.toDomain(customerVerificationRequest))
         ));
