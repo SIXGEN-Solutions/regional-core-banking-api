@@ -46,6 +46,15 @@ abstract class AbstractAnsiCustomerSqlDialect implements CustomerSqlDialect {
     }
 
     @Override
+    public String findAccountByAgencyAndNumber() {
+        return "select bkcom.ncp, bkcom.age, bkcom.dev, bkcom.cha, bkcom.clc, bkcom.cli, "
+                + "bkcom.inti, bkcom.ife, bkcom.dou, bkcom.cfe, bkcom.sde, bkcom.sin, "
+                + "bkcom.typ, bkcom.suf from bkcom where trim(bkcom.age) = ? "
+                + "and trim(bkcom.ncp) = ? and trim(bkcom.ife) = 'N' "
+                + "and trim(bkcom.cfe) = 'N'";
+    }
+
+    @Override
     public String checkNightMode() {
         return "select mnt4 from bknom where trim(ctab)='098' and trim(cacc)='SITE-CENT'";
     }

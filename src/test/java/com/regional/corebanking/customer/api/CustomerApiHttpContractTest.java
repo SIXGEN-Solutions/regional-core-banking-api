@@ -204,6 +204,19 @@ class CustomerApiHttpContractTest {
         }
 
         @Override
+        public BankAccount findAccountByAgencyAndNumber(
+                String financialInstitutionCode,
+                String branchId,
+                String accountNumber
+        ) {
+            if ("MISSING".equals(accountNumber)) {
+                return null;
+            }
+
+            return account();
+        }
+
+        @Override
         public CustomerIdentity getCustomer(
                 String financialInstitutionCode,
                 String customerReference

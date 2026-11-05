@@ -43,6 +43,12 @@ public final class UnconfiguredCustomerBankingAdapter implements CustomerBanking
     }
 
     @Override
+    public BankAccount findAccountByAgencyAndNumber(
+            String institutionCode, String branchId, String accountNumber) {
+        throw missingEvidence();
+    }
+
+    @Override
     public BankAccount findAccountByReference(String accountReference) {
         throw missingEvidence();
     }

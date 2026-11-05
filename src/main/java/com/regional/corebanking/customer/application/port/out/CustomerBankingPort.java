@@ -26,5 +26,7 @@ public interface CustomerBankingPort {
             String iban
     );
 
+    BankAccount findAccountByAgencyAndNumber(String institutionCode, String branchId, String accountNumber);
+
     BankAccount findAccountByReference(String accountReference);
 }

@@ -176,6 +176,33 @@ public final class JdbcCustomerBankingAdapter implements CustomerBankingPort {
         }
     }
 
+    @Override
+    public BankAccount findAccountByAgencyAndNumber(
+            String requestedInstitution, String branchId, String accountNumber) {
+        validateInstitution(requestedInstitution);
+        if (!notBlank(branchId) || !notBlank(accountNumber)) {
+            throw new IllegalArgumentException("branchid and accountnumber are required");
+        }
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     dialect.findAccountByAgencyAndNumber())) {
+            statement.setString(1, branchId.strip());
+            statement.setString(2, accountNumber.strip());
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                BankAccount result = mapAccount(rs); // reuses historical getSolde via availableBalance
+                if (rs.next()) {
+                    throw new SQLException("Ambiguous BKCOM agency/NCP: multiple matching rows");
+                }
+                return result;
+            }
+        } catch (SQLException exception) {
+            throw bankError("Unable to load account by agency and number", exception);
+        }
+    }
+
     private List<CustomerSummary> queryCustomers(String sql, List<String> parameters) {
         try (Connection connection = openConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {

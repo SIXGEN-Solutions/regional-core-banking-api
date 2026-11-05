@@ -128,6 +128,21 @@ class CustomerVerificationServiceTest {
         }
 
         @Override
+        public BankAccount findAccountByAgencyAndNumber(
+                String financialInstitutionCode,
+                String branchId,
+                String accountNumber
+        ) {
+            if (!"REGIONAL".equals(financialInstitutionCode)
+                    || !"001".equals(branchId)
+                    || !"123456".equals(accountNumber)) {
+                return null;
+            }
+
+            return findAccountByReference("001-123456-7");
+        }
+
+        @Override
         public List<BankAccount> getCustomerAccounts(
                 String financialInstitutionCode,
                 String customerReference,

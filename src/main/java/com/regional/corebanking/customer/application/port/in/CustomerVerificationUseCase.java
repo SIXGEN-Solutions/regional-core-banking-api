@@ -27,6 +27,8 @@ public interface CustomerVerificationUseCase {
             String iban
     );
 
+    BankAccount findAccountByAgencyAndNumber(String institutionCode, String branchId, String accountNumber);
+
     CustomerVerification.Result verifyCustomer(
             CustomerVerification.Request request
     );

@@ -45,6 +45,7 @@ security:
 
 tags:
   - name: Customers
+  - name: Accounts
   - name: Payment confirmation
   - name: Payment execution
   - name: Accounting
@@ -158,6 +159,44 @@ paths:
         '403': { $ref: '#/components/responses/ProblemResponse' }
         '404': { $ref: '#/components/responses/ProblemResponse' }
         '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /getaccountinfo/{branchid}/{accountnumber}:
+    get:
+      tags: [Accounts]
+      operationId: getAccountByBranchAndNumber
+      summary: Consulter un compte admissible BKCOM par agence et NCP
+      description: |
+        Consultation bancaire en lecture seule, fondée sur la méthode legacy
+        /getaccountinfo/{branchid}/{accountnumber}. Le résultat métier est explicite :
+        SUCCESS avec un unique BankAccount, ou COMPTE_INEXISTANT et data null.
+        Une absence de compte est un résultat métier normal (HTTP 200), jamais
+        une erreur d'accès bancaire. sin réutilise le calcul bancaire existant.
+        Cette opération a son propre statut de validation; elle n'altère pas
+        les décisions contractuelles des autres opérations.
+      x-regional-review-status: APPROVED
+      x-regional-approval-basis: EXPLICIT_HUMAN_DECISION_2026-11-04
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - name: branchid
+          in: path
+          required: true
+          schema: { type: string, minLength: 1 }
+        - name: accountnumber
+          in: path
+          required: true
+          schema: { type: string, minLength: 1 }
+      responses:
+        '200':
+          description: Consultation effectuée, que le compte existe ou non.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountLookupResult' }
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
         '500': { $ref: '#/components/responses/ProblemResponse' }
         '503': { $ref: '#/components/responses/ProblemResponse' }
 
@@ -765,6 +804,22 @@ components:
           type: string
           enum: [ACTIVE, INACTIVE, BLOCKED, CLOSED, UNKNOWN]
 
+    AccountLookupResult:
+      type: object
+      additionalProperties: false
+      description: Resultat metier de la consultation par agence et NCP.
+      required: [code, message, data]
+      properties:
+        code:
+          type: string
+          enum: [SUCCESS, COMPTE_INEXISTANT]
+        message:
+          type: string
+          description: Libelle informatif du resultat metier.
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/BankAccount'
+            - type: 'null'
     CustomerVerificationRequest:
       type: object
       additionalProperties: false

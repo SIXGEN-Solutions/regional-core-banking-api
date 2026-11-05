@@ -74,6 +74,15 @@ public final class CustomerVerificationService implements CustomerVerificationUs
     }
 
     @Override
+    public BankAccount findAccountByAgencyAndNumber(
+            String institutionCode, String branchId, String accountNumber) {
+        return bankingPort.findAccountByAgencyAndNumber(
+                required(institutionCode, "financialInstitutionCode"),
+                required(branchId, "branchid"),
+                required(accountNumber, "accountnumber"));
+    }
+
+    @Override
     public CustomerVerification.Result verifyCustomer(CustomerVerification.Request request) {
         Objects.requireNonNull(request, "request is required");
 

@@ -17,6 +17,8 @@ public interface CustomerSqlDialect {
 
     String findAccountByReferenceParts();
 
+    String findAccountByAgencyAndNumber();
+
     String checkNightMode();
 
     String availableBalanceNormal();

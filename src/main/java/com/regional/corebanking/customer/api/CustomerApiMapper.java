@@ -47,6 +47,16 @@ public final class CustomerApiMapper {
         );
     }
 
+    public com.regional.corebanking.generated.model.AccountLookupResult toAccountLookupResult(
+            BankAccount account) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("code", account == null ? "COMPTE_INEXISTANT" : "SUCCESS");
+        payload.put("message", account == null ? "COMPTE INEXISTANT" : "Compte trouvé");
+        payload.put("data", account == null ? null : bankAccount(account));
+        return objectMapper.convertValue(payload,
+                com.regional.corebanking.generated.model.AccountLookupResult.class);
+    }
+
     public AccountSearchResult toAccountSearchResult(List<BankAccount> accounts) {
         List<Map<String, Object>> payload = accounts.stream()
                 .map(this::bankAccount)
