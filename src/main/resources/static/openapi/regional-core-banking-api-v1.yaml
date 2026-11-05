@@ -179,7 +179,14 @@ paths:
       x-regional-approval-basis: EXPLICIT_HUMAN_DECISION_2026-11-04
       parameters:
         - $ref: '#/components/parameters/CorrelationId'
-        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - name: X-Financial-Institution-Code
+          in: header
+          required: false
+          description: |
+            Optional for this account lookup operation only. When absent, the
+            existing regional.banking.financial-institution-code deployment
+            configuration is used. Supplied values are still validated.
+          schema: { $ref: '#/components/schemas/FinancialInstitutionCode' }
         - name: branchid
           in: path
           required: true

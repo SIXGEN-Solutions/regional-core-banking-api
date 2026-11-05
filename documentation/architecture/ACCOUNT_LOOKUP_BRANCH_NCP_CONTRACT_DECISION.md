@@ -14,8 +14,12 @@ Le prefixe `documentation/architecture/R6_6_1_*` est absent du commit de base.
 
 `GET /api/v1/getaccountinfo/{branchid}/{accountnumber}`
 
-Headers requis suivant la convention Regional existante: `X-Correlation-ID`
-(UUID) et `X-Financial-Institution-Code` (chaine).
+Header requis: `X-Correlation-ID` (UUID).
+Header facultatif pour cette consultation uniquement: `X-Financial-Institution-Code`.
+En son absence, le code institutionnel existant configure par
+`regional.banking.financial-institution-code` est utilise. Lorsqu'il est
+fourni, la validation existante reste applicable; aucune valeur
+institutionnelle n'est inventee et les autres endpoints ne changent pas.
 
 **HTTP 200 dans les deux cas de consultation aboutie :**
 
