@@ -12,7 +12,7 @@ Le prefixe `documentation/architecture/R6_6_1_*` est absent du commit de base.
 
 ## Endpoint et semantique
 
-`GET /getaccountinfo/{branchid}/{accountnumber}`
+`GET /api/v1/getaccountinfo/{branchid}/{accountnumber}`
 
 Headers requis suivant la convention Regional existante: `X-Correlation-ID`
 (UUID) et `X-Financial-Institution-Code` (chaine).
@@ -62,3 +62,8 @@ aucun nouveau scope ni relation de confiance. Le consumer SIXPAY reste inchangé
   compatibilite automatique avec la reponse JSON du legacy.
 - Unicite de `(age,ncp)` dans BKCOM: confirmation bancaire encore requise.
 - Aucune modification distante ni execution de gates par le script.
+## Modification de route (4 novembre 2026)
+
+Sur demande explicite, le chemin REST Regional est `/api/v1/getaccountinfo/{branchid}/{accountnumber}`.
+L'ancien chemin `/getaccountinfo/{branchid}/{accountnumber}` n'est pas maintenu en alias.
+Le contrat OpenAPI canonique, sa copie Swagger UI et le mapping Spring sont synchronises. Les entetes, les modeles, les statuts HTTP et la semantique de consultation sont inchanges.

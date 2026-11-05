@@ -23,7 +23,7 @@ public final class AccountLookupApiAdapter {
         this.mapper = mapper;
     }
 
-    @GetMapping(value = "/getaccountinfo/{branchid}/{accountnumber}",
+    @GetMapping(value = "/api/v1/getaccountinfo/{branchid}/{accountnumber}",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccountLookupResult> getAccountByBranchAndNumber(
             @RequestHeader("X-Correlation-ID") UUID correlationId,
