@@ -32,6 +32,7 @@ public class PaymentExecutionService implements PaymentExecutionUseCase {
         validate(command);
 
         String fingerprint = PaymentExecutionFingerprint.sha256(command);
+        System.out.println("Posting FingerPrint: " + fingerprint);
         return persistencePort.executeIdempotent(
                 financialInstitutionCode,
                 idempotencyKey,

@@ -42,6 +42,7 @@ public class JdbcPaymentExecutionPersistenceAdapter implements PaymentExecutionP
             PaymentExecutionCommand command,
             Supplier<PaymentExecutionResult> execution) {
 
+        System.out.println("Insert payment in database");
         Boolean claimed = transactions.execute(status -> jdbc.update("""
                 INSERT INTO regional_payment_execution
                   (institution_code, payment_reference, idempotency_key,
@@ -54,7 +55,7 @@ public class JdbcPaymentExecutionPersistenceAdapter implements PaymentExecutionP
                 key,
                 fingerprint,
                 command.providerEvent().operationCode()) == 1);
-
+        System.out.println("Claimed: " + claimed);
         if (!Boolean.TRUE.equals(claimed)) {
             StoredExecution existing = findStoredByIdempotencyKey(institution, key)
                     .orElseThrow(() -> new IllegalStateException("Idempotency claim disappeared"));
@@ -62,6 +63,7 @@ public class JdbcPaymentExecutionPersistenceAdapter implements PaymentExecutionP
             if (existing.result() != null) {
                 return existing.result();
             }
+            System.out.println("Unresolved payment execution");
             throw unresolved();
         }
 

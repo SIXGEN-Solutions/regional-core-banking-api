@@ -4,7 +4,7 @@
 
 regional:
   technical-datasource:
-    url: ${REGIONAL_TECHNICAL_DB_URL:jdbc:postgresql://postgres:5432/regional_core_banking?currentSchema=core_banking}
+    url: ${REGIONAL_TECHNICAL_DB_URL:jdbc:postgresql://localhost:5432/regional_core_banking?currentSchema=core_banking}
     username: ${REGIONAL_TECHNICAL_DB_USERNAME:regional_core_banking_app}
     password: ${REGIONAL_TECHNICAL_DB_PASSWORD}
 

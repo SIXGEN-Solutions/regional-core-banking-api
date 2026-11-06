@@ -27,11 +27,13 @@ public class PaymentExecutionApiAdapter implements PaymentExecutionApi {
             String xFinancialInstitutionCode,
             String idempotencyKey,
             PaymentEventEnvelope request) {
+        System.out.println("Posting request: " + request);
         var result = useCase.execute(
                 xFinancialInstitutionCode,
                 idempotencyKey,
                 mapper.toDomain(request));
         var body = mapper.toApi(result);
+        System.out.println("Posting response: " + body);
         return result.outcome() == PaymentExecutionOutcome.UNKNOWN
                 ? ResponseEntity.accepted().body(body)
                 : ResponseEntity.ok(body);
