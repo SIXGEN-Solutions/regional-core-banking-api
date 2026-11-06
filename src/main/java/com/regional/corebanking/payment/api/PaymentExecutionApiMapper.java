@@ -30,6 +30,7 @@ public class PaymentExecutionApiMapper {
                 source.observedAt());
         target.setBankReference(source.bankReference());
         target.setReasonCode(source.reasonCode());
+        target.setDco(source.dco());
         return target;
     }
 

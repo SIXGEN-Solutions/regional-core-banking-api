@@ -1890,6 +1890,13 @@ components:
           maxLength: 128
           description: Present only after successful Core Banking execution.
         reasonCode: { type: [string, 'null'], maxLength: 64 }
+        dco:
+          type: [string, 'null']
+          format: date
+          description: |
+            Banking accounting date recorded for the successfully posted event.
+            Not authoritative for unresolved or rejected executions and may be null
+            in results persisted before this contract extension.
         observedAt: { type: string, format: date-time }
 
     AccountingEntriesBatchRequest:

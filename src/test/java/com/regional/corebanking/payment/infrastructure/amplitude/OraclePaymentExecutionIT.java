@@ -81,6 +81,13 @@ class OraclePaymentExecutionIT {
         var first=repository.executeIdempotent(FIC,"oracle-test-ok","a".repeat(64),cmd,
             ()->banking.execute(FIC,"oracle-test-ok",cmd));
         assertEquals(PaymentExecutionOutcome.COMPLETED,first.outcome());
+        var persistedDco = oracle.queryForObject(
+            "SELECT DCO FROM BKEVE WHERE OPE=? AND EVE=?",
+            java.sql.Date.class, OPE, first.bankReference().split("/")[1]);
+        assertNotNull(persistedDco);
+        assertEquals(persistedDco.toLocalDate(), first.dco());
+        assertEquals(first.dco(), repository.findByIdempotencyKey(FIC,"oracle-test-ok")
+            .orElseThrow().dco());
         assertEquals(1,oracle.queryForObject("SELECT COUNT(*) FROM BKEVE WHERE OPE=? AND EVE=?",
             Integer.class,OPE,first.bankReference().split("/")[1]));
         assertEquals(0,new BigDecimal("9900").compareTo(oracle.queryForObject(

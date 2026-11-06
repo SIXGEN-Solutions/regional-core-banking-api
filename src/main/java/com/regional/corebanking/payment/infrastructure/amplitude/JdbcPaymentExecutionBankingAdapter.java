@@ -148,7 +148,7 @@ final class JdbcPaymentExecutionBankingAdapter implements PaymentExecutionBankin
                             List.of(accountValid, debitAllowed,
                                 pass(PaymentExecutionCheckType.AVAILABLE_FUNDS_SUFFICIENT)),
                             event.operationCode() + "/" + eve, null,
-                            OffsetDateTime.now(ZoneOffset.UTC));
+                            OffsetDateTime.now(ZoneOffset.UTC), bankContext.accountingDate());
                 });
     }
 
