@@ -38,13 +38,11 @@ public final class AccountLookupApiAdapter {
             @PathVariable("accountnumber") String accountNumber) {
         // Missing header selects the existing bank deployment configuration.
         // A supplied (even blank or incorrect) header is never silently replaced.
-        System.out.println("*** Account Infos ***");
-        System.out.println("correlationId = " + correlationId + "\nbranchId = " + branchId + "\naccountnumber = " + accountNumber);
+        
         String effectiveInstitutionCode = institutionCode == null
                 ? configuredInstitutionCode : institutionCode;
         BankAccount account = useCase.findAccountByAgencyAndNumber(
                 effectiveInstitutionCode, branchId, accountNumber);
-        System.out.println("Account Response: " + account.toString());
         return ResponseEntity.ok(mapper.toAccountLookupResult(account));
     }
 }

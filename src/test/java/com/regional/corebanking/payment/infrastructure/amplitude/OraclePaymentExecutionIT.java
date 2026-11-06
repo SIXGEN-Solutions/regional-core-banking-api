@@ -96,12 +96,35 @@ class OraclePaymentExecutionIT {
             "SELECT SIN FROM BKCOM WHERE NCP='654321'",BigDecimal.class)));
         assertEquals(1L,pg.queryForObject("SELECT event_number FROM regional_payment_execution WHERE idempotency_key='oracle-test-ok'",Long.class));
         assertEquals("000001",pg.queryForObject("SELECT lasteve FROM api_eodprocess WHERE id=?",String.class,OPE));
-        assertEquals(first.bankReference(),banking.findByPaymentReference(FIC,cmd.paymentReference()).orElseThrow().bankReference());
-        assertEquals(first.bankReference(),banking.findByIdempotencyKey(FIC,"oracle-test-ok").orElseThrow().bankReference());
+        var recoveredByReference = banking.findByPaymentReference(FIC,cmd.paymentReference()).orElseThrow();
+        var recoveredByKey = banking.findByIdempotencyKey(FIC,"oracle-test-ok").orElseThrow();
+        assertEquals(first.bankReference(), recoveredByReference.bankReference());
+        assertEquals(first.dco(), recoveredByReference.dco());
+        assertEquals(first.bankReference(), recoveredByKey.bankReference());
+        assertEquals(first.dco(), recoveredByKey.dco());
         var replay=repository.executeIdempotent(FIC,"oracle-test-ok","a".repeat(64),cmd,
             ()-> {throw new AssertionError("Illegal replay");});
         assertEquals(first,replay);
         assertEquals(1,oracle.queryForObject("SELECT COUNT(*) FROM BKEVE WHERE OPE=?",Integer.class,OPE));
+    }
+
+    @Test void absentAccountingDateNeverReservesOrPostsToOracle() {
+        var original = oracle.queryForMap(
+                "SELECT MNT1, MNT2 FROM BKNOM WHERE CTAB='001' AND CACC='00099'");
+        oracle.update("UPDATE BKNOM SET MNT1 = NULL, MNT2 = NULL WHERE CTAB='001' AND CACC='00099'");
+        try {
+            var cmd = command("PAY-R6610-NO-DCO", new BigDecimal("100"));
+            assertThrows(RuntimeException.class, () -> repository.executeIdempotent(
+                    FIC, "oracle-test-no-dco", "d".repeat(64), cmd,
+                    () -> banking.execute(FIC, "oracle-test-no-dco", cmd)));
+            assertEquals(0, oracle.queryForObject(
+                    "SELECT COUNT(*) FROM BKEVE WHERE OPE=?", Integer.class, OPE));
+            assertEquals(0, pg.queryForObject(
+                    "SELECT COUNT(*) FROM api_eodprocess", Integer.class));
+        } finally {
+            oracle.update("UPDATE BKNOM SET MNT1=?, MNT2=? WHERE CTAB='001' AND CACC='00099'",
+                    original.get("MNT1"), original.get("MNT2"));
+        }
     }
 
     @Test void insufficientFundsRejectsBeforeReservation() {

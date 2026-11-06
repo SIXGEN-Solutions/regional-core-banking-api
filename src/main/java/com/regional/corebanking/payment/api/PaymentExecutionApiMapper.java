@@ -4,6 +4,7 @@ import com.regional.corebanking.generated.model.PaymentEventEnvelope;
 import com.regional.corebanking.generated.model.PaymentEventResult;
 import com.regional.corebanking.generated.model.PaymentExecutionCheck;
 import com.regional.corebanking.generated.model.PaymentProviderEvent;
+import com.regional.corebanking.payment.application.exception.PaymentExecutionUnavailableException;
 import com.regional.corebanking.payment.domain.PaymentExecutionCommand;
 import com.regional.corebanking.payment.domain.BkeveEvent;
 import org.springframework.beans.BeanWrapperImpl;
@@ -22,15 +23,26 @@ public class PaymentExecutionApiMapper {
                 source.getRequestedAt());
     }
 
-    public PaymentEventResult toApi(com.regional.corebanking.payment.domain.PaymentExecutionResult source) {
+    public PaymentEventResult toApi(
+            com.regional.corebanking.payment.domain.PaymentExecutionResult source) {
+
+        if (source.outcome() == com.regional.corebanking.payment.domain.PaymentExecutionOutcome.COMPLETED
+                && source.dco() == null) {
+            throw new PaymentExecutionUnavailableException(
+                    "Completed payment has no authoritative accounting date (DCO)");
+        }
+
         PaymentEventResult target = new PaymentEventResult(
                 source.paymentReference(),
                 PaymentEventResult.OutcomeEnum.fromValue(source.outcome().name()),
                 source.checks().stream().map(this::toApi).toList(),
-                source.observedAt());
+                source.dco(),
+                source.observedAt()
+        );
+
         target.setBankReference(source.bankReference());
         target.setReasonCode(source.reasonCode());
-        target.setDco(source.dco());
+
         return target;
     }
 

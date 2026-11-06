@@ -24,10 +24,19 @@ class PaymentExecutionDcoMapperTest {
     }
 
     @Test
-    void oldResultWithoutDcoRemainsRepresentable() {
+    void rejectedResponseKeepsExplicitNullableDco() {
+        var result = new PaymentExecutionResult("PAY-REJECT", PaymentExecutionOutcome.REJECTED,
+                List.<PaymentExecutionCheck>of(), null, "ACCOUNT_INVALID",
+                OffsetDateTime.parse("2026-11-06T02:36:13Z"));
+        assertNull(mapper.toApi(result).getDco());
+    }
+
+    @Test
+    void completedWithoutDcoIsNeverReturnedAsSuccess() {
         var oldResult = new PaymentExecutionResult("PAY-1", PaymentExecutionOutcome.COMPLETED,
                 List.<PaymentExecutionCheck>of(), "787/000002", null,
                 OffsetDateTime.parse("2026-11-06T02:36:13Z"));
-        assertNull(mapper.toApi(oldResult).getDco());
+        assertThrows(com.regional.corebanking.payment.application.exception.PaymentExecutionUnavailableException.class,
+                () -> mapper.toApi(oldResult));
     }
 }

@@ -60,6 +60,11 @@ public class JdbcPaymentExecutionPersistenceAdapter implements PaymentExecutionP
                     .orElseThrow(() -> new IllegalStateException("Idempotency claim disappeared"));
             validateFingerprint(existing.requestFingerprint(), fingerprint);
             if (existing.result() != null) {
+                if (existing.result().outcome() == com.regional.corebanking.payment.domain.PaymentExecutionOutcome.COMPLETED
+                        && existing.result().dco() == null) {
+                    throw new PaymentExecutionUnavailableException(
+                        "Stored completed payment has no DCO; use authoritative recovery, never replay");
+                }
                 return existing.result();
             }
             System.out.println("Unresolved payment execution");

@@ -1,0 +1,415 @@
+# REGIONAL CLASSIFICATION: SIXPAY_REFERENCE / REFERENCE_ONLY
+# sourceRepository: SIXGEN-Solutions/sixpay-connect
+# sourceRevision: main @ b6da7db33432cb81997cc293b21080dd46fdcc14
+# sourcePath: documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml
+# NOTE: any SIXPAY approval/code-generation metadata below applies only to SIXPAY.
+# It does NOT approve this material as a Regional canonical contract.
+
+openapi: 3.1.0
+
+info:
+  title: SIXPAY CONNECT - Amplitude Payment Event API
+  version: 1.0.0
+  summary: Protected synchronous T0 execution of a SIXPAY-built Core Banking Payment event.
+  description: |
+    Approved T0 target contract.
+
+    SIXPAY Payment freezes reduced immutable financial-event and financial-entry
+    snapshots, then its Amplitude anti-corruption layer maps those snapshots to
+    the provider event corresponding functionally to `bkeve` and `bkmvti[]`.
+
+    SIXPAY does not persist the complete historical Amplitude entity/table
+    schema. The exact provider field subset/code tables remain a mapping
+    implementation input and must be derived from approved bank evidence before
+    provider DTO generation.
+
+    Core Banking remains authoritative for execution-time banking controls and
+    atomic execution of the submitted event.
+
+  x-sixpay-contract:
+    registryId: "amplitude-payment-posting-api-v1"
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "2.3.T0"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    governanceDecision: "D00-CB-OWNERSHIP"
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "integration"
+    capability: "BANKING_PAYMENT_EVENT_EXECUTION"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "AMPLITUDE"
+    approvedContractDesign:
+      execute: "POST /api/v1/payment-events"
+      lookupByPaymentReference: "GET /api/v1/payment-events/{paymentReference}"
+      lookupByIdempotencyKey: "GET /api/v1/payment-events/idempotency/{idempotencyKey}"
+      allocateNextEventNumberByOperation: "GET /api/v1/transactions/process/lastnumeroeveope/{operationCode}"
+      accountingDate: "GET /api/v1/nomenclature/getdatecomptable"
+      nightMode: "GET /api/v1/kyc/process/modenuit"
+      applicationSecurity: ["OAUTH2_CLIENT_CREDENTIALS", "MUTUAL_TLS"]
+      executeScope: "amplitude.payment.execution"
+      readScope: "amplitude.payment.execution.read"
+    snapshotPolicy:
+      owner: "payment"
+      persistence: "REDUCED_IMMUTABLE_SIXPAY_SNAPSHOTS"
+      providerEntityPersistence: false
+      finalizedSnapshotMutable: false
+      t1Reuse: "ACCOUNTING_CONSUMES_FROZEN_ENTRY_FACTS_THROUGH_APPROVED_BOUNDARY"
+    providerMapping:
+      exactFieldSubsetStatus: "TO_BE_DERIVED_FROM_APPROVED_BANK_EVIDENCE"
+      accountReferenceFormat: "age-ncp-clc"
+      accountReferenceExample: "00001-12345678901-42"
+      fullHistoricalSchemaImportAllowed: false
+    limitations:
+      - "NO_STANDALONE_READ_ONLY_FUNDS_CONTROL_CALL"
+      - "NO_BLIND_FINANCIAL_REPLAY"
+      - "NO_COMPLETE_AMPLITUDE_BKEVE_BKMVTI_SCHEMA_PERSISTENCE"
+      - "NO_T1_BATCH_SUBMISSION_ENDPOINT_DEFINED_BY_THIS_CONTRACT"
+
+servers:
+  - url: https://amplitude-api.example
+    description: Environment-specific placeholder.
+
+security:
+  - oauth2ClientCredentials:
+      - amplitude.payment.execution.read
+    mutualTLS: []
+
+paths:
+  /api/v1/payment-events:
+    post:
+      tags: [Payment events]
+      operationId: registerPaymentEventToCoreBanking
+      summary: Register and execute the SIXPAY Payment event
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.execution
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentEventEnvelope'
+      responses:
+        '200':
+          description: Conclusive COMPLETED or REJECTED result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentEventResult'
+        '202':
+          description: Accepted but outcome not yet conclusive.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentEventResult'
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/payment-events/{paymentReference}:
+    get:
+      tags: [Payment event recovery]
+      operationId: getPaymentEventByPaymentReference
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.execution.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/PaymentReferencePath'
+      responses:
+        '200':
+          description: Authoritative T0 result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentEventResult'
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/payment-events/idempotency/{idempotencyKey}:
+    get:
+      tags: [Payment event recovery]
+      operationId: getPaymentEventByIdempotencyKey
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.execution.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKeyPath'
+      responses:
+        '200':
+          description: Authoritative T0 result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentEventResult'
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/transactions/process/lastnumeroeveope/{operationCode}:
+    get:
+      tags: [Payment event context]
+      operationId: allocateNextPaymentEventNumberByOperation
+      summary: Atomically allocate the next Core Banking event number for an operation code
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.execution.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/OperationCodePath'
+      responses:
+        '200':
+          description: Core Banking response carrying the atomically allocated next event number.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoreBankingStringDataResponse'
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/nomenclature/getdatecomptable:
+    get:
+      tags: [Payment event context]
+      operationId: getCoreBankingAccountingDate
+      summary: Read the current Core Banking accounting date
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.execution.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+      responses:
+        '200':
+          description: Historical Core Banking response carrying the accounting date.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoreBankingStringDataResponse'
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/kyc/process/modenuit:
+    get:
+      tags: [Payment event context]
+      operationId: getCoreBankingNightMode
+      summary: Read the Core Banking night-mode state using historical response semantics
+      description: |
+        Response body code "200" means night mode is active.
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.payment.execution.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+      responses:
+        '200':
+          description: Historical Core Banking night-mode response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoreBankingCodeResponse'
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+components:
+  securitySchemes:
+    oauth2ClientCredentials:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://identity.amplitude.example/oauth2/token
+          scopes:
+            amplitude.payment.execution: Execute a T0 Payment event
+            amplitude.payment.execution.read: Read authoritative T0 results
+    mutualTLS:
+      type: mutualTLS
+
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
+    FinancialInstitutionCode:
+      name: X-Financial-Institution-Code
+      in: header
+      required: true
+      schema: { type: string, minLength: 2, maxLength: 35 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 16, maxLength: 128 }
+    IdempotencyKeyPath:
+      name: idempotencyKey
+      in: path
+      required: true
+      schema: { type: string, minLength: 16, maxLength: 128 }
+    PaymentReferencePath:
+      name: paymentReference
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/PaymentReference'
+    OperationCodePath:
+      name: operationCode
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 3
+
+  schemas:
+    PaymentReference:
+      type: string
+      minLength: 1
+      maxLength: 100
+
+    CoreBankingStringDataResponse:
+      type: object
+      additionalProperties: true
+      required: [code, data]
+      properties:
+        code:
+          type: string
+        data:
+          type: string
+
+    CoreBankingCodeResponse:
+      type: object
+      additionalProperties: true
+      required: [code]
+      properties:
+        code:
+          type: string
+
+    PaymentEventEnvelope:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentReference
+        - snapshotVersion
+        - providerEvent
+        - providerEntries
+        - requestedAt
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        snapshotVersion:
+          type: string
+          minLength: 1
+          maxLength: 32
+        providerEvent:
+          type: object
+          description: |
+            Provider-specific reduced `bkeve`-equivalent payload. The exact
+            approved field subset is supplied by the Payment-owned Amplitude
+            mapping and must not be inferred from this placeholder schema.
+          additionalProperties: true
+        providerEntries:
+          type: array
+          minItems: 1
+          description: |
+            Provider-specific reduced `bkmvti`-equivalent lines built from the
+            immutable SIXPAY financial-entry snapshots. Exact fields/code tables
+            require approved bank mapping evidence.
+          items:
+            type: object
+            additionalProperties: true
+        requestedAt:
+          type: string
+          format: date-time
+
+    PaymentExecutionCheck:
+      type: object
+      additionalProperties: false
+      required: [type, result]
+      properties:
+        type:
+          type: string
+          enum:
+            - ACCOUNT_EXISTS
+            - ACCOUNT_ACTIVE
+            - DEBIT_ALLOWED
+            - CURRENCY_SUPPORTED
+            - AVAILABLE_FUNDS_SUFFICIENT
+            - PER_TRANSACTION_LIMIT_NOT_EXCEEDED
+            - DAILY_LIMIT_NOT_EXCEEDED
+            - OTHER_APPLICABLE_LIMITS_NOT_EXCEEDED
+        result:
+          type: string
+          enum: [PASS, FAIL, UNKNOWN]
+        reasonCode:
+          type: [string, 'null']
+
+    PaymentEventResult:
+      type: object
+      additionalProperties: false
+      required:
+        - paymentReference
+        - outcome
+        - checks
+        - observedAt
+      properties:
+        paymentReference:
+          $ref: '#/components/schemas/PaymentReference'
+        outcome:
+          type: string
+          enum: [COMPLETED, REJECTED, UNKNOWN]
+        checks:
+          type: array
+          minItems: 8
+          maxItems: 8
+          items:
+            $ref: '#/components/schemas/PaymentExecutionCheck'
+        bankReference:
+          type: [string, 'null']
+          maxLength: 128
+        reasonCode:
+          type: [string, 'null']
+          maxLength: 64
+        observedAt:
+          type: string
+          format: date-time
+
+    Problem:
+      type: object
+      additionalProperties: true
+      required: [type, title, status]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+
+  responses:
+    ProblemResponse:
+      description: Standardized technical or business error response.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'

@@ -1870,7 +1870,7 @@ components:
     PaymentEventResult:
       type: object
       additionalProperties: false
-      required: [paymentReference, outcome, checks, observedAt]
+      required: [paymentReference, outcome, checks, dco, observedAt]
       properties:
         paymentReference: { $ref: '#/components/schemas/PaymentReference' }
         outcome:
@@ -1895,8 +1895,9 @@ components:
           format: date
           description: |
             Banking accounting date recorded for the successfully posted event.
-            Not authoritative for unresolved or rejected executions and may be null
-            in results persisted before this contract extension.
+            Required in every response. Non-null for COMPLETED; null is permitted
+            only for REJECTED or UNKNOWN. Historic completed results missing
+            DCO must be resolved from authoritative bank evidence or fail closed.
         observedAt: { type: string, format: date-time }
 
     AccountingEntriesBatchRequest:

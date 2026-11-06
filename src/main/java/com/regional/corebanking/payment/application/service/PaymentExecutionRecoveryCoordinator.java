@@ -29,7 +29,7 @@ final class PaymentExecutionRecoveryCoordinator {
         require(institution, "financialInstitutionCode");
         require(reference, "paymentReference");
         Optional<PaymentExecutionResult> local = technical.findByPaymentReference(institution, reference);
-        if (local.isPresent() && local.get().outcome() != PaymentExecutionOutcome.UNKNOWN) {
+        if (local.isPresent() && terminalWithValidDco(local.get())) {
             validateReference(local.get(), reference);
             return local.get();
         }
@@ -38,6 +38,9 @@ final class PaymentExecutionRecoveryCoordinator {
             validateReference(bank.get(), reference);
             return validateBankOutcome(bank.get());
         }
+        if (local.isPresent() && local.get().outcome() == PaymentExecutionOutcome.COMPLETED)
+            throw new PaymentExecutionUnavailableException(
+                "Stored completed payment has no DCO; authoritative banking recovery required");
         return local.orElseThrow(() -> new PaymentExecutionNotFoundException(
                 "No authoritative payment execution result for paymentReference"));
     }
@@ -46,7 +49,7 @@ final class PaymentExecutionRecoveryCoordinator {
         require(institution, "financialInstitutionCode");
         require(key, "idempotencyKey");
         Optional<PaymentExecutionResult> local = technical.findByIdempotencyKey(institution, key);
-        if (local.isPresent() && local.get().outcome() != PaymentExecutionOutcome.UNKNOWN) {
+        if (local.isPresent() && terminalWithValidDco(local.get())) {
             return local.get();
         }
         Optional<PaymentExecutionResult> bank = banking.findByIdempotencyKey(institution, key);
@@ -57,14 +60,25 @@ final class PaymentExecutionRecoveryCoordinator {
             }
             return candidate;
         }
+        if (local.isPresent() && local.get().outcome() == PaymentExecutionOutcome.COMPLETED)
+            throw new PaymentExecutionUnavailableException(
+                "Stored completed payment has no DCO; authoritative banking recovery required");
         return local.orElseThrow(() -> new PaymentExecutionNotFoundException(
                 "No authoritative payment execution result for idempotencyKey"));
+    }
+
+    private static boolean terminalWithValidDco(PaymentExecutionResult result) {
+        return result.outcome() != PaymentExecutionOutcome.UNKNOWN
+                && (result.outcome() != PaymentExecutionOutcome.COMPLETED || result.dco() != null);
     }
 
     private static PaymentExecutionResult validateBankOutcome(PaymentExecutionResult result) {
         if (result.outcome() == null || result.outcome() == PaymentExecutionOutcome.UNKNOWN) {
             // An unresolved bank lookup cannot upgrade a technical UNKNOWN.
             throw new PaymentExecutionUnavailableException("Bank recovery outcome remains uncertain");
+        }
+        if (result.outcome() == PaymentExecutionOutcome.COMPLETED && result.dco() == null) {
+            throw new PaymentExecutionUnavailableException("Bank recovery completed event has no DCO");
         }
         if (result.outcome() == PaymentExecutionOutcome.COMPLETED &&
                 (result.bankReference() == null || result.bankReference().isBlank())) {

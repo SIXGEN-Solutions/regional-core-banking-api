@@ -7,6 +7,7 @@ import com.regional.corebanking.payment.domain.*;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -139,10 +140,18 @@ class PaymentExecutionServiceTest {
         List<PaymentExecutionCheck> checks = List.of(
                 check(PaymentExecutionCheckType.ACCOUNT_VALID),
                 check(PaymentExecutionCheckType.DEBIT_ALLOWED),
-                check(PaymentExecutionCheckType.AVAILABLE_FUNDS_SUFFICIENT));
+                check(PaymentExecutionCheckType.AVAILABLE_FUNDS_SUFFICIENT)
+        );
+
         return new PaymentExecutionResult(
-                "PAY-1", PaymentExecutionOutcome.COMPLETED, checks,
-                "BANK-1", null, OffsetDateTime.parse("2026-09-28T20:00:01-04:00"));
+                "PAY-1",
+                PaymentExecutionOutcome.COMPLETED,
+                checks,
+                "BANK-1",
+                null,
+                OffsetDateTime.parse("2026-09-28T20:00:01-04:00"),
+                LocalDate.of(2026, 9, 28)
+        );
     }
 
     private static PaymentExecutionCheck check(PaymentExecutionCheckType type) {

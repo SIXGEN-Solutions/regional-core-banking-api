@@ -169,22 +169,38 @@ final class JdbcPaymentExecutionBankingAdapter implements PaymentExecutionBankin
         // The result is COMPLETED only after a real banking BKEVE/BKEVE_EOD lookup.
         try (Connection connection = open()) {
             long count = 0;
+            String foundTable = null;
             for (String table : List.of("BKEVE", "BKEVE_EOD")) {
                 try (PreparedStatement stmt = connection.prepareStatement(q.countEventNumber(table))) {
                     stmt.setString(1, event.eventNumber());
                     stmt.setString(2, event.operationCode());
                     try (ResultSet rs = stmt.executeQuery()) {
                         if (!rs.next()) throw un("Bank event verification returned no count");
-                        count += rs.getLong("nbr");
+                        long inTable = rs.getLong("nbr");
+                        count += inTable;
+                        if (inTable == 1) foundTable = table;
                     }
                 }
             }
             if (count == 0) return Optional.empty(); // Absence is not financial rejection.
             if (count != 1) throw un("Ambiguous banking event; manual reconciliation required");
+            if (foundTable == null) throw un("Unique bank event table could not be identified");
+            LocalDate dco;
+            try (PreparedStatement statement = connection.prepareStatement(q.findEventAccountingDate(foundTable))) {
+                statement.setString(1, event.eventNumber());
+                statement.setString(2, event.operationCode());
+                try (ResultSet rs = statement.executeQuery()) {
+                    if (!rs.next()) throw un("Confirmed banking event disappeared during DCO lookup");
+                    java.sql.Date storedDco = rs.getDate("dco");
+                    if (storedDco == null) throw un("Confirmed banking event has null DCO");
+                    dco = storedDco.toLocalDate();
+                    if (rs.next()) throw un("Ambiguous banking event during DCO lookup");
+                }
+            }
             return Optional.of(new PaymentExecutionResult(event.paymentReference(),
                     PaymentExecutionOutcome.COMPLETED, List.of(),
                     event.operationCode() + "/" + event.eventNumber(), null,
-                    OffsetDateTime.now(ZoneOffset.UTC)));
+                    OffsetDateTime.now(ZoneOffset.UTC), dco));
         } catch (SQLException failure) {
             var ex = un("Bank event recovery lookup failed; outcome remains UNKNOWN");
             ex.initCause(failure);

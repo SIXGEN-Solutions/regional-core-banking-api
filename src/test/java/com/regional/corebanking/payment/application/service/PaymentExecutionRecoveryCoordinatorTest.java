@@ -18,7 +18,8 @@ import static org.mockito.Mockito.*;
 class PaymentExecutionRecoveryCoordinatorTest {
     private static PaymentExecutionResult result(String ref, PaymentExecutionOutcome state, String bankRef) {
         return new PaymentExecutionResult(ref, state, List.of(), bankRef, null,
-                OffsetDateTime.parse("2026-10-17T12:00:00Z"));
+                OffsetDateTime.parse("2026-10-17T12:00:00Z"),
+                state == PaymentExecutionOutcome.COMPLETED ? java.time.LocalDate.of(2026, 10, 17) : null);
     }
 
     @Test void localUnknownRequiresReadOnlyAuthoritativeLookupWithNoReposting() {
@@ -65,6 +66,32 @@ class PaymentExecutionRecoveryCoordinatorTest {
         var recovery = new PaymentExecutionRecoveryCoordinator(local, bank);
         assertThrows(PaymentExecutionUnavailableException.class,
                 () -> recovery.byIdempotencyKey("REGIONAL", "K1"));
+    }
+
+    @Test void historicalCompletedWithoutDcoRequiresBankRecoveryAndNeverReexecutes() {
+        var local = mock(PaymentExecutionPersistencePort.class);
+        var bank = mock(PaymentExecutionBankingPort.class);
+        var historic = new PaymentExecutionResult("P1", PaymentExecutionOutcome.COMPLETED,
+                List.of(), "BANK1", null, OffsetDateTime.parse("2026-10-17T12:00:00Z"));
+        when(local.findByIdempotencyKey("REGIONAL", "K1")).thenReturn(Optional.of(historic));
+        when(bank.findByIdempotencyKey("REGIONAL", "K1")).thenReturn(Optional.of(
+                result("P1", PaymentExecutionOutcome.COMPLETED, "BANK1")));
+        var recovered = new PaymentExecutionRecoveryCoordinator(local, bank)
+                .byIdempotencyKey("REGIONAL", "K1");
+        assertNotNull(recovered.dco());
+        verify(bank, never()).execute(anyString(), anyString(), any());
+    }
+
+    @Test void historicalCompletedWithoutBankEvidenceFailsClosed() {
+        var local = mock(PaymentExecutionPersistencePort.class);
+        var bank = mock(PaymentExecutionBankingPort.class);
+        var historic = new PaymentExecutionResult("P1", PaymentExecutionOutcome.COMPLETED,
+                List.of(), "BANK1", null, OffsetDateTime.parse("2026-10-17T12:00:00Z"));
+        when(local.findByPaymentReference("REGIONAL", "P1")).thenReturn(Optional.of(historic));
+        assertThrows(PaymentExecutionUnavailableException.class,
+                () -> new PaymentExecutionRecoveryCoordinator(local, bank)
+                        .byPaymentReference("REGIONAL", "P1"));
+        verify(bank, never()).execute(anyString(), anyString(), any());
     }
 
     @Test void missingResultIsNotFoundWithoutExecution() {

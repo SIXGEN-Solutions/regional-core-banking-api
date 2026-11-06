@@ -24,6 +24,8 @@ interface PaymentExecutionSqlDialect {
 
     String countEventNumber(String eventTable);
 
+    String findEventAccountingDate(String eventTable);
+
     String findHolidays();
 
     default void prepareConnection(Connection c) throws SQLException {

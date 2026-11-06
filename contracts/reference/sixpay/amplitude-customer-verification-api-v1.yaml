@@ -1,0 +1,973 @@
+# REGIONAL CLASSIFICATION: SIXPAY_REFERENCE / REFERENCE_ONLY
+# sourceRepository: SIXGEN-Solutions/sixpay-connect
+# sourceRevision: main @ b6da7db33432cb81997cc293b21080dd46fdcc14
+# sourcePath: documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml
+# NOTE: any SIXPAY approval/code-generation metadata below applies only to SIXPAY.
+# It does NOT approve this material as a Regional canonical contract.
+
+openapi: 3.1.0
+info:
+  title: SIXPAY CONNECT - Amplitude Customer Verification API
+  version: 1.0.0
+  x-sixpay-contract:
+    registryId: "amplitude-customer-verification-api-v1"
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "1.R1"
+    reviewedForGate: "IA-0.5P_PAYMENT_CONTRACT_PACK"
+    reviewStep: "1.3"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    governanceDecision: "D00-CB-OWNERSHIP"
+    domain: "integration"
+    capability: "BANKING_CUSTOMER_AND_ACCOUNT_VERIFICATION"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    systemOfRecord: "AMPLITUDE"
+    mvpIncluded: true
+    paymentUsage:
+      confirmed: true
+      role: "CUSTOMER_AND_ACCOUNT_VERIFICATION_BEFORE_PAYMENT_CONFIRMATION"
+      invokedAfter: "PAYMENT_REQUEST_DURABLY_PERSISTED"
+      requiredBefore: "PAYMENT_CONFIRMATION_CHALLENGE_CREATION"
+      progressionRule: "ONLY_VERIFIED_MAY_PROGRESS_TO_PAYMENT_CONFIRMATION"
+      paymentPolicyBaseline:
+        id: "payment-mvp/v1"
+        path: "documentation/domains/payment/PAYMENT_POLICY_BASELINE.md"
+        role: "SIXPAY_POLICY_CONSUMING_BANKING_FACTS"
+      consumedBy:
+        - "customer"
+        - "payment"
+      decisionPath: "documentation/ai/payment/AMPLITUDE_CUSTOMER_VERIFICATION_PAYMENT_REVIEW.md"
+      fundsControlContract: "amplitude-payment-posting-api-v1"
+    limitations:
+      - "NO_SUBSCRIPTION_AUTHORIZATION"
+      - "NO_FUNDS_AVAILABILITY_CONTROL"
+      - "NO_PAYMENT_POSTING"
+      - "NO_CUT_CREDIT"
+      - "NO_END_OF_DAY_CONFIRMATION"
+  license:
+    name: SIXGEN Solutions Proprietary
+    url: https://github.com/SIXGEN-Solutions/sixpay-connect/blob/main/LICENSE.md
+  description: |
+    Canonical contract consumed by SIXPAY to query customer, KYC and account
+    facts from the Amplitude Core Banking system.
+
+    Amplitude remains the system of record for banking customer/account facts.
+    The contract exposes normalized facts and verification evidence used by
+    Customer Management and Payment. It does not authorize or manage a SIXPAY
+    subscription. SIXPAY owns its enrolled Customer and partner-subscription
+    lifecycle.
+
+    This reference contract does not cover funds-availability controls, debit
+    posting, CUT credit or end-of-day Treasury confirmation. Those capabilities
+    require dedicated contracts in the Payment Contract Pack.
+
+    Payment usage is confirmed for the read-only verification of the banking
+    customer, NIU, claimed identity, debtor account ownership, account status,
+    blocks, oppositions and required KYC facts. SIXPAY invokes the composite
+    verification only after durable persistence of the Payment request and before
+    any Payment confirmation challenge is created or sent.
+
+    Only a VERIFIED outcome may authorize progression to Payment confirmation.
+    A REJECTED or INDETERMINATE outcome must not create or send an OTP challenge.
+    The verified result supplies the canonical banking customer/account identity
+    and the authoritative KYC/contact facts needed by the subsequent bank-owned
+    confirmation capability. Funds control remains a later, separate
+    execution-time capability.
+
+    Connection timeout, response timeout, retry limits, circuit-breaker values
+    and SLA objectives are intentionally environment/configuration concerns.
+    Their numeric values are validated with the target runtime environment and
+    do not block approval of this logical Core Banking target contract.
+servers:
+  - url: https://amplitude-api.example
+    description: Environment-specific Amplitude integration endpoint
+security:
+  - oauth2ClientCredentials:
+      - amplitude.customer.read
+      - amplitude.account.read
+    mutualTLS: []
+tags:
+  - name: Customers
+    description: Customer lookup and canonical banking identity.
+  - name: Accounts
+    description: Customer bank-account lookup.
+  - name: Verifications
+    description: Fresh composite customer, KYC and account verification.
+
+paths:
+  /api/v1/customers:
+    get:
+      tags: [Customers]
+      operationId: searchAmplitudeCustomers
+      summary: Search for a customer
+      description: |
+        At least one search criterion is required. NIU is a matching attribute,
+        not proof of identity and not necessarily the Amplitude primary key.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeQuery'
+        - name: niu
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 50
+        - name: customerNumber
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 50
+      responses:
+        '200':
+          description: Matching customers, possibly empty
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerSearchResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/customers/{customerReference}:
+    get:
+      tags: [Customers]
+      operationId: getAmplitudeCustomerIdentity
+      summary: Retrieve the canonical banking identity and KYC attributes
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/CustomerReference'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - name: kycFields
+          in: query
+          required: false
+          description: |
+            Optional comma-separated configured KYC field codes. The mandatory
+            version-1 fields are always returned when available and authorized.
+          schema:
+            type: array
+            maxItems: 50
+            uniqueItems: true
+            items:
+              $ref: '#/components/schemas/KycFieldCode'
+          style: form
+          explode: false
+      responses:
+        '200':
+          description: Customer identity found
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerIdentity'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/CustomerNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/customers/{customerReference}/accounts:
+    get:
+      tags: [Accounts]
+      operationId: searchAmplitudeCustomerAccounts
+      summary: Search accounts owned by a customer
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/CustomerReference'
+        - $ref: '#/components/parameters/FinancialInstitutionCodeHeader'
+        - name: rib
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 10
+            maxLength: 50
+            writeOnly: true
+        - name: iban
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 15
+            maxLength: 34
+            pattern: '^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$'
+            writeOnly: true
+        - name: status
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/AccountStatus'
+      responses:
+        '200':
+          description: Customer accounts, possibly empty
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountSearchResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/CustomerNotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /api/v1/customer-verifications:
+    post:
+      x-sixpay-bank-approval: APPROVED
+      tags: [Verifications]
+      operationId: verifyAmplitudeCustomer
+      summary: Verify customer identity, KYC and account facts
+      description: |
+        Executes a fresh, read-only composite verification. The operation is
+        semantically idempotent and creates no Amplitude business resource.
+        Retries must reuse `X-Correlation-ID`. A customer or account not found
+        is a completed negative business verification returned with HTTP 200;
+        HTTP errors represent protocol, authentication or technical failures.
+      x-idempotent: true
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerVerificationRequest'
+      responses:
+        '200':
+          description: Verification completed, including negative check results
+          headers:
+            X-Correlation-ID:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerVerificationResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+components:
+  securitySchemes:
+    oauth2ClientCredentials:
+      type: oauth2
+      description: OAuth 2.0 client credentials access token issued to SIXPAY.
+      flows:
+        clientCredentials:
+          tokenUrl: https://identity.amplitude.example/oauth2/token
+          scopes:
+            amplitude.customer.read: Read customer identity and KYC facts
+            amplitude.account.read: Read customer account facts
+    mutualTLS:
+      type: mutualTLS
+      description: SIXPAY client certificate trusted by the bank.
+
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      description: End-to-end correlation identifier propagated unchanged.
+      schema:
+        type: string
+        format: uuid
+    CustomerReference:
+      name: customerReference
+      in: path
+      required: true
+      description: Opaque canonical Amplitude customer reference.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+    FinancialInstitutionCodeQuery:
+      name: financialInstitutionCode
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/FinancialInstitutionCode'
+    FinancialInstitutionCodeHeader:
+      name: X-Financial-Institution-Code
+      in: header
+      required: true
+      schema:
+        $ref: '#/components/schemas/FinancialInstitutionCode'
+
+  headers:
+    CorrelationId:
+      description: End-to-end correlation identifier.
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    FinancialInstitutionCode:
+      type: string
+      minLength: 2
+      maxLength: 35
+      pattern: '^[A-Z0-9][A-Z0-9._-]+$'
+
+    KycFieldCode:
+      type: string
+      minLength: 2
+      maxLength: 64
+      pattern: '^[a-z][a-zA-Z0-9._-]+$'
+
+    CustomerSearchResult:
+      type: object
+      additionalProperties: false
+      required:
+        - customers
+        - resultCount
+      properties:
+        customers:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/CustomerSummary'
+        resultCount:
+          type: integer
+          minimum: 0
+          maximum: 100
+
+    CustomerSummary:
+      type: object
+      additionalProperties: false
+      required:
+        - customerReference
+        - customerNumber
+        - financialInstitutionCode
+        - niu
+        - legalName
+      properties:
+        customerReference:
+          type: string
+          minLength: 1
+          maxLength: 100
+        customerNumber:
+          type: string
+          minLength: 1
+          maxLength: 50
+        financialInstitutionCode:
+          $ref: '#/components/schemas/FinancialInstitutionCode'
+        niu:
+          type: string
+          minLength: 1
+          maxLength: 50
+        legalName:
+          type: string
+          minLength: 1
+          maxLength: 200
+
+    CustomerIdentity:
+      type: object
+      additionalProperties: false
+      required:
+        - customerReference
+        - customerNumber
+        - financialInstitutionCode
+        - niu
+        - legalName
+        - phoneNumber
+        - email
+        - kycStatus
+        - kycFields
+        - source
+        - retrievedAt
+      properties:
+        customerReference:
+          type: string
+          minLength: 1
+          maxLength: 100
+        customerNumber:
+          type: string
+          minLength: 1
+          maxLength: 50
+        financialInstitutionCode:
+          $ref: '#/components/schemas/FinancialInstitutionCode'
+        niu:
+          type: string
+          minLength: 1
+          maxLength: 50
+        legalName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        phoneNumber:
+          type: string
+          minLength: 8
+          maxLength: 20
+          pattern: '^\+[1-9][0-9]{7,14}$'
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        kycStatus:
+          $ref: '#/components/schemas/KycStatus'
+        kycFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/KycField'
+        kycLastUpdatedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        source:
+          type: string
+          const: AMPLITUDE
+        retrievedAt:
+          type: string
+          format: date-time
+
+    KycStatus:
+      type: string
+      enum:
+        - COMPLETE
+        - INCOMPLETE
+        - EXPIRED
+        - NOT_VERIFIED
+        - UNKNOWN
+
+    KycField:
+      type: object
+      additionalProperties: false
+      required:
+        - code
+        - present
+        - verified
+      properties:
+        code:
+          $ref: '#/components/schemas/KycFieldCode'
+        value:
+          description: |
+            Value returned only when contractually required and authorized.
+            Sensitive values must be masked or omitted.
+          type:
+            - string
+            - number
+            - integer
+            - boolean
+            - 'null'
+        present:
+          type: boolean
+        verified:
+          type: boolean
+        verifiedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+
+    AccountSearchResult:
+      type: object
+      additionalProperties: false
+      required:
+        - accounts
+        - resultCount
+      properties:
+        accounts:
+          type: array
+          maxItems: 500
+          items:
+            $ref: '#/components/schemas/BankAccount'
+        resultCount:
+          type: integer
+          minimum: 0
+          maximum: 500
+
+    BankAccount:
+      type: object
+      additionalProperties: false
+      required:
+        - accountReference
+        - customerReference
+        - financialInstitutionCode
+        - maskedAccountIdentifier
+        - currency
+        - accountType
+        - status
+        - restrictions
+        - source
+        - retrievedAt
+      properties:
+        accountReference:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Opaque canonical Amplitude account reference.
+        customerReference:
+          type: string
+          minLength: 1
+          maxLength: 100
+        financialInstitutionCode:
+          $ref: '#/components/schemas/FinancialInstitutionCode'
+        maskedAccountIdentifier:
+          type: string
+          minLength: 4
+          maxLength: 50
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+        accountType:
+          type: string
+          enum:
+            - CURRENT
+            - SAVINGS
+            - OTHER
+            - UNKNOWN
+        status:
+          $ref: '#/components/schemas/AccountStatus'
+        restrictions:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: '#/components/schemas/AccountRestriction'
+        source:
+          type: string
+          const: AMPLITUDE
+        retrievedAt:
+          type: string
+          format: date-time
+
+    AccountStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - INACTIVE
+        - DORMANT
+        - FROZEN
+        - BLOCKED
+        - CLOSED
+        - UNKNOWN
+
+    AccountRestriction:
+      type: string
+      enum:
+        - DEBIT_BLOCKED
+        - CREDIT_BLOCKED
+        - FULL_BLOCK
+        - OPPOSITION
+        - LEGAL_HOLD
+        - GARNISHMENT
+        - OTHER
+        - UNKNOWN
+
+    CustomerVerificationRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - financialInstitutionCode
+        - customer
+        - account
+        - requiredKycFields
+        - requestedAt
+      properties:
+        financialInstitutionCode:
+          $ref: '#/components/schemas/FinancialInstitutionCode'
+        customer:
+          $ref: '#/components/schemas/CustomerVerificationSubject'
+        account:
+          $ref: '#/components/schemas/AccountVerificationSubject'
+        requiredKycFields:
+          type: array
+          minItems: 4
+          maxItems: 50
+          uniqueItems: true
+          description: |
+            Must include `niu`, `legalName`, `phoneNumber` and `email` in v1.
+            Additional configured field codes may be supplied.
+          items:
+            $ref: '#/components/schemas/KycFieldCode'
+        requestedAt:
+          type: string
+          format: date-time
+
+    CustomerVerificationSubject:
+      type: object
+      additionalProperties: false
+      required:
+        - niu
+        - legalName
+      description: |
+        Identity attributes claimed in the Payment request. Optional attributes
+        are compared only when supplied; their omission does not prevent
+        Amplitude from returning the corresponding authorized KYC facts.
+      properties:
+        customerReference:
+          type: string
+          minLength: 1
+          maxLength: 100
+        customerNumber:
+          type: string
+          minLength: 1
+          maxLength: 50
+        niu:
+          type: string
+          minLength: 1
+          maxLength: 50
+        legalName:
+          type: string
+          minLength: 1
+          maxLength: 200
+        phoneNumber:
+          type: string
+          pattern: '^\+[1-9][0-9]{7,14}$'
+        email:
+          type: string
+          format: email
+          maxLength: 254
+
+    AccountVerificationSubject:
+      type: object
+      additionalProperties: false
+      description: At least one bank-account identifier is required.
+      properties:
+        accountReference:
+          type: string
+          minLength: 1
+          maxLength: 100
+        rib:
+          type: string
+          minLength: 10
+          maxLength: 50
+          writeOnly: true
+        iban:
+          type: string
+          minLength: 15
+          maxLength: 34
+          pattern: '^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$'
+          writeOnly: true
+      anyOf:
+        - required: [accountReference]
+        - required: [rib]
+        - required: [iban]
+
+    CustomerVerificationResult:
+      type: object
+      additionalProperties: false
+      required:
+        - verificationId
+        - verifiedAt
+        - source
+        - outcome
+        - checks
+      properties:
+        verificationId:
+          type: string
+          format: uuid
+        verifiedAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          const: AMPLITUDE
+        outcome:
+          type: string
+          description: |
+            VERIFIED requires every applicable mandatory check to pass.
+            REJECTED represents a conclusive negative business result.
+            INDETERMINATE never authorizes Payment progression.
+          enum:
+            - VERIFIED
+            - REJECTED
+            - INDETERMINATE
+        customerReference:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 100
+        accountReference:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          maxLength: 100
+        checks:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          description: |
+            Contains each applicable check at most once. Checks that cannot be
+            evaluated after an earlier negative result may be omitted or marked
+            UNKNOWN. Payment may progress only when the outcome is VERIFIED.
+          items:
+            $ref: '#/components/schemas/VerificationCheck'
+        identity:
+          oneOf:
+            - $ref: '#/components/schemas/CustomerIdentity'
+            - type: 'null'
+        account:
+          oneOf:
+            - $ref: '#/components/schemas/BankAccount'
+            - type: 'null'
+
+    VerificationCheck:
+      type: object
+      additionalProperties: false
+      required:
+        - type
+        - result
+      properties:
+        type:
+          type: string
+          enum:
+            - CUSTOMER_EXISTS
+            - FINANCIAL_INSTITUTION_MATCHES
+            - NIU_MATCHES
+            - IDENTITY_MATCHES
+            - ACCOUNT_EXISTS
+            - ACCOUNT_BELONGS_TO_CUSTOMER
+            - ACCOUNT_IS_ACTIVE
+            - ACCOUNT_NOT_BLOCKED
+            - ACCOUNT_NOT_OPPOSED
+            - REQUIRED_KYC_PRESENT
+            - REQUIRED_KYC_VERIFIED
+        result:
+          type: string
+          enum:
+            - PASS
+            - FAIL
+            - UNKNOWN
+        reasonCode:
+          type:
+            - string
+            - 'null'
+          maxLength: 50
+        checkedAt:
+          type:
+            - string
+            - 'null'
+          format: date-time
+
+    ProblemDetail:
+      type: object
+      additionalProperties: true
+      required:
+        - type
+        - title
+        - status
+        - code
+        - correlationId
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri-reference
+        code:
+          type: string
+          enum:
+            - REQUEST_INVALID
+            - AUTHENTICATION_REQUIRED
+            - ACCESS_DENIED
+            - CUSTOMER_NOT_FOUND
+            - VERIFICATION_CRITERIA_INVALID
+            - RATE_LIMIT_EXCEEDED
+            - AMPLITUDE_INTERNAL_ERROR
+            - AMPLITUDE_UNAVAILABLE
+        correlationId:
+          type: string
+          format: uuid
+        invalidParams:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvalidParameter'
+
+    InvalidParameter:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - reason
+      properties:
+        name:
+          type: string
+        reason:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Malformed request or invalid search criteria
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Unauthorized:
+      description: OAuth 2.0 token or mTLS client identity is invalid
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    Forbidden:
+      description: Authenticated SIXPAY client is not authorized
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    CustomerNotFound:
+      description: Customer reference does not exist in Amplitude
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    UnprocessableEntity:
+      description: Verification criteria are syntactically valid but inconsistent
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    TooManyRequests:
+      description: Amplitude request rate exceeded
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+        Retry-After:
+          description: Delay in seconds before retry, when supplied by Amplitude
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    InternalServerError:
+      description: Unexpected Amplitude processing failure
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+    ServiceUnavailable:
+      description: Amplitude is temporarily unavailable
+      headers:
+        X-Correlation-ID:
+          $ref: '#/components/headers/CorrelationId'
+        Retry-After:
+          description: Delay in seconds before retry, when supplied by Amplitude
+          schema:
+            type: integer
+            minimum: 1
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+x-sixpay-amplitude-resilience-policy:
+  timeout:
+    connection: configurable
+    response: configurable
+    overallOperation: configurable
+    configurationKeys:
+      - sixpay.integration.amplitude.timeout.connection
+      - sixpay.integration.amplitude.timeout.response
+      - sixpay.integration.amplitude.timeout.overall
+  retry:
+    enabled: configurable
+    maximumAttempts: configurable
+    backoff: configurable-exponential-with-jitter
+    honorRetryAfter: true
+    retryableConditions:
+      - connection-failure-before-response
+      - timeout-when-the-operation-can-be-safely-replayed
+      - HTTP_429
+      - HTTP_502
+      - HTTP_503
+      - HTTP_504
+    nonRetryableStatuses:
+      - 400
+      - 401
+      - 403
+      - 404
+      - 422
+  circuitBreaker:
+    enabled: configurable
+    failureThreshold: configurable
+    openStateDuration: configurable
+    halfOpenCalls: configurable
+  fallback:
+    useStaleKycOrAccountData: false
+    failClosedForPaymentVerification: true
+
+x-sixpay-amplitude-sla:
+  status: pending-bank-approval
+  availabilityTarget: configurable
+  latencyTarget: configurable
+  measurementWindow: configurable
+  effectiveValuesSource: environment-configuration

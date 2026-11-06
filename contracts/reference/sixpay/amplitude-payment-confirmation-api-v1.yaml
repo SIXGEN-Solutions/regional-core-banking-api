@@ -1,0 +1,668 @@
+# REGIONAL CLASSIFICATION: SIXPAY_REFERENCE / REFERENCE_ONLY
+# sourceRepository: SIXGEN-Solutions/sixpay-connect
+# sourceRevision: main @ b6da7db33432cb81997cc293b21080dd46fdcc14
+# sourcePath: documentation/contracts/amplitude/amplitude-payment-confirmation-api-v1.yaml
+# NOTE: any SIXPAY approval/code-generation metadata below applies only to SIXPAY.
+# It does NOT approve this material as a Regional canonical contract.
+
+openapi: 3.1.0
+
+info:
+  title: SIXPAY CONNECT - Amplitude Payment Confirmation API
+  version: 1.0.0
+  summary: Bank-owned customer confirmation challenge lifecycle for SIXPAY Payments.
+  description: |
+    Contract approved by SIXPAY for the SIXPAY -> Amplitude customer Payment
+    confirmation boundary.
+
+    Amplitude / La Regionale remains authoritative for challenge creation,
+    OTP generation, OTP storage, OTP delivery, OTP verification, invalid
+    attempt counting, lockout, expiry, replacement and revocation.
+
+    SIXPAY never persists the OTP value.
+
+    A confirmation challenge may be created only after the Payment has a
+    completed VERIFIED banking customer/account/KYC verification. The canonical
+    customerReference and debtorAccountReference used to bind the challenge are
+    obtained from that verified banking result; they must not be inferred from
+    NIU, subscriptionReference or another non-authoritative Payment identifier.
+
+    Successful OTP verification proves customer confirmation for the bound
+    Payment only. It does not establish funds availability, successful debit,
+    CUT credit or financial finality.
+
+    The target status vocabulary, business-code vocabulary and current wire
+    schemas are programme-approved contract decisions under D00-CB-OWNERSHIP,
+    D046-02 and D046-03. They are not provider-discovery dependencies.
+
+    The contract is approved for its Payment-confirmation semantics under
+    LOT 0.4.7. LOT 0.4.8 explicitly authorizes code generation from this
+    approved Core Banking Payment Confirmation contract.
+
+    Bank business-policy values and runtime/environment parameters remain
+    external where they genuinely depend on La Regionale policy or deployment.
+
+  x-sixpay-contract:
+    registryId: "amplitude-payment-confirmation-api-v1"
+    gate: "PAYMENT_COMPLETION"
+    phaseStep: "0.4.3"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    governanceDecision: "D00-CB-OWNERSHIP"
+    domain: "integration"
+    businessOwner: "payment"
+    deliveryOwner: "integration"
+    capability: "BANKING_PAYMENT_CONFIRMATION"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "AMPLITUDE"
+    mvpIncluded: true
+    approvedContractDesign:
+      createSend: "POST /api/v1/payment-confirmation-challenges"
+      verify: "POST /api/v1/payment-confirmation-challenges/{challengeReference}/verifications"
+      replace: "POST /api/v1/payment-confirmation-challenges/{challengeReference}/replacements"
+      lookupByChallenge: "GET /api/v1/payment-confirmation-challenges/{challengeReference}"
+      revoke: "POST /api/v1/payment-confirmation-challenges/{challengeReference}/revocations"
+      recoveryByIdempotencyKey: "GET /api/v1/payment-confirmation-challenge-lookups/{idempotencyKey}"
+      correlationHeader: "X-Correlation-ID"
+      institutionHeader: "X-Financial-Institution-Code"
+      idempotencyConflictHttpStatus: 409
+      securityProfile:
+        - "OAUTH2_CLIENT_CREDENTIALS"
+        - "MUTUAL_TLS"
+    decisions:
+      - "D00-CB-OWNERSHIP"
+      - "D046-01_REVOKE_IDEMPOTENCY"
+      - "D046-02_TARGET_STATUS_VOCABULARY"
+      - "D046-03_BUSINESS_CODES_AND_WIRE_SCHEMAS"
+      - "D046-04_CONFIRMED_DELIVERY_FAILURE_REPLACED"
+      - "S05-01_VERIFY_IDEMPOTENCY_HMAC_SHA256"
+      - "D047-01_RESEND_MAXIMUM_3"
+      - "D047-02_RESEND_COOLDOWN_3_MINUTES_CONFIGURABLE"
+      - "D047-03_POST_OTP_WINDOW_EXPIRY_INVALIDATES_CONFIRMATION"
+      - "D047-04_HMAC_PREVIOUS_KEYS_AVAILABLE_FOR_REPLAY_VERIFICATION"
+      - "D047-05_LA_REGIONALE_CORE_BANKING_CONTRACT_APPROVAL"
+      - "D047-07_SECURITY_APPROVAL"
+      - "D047-08_ARCHITECTURE_APPROVAL"
+    openDecisions: []
+    externalRuntimeParameters:
+      - "CONNECTION_TIMEOUT"
+      - "RESPONSE_TIMEOUT"
+      - "RATE_LIMIT_VALUES"
+      - "RETRY_BACKOFF_VALUES"
+      - "OAUTH2_ENDPOINTS"
+      - "CERTIFICATES_AND_TRUST_MATERIAL"
+    limitations:
+      - "NO_FUNDS_AVAILABILITY_DECISION"
+      - "NO_PAYMENT_POSTING"
+      - "NO_CUT_CREDIT"
+      - "NO_TFJ_FINALITY"
+      - "NO_OTP_PERSISTENCE_BY_SIXPAY"
+      - "NO_CHALLENGE_CREATION_BEFORE_VERIFIED_BANKING_CUSTOMER_ACCOUNT_KYC"
+
+servers:
+  - url: https://amplitude-api.example
+    description: Environment-specific placeholder; real URLs remain external configuration.
+
+security:
+  - oauth2ClientCredentials:
+      - amplitude.payment.confirmation
+    mutualTLS: []
+
+tags:
+  - name: Payment confirmation challenges
+    description: Bank-owned confirmation challenge lifecycle.
+  - name: Payment confirmation recovery
+    description: Authoritative recovery after uncertain transport outcomes.
+
+paths:
+  /api/v1/payment-confirmation-challenges:
+    post:
+      tags: [Payment confirmation challenges]
+      operationId: createAmplitudePaymentConfirmationChallenge
+      summary: Create and send a Payment confirmation challenge
+      description: |
+        Creates and sends a bank-owned confirmation challenge bound to the
+        supplied SIXPAY Payment, customer, debtor account and financial context.
+        SIXPAY may invoke this operation only after the banking
+        customer/account/KYC verification has completed with outcome VERIFIED.
+        customerReference and debtorAccountReference are the canonical Amplitude
+        references obtained from that verified result. They must not be derived
+        from NIU or subscription identifiers. La Regionale selects the active
+        contact and delivery channel.
+        Same Idempotency-Key plus the same logical request returns the same
+        result without generating another OTP. Same key plus a different
+        logical request is a conflict.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentConfirmationChallengeRequest'
+      responses:
+        '200':
+          description: Stable authoritative create/send business result.
+          headers:
+            X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmationChallengeResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /api/v1/payment-confirmation-challenges/{challengeReference}/verifications:
+    post:
+      tags: [Payment confirmation challenges]
+      operationId: verifyAmplitudePaymentConfirmationChallenge
+      summary: Verify the OTP for a confirmation challenge
+      description: |
+        Synchronously verifies the transient OTP against the bank-owned challenge.
+        SIXPAY never persists or reproduces the OTP. Replaying the same
+        idempotent verification must not consume another OTP attempt. HTTP 200
+        alone does not mean the OTP was accepted.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ChallengeReference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VerifyPaymentConfirmationChallengeRequest' }
+      responses:
+        '200':
+          description: Completed positive or negative authoritative verification result.
+          headers:
+            X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmationVerificationResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/ChallengeNotFound' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /api/v1/payment-confirmation-challenges/{challengeReference}/replacements:
+    post:
+      tags: [Payment confirmation challenges]
+      operationId: replaceAmplitudePaymentConfirmationChallenge
+      summary: Replace the current challenge and send a new OTP
+      description: |
+        Creates a new logical challenge and a new OTP and permanently invalidates
+        the previous challenge. La Regionale controls resend maximum and cooldown.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ChallengeReference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReplacePaymentConfirmationChallengeRequest' }
+      responses:
+        '200':
+          description: Stable authoritative challenge replacement result.
+          headers:
+            X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmationChallengeResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/ChallengeNotFound' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /api/v1/payment-confirmation-challenges/{challengeReference}:
+    get:
+      tags: [Payment confirmation challenges]
+      operationId: getAmplitudePaymentConfirmationChallenge
+      summary: Read the authoritative challenge status
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/ChallengeReference'
+      responses:
+        '200':
+          description: Current authoritative challenge result.
+          headers:
+            X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmationChallengeResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/ChallengeNotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /api/v1/payment-confirmation-challenge-lookups/{idempotencyKey}:
+    get:
+      tags: [Payment confirmation recovery]
+      operationId: getAmplitudePaymentConfirmationByIdempotencyKey
+      summary: Recover a confirmation operation by original idempotency key
+      description: |
+        Authoritative recovery when create or replacement may have succeeded but
+        SIXPAY did not receive challengeReference. Lookup is mandatory before
+        any retry after an unknown outcome.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKeyPath'
+      responses:
+        '200':
+          description: Authoritative previously processed confirmation result.
+          headers:
+            X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmationChallengeResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/OperationNotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+  /api/v1/payment-confirmation-challenges/{challengeReference}/revocations:
+    post:
+      tags: [Payment confirmation challenges]
+      operationId: revokeAmplitudePaymentConfirmationChallenge
+      summary: Revoke an active confirmation challenge
+      x-sixpay-idempotency-status: APPROVED
+      description: |
+        Revokes an active challenge when Payment is cancelled or rejected before
+        successful OTP confirmation. A VERIFIED challenge is not revocable.
+        Revoke is idempotent: same Idempotency-Key plus the same logical request
+        returns the original result without another revocation; the same key plus
+        a different logical request returns HTTP 409.
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ChallengeReference'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RevokePaymentConfirmationChallengeRequest' }
+      responses:
+        '200':
+          description: Stable authoritative revocation result.
+          headers:
+            X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmationChallengeResult' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/ChallengeNotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+
+components:
+  securitySchemes:
+    oauth2ClientCredentials:
+      type: oauth2
+      description: Approved contract profile; operational token parameters remain environment configuration.
+      flows:
+        clientCredentials:
+          tokenUrl: https://identity.amplitude.example/oauth2/token
+          scopes:
+            amplitude.payment.confirmation: Payment confirmation operations.
+    mutualTLS:
+      type: mutualTLS
+      description: SIXPAY client certificate trusted by La Regionale.
+
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      schema: { type: string, format: uuid }
+    FinancialInstitutionCode:
+      name: X-Financial-Institution-Code
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 2
+        maxLength: 35
+        pattern: '^[A-Z0-9][A-Z0-9._-]+$'
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Opaque logical-operation key; must not contain OTP or sensitive banking data.
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+        pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$'
+    IdempotencyKeyPath:
+      name: idempotencyKey
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+        pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$'
+    ChallengeReference:
+      name: challengeReference
+      in: path
+      required: true
+      description: Unique opaque bank-generated challenge reference.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+
+  headers:
+    CorrelationId:
+      description: End-to-end correlation identifier.
+      required: true
+      schema: { type: string, format: uuid }
+
+  schemas:
+    PaymentReference:
+      type: string
+      minLength: 30
+      maxLength: 30
+      pattern: '^PAY-[0-9A-HJKMNP-TV-Z]{26}$'
+    CustomerReference:
+      type: string
+      minLength: 1
+      maxLength: 100
+      description: Opaque canonical banking customer reference.
+    AccountReference:
+      type: string
+      minLength: 1
+      maxLength: 100
+      description: Opaque canonical Amplitude debtor-account reference.
+    Money:
+      type: object
+      additionalProperties: false
+      required: [amount, currency]
+      properties:
+        amount: { type: number, exclusiveMinimum: 0 }
+        currency: { type: string, pattern: '^[A-Z]{3}$' }
+
+    CreatePaymentConfirmationChallengeRequest:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, customerReference, debtorAccountReference, amount]
+      properties:
+        paymentReference: { $ref: '#/components/schemas/PaymentReference' }
+        customerReference: { $ref: '#/components/schemas/CustomerReference' }
+        debtorAccountReference: { $ref: '#/components/schemas/AccountReference' }
+        amount: { $ref: '#/components/schemas/Money' }
+      description: >-
+        Approved target Core Banking create/send wire schema and logical binding
+        context. customerReference and debtorAccountReference must come from a
+        completed VERIFIED banking customer/account/KYC verification for the
+        Payment.
+
+    VerifyPaymentConfirmationChallengeRequest:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, otp]
+      properties:
+        paymentReference: { $ref: '#/components/schemas/PaymentReference' }
+        otp:
+          type: string
+          minLength: 1
+          writeOnly: true
+          description: Transient OTP; bank defines syntax and SIXPAY never persists it.
+
+    ReplacePaymentConfirmationChallengeRequest:
+      type: object
+      additionalProperties: false
+      required: [paymentReference]
+      properties:
+        paymentReference: { $ref: '#/components/schemas/PaymentReference' }
+
+    RevokePaymentConfirmationChallengeRequest:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, reasonCode]
+      properties:
+        paymentReference: { $ref: '#/components/schemas/PaymentReference' }
+        reasonCode:
+          type: string
+          minLength: 1
+          maxLength: 64
+          pattern: '^[A-Z][A-Z0-9_]{0,63}$'
+          description: |
+            Approved target wire field. The reasonCode value is a SIXPAY-owned
+            cancellation/rejection reason supplied to Core Banking; no additional
+            provider-native vocabulary is required by this contract.
+
+    BankChallengeStatus:
+      type: string
+      description: Approved target Core Banking confirmation-challenge state.
+      enum:
+        - ACTIVE
+        - VERIFIED
+        - EXPIRED
+        - LOCKED
+        - REPLACED
+        - REVOKED
+    BankConfirmationBusinessCode:
+      type: string
+      description: |
+        Approved target Core Banking functional result vocabulary. These values
+        intentionally reuse the stable SIXPAY Payment-confirmation vocabulary;
+        no second provider-native vocabulary is introduced.
+      enum:
+        - CHALLENGE_ACTIVE
+        - OTP_VERIFIED
+        - OTP_INVALID
+        - CHALLENGE_EXPIRED
+        - CHALLENGE_LOCKED
+        - CHALLENGE_REPLACED
+        - CHALLENGE_REVOKED
+        - RESEND_NOT_ALLOWED
+        - CONFIRMATION_NOT_AVAILABLE
+        - DEPENDENCY_RESULT_UNKNOWN
+        - DELIVERY_FAILED
+    DeliveryChannel:
+      type: string
+      enum: [SMS, EMAIL]
+
+    PaymentConfirmationChallengeResult:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, challengeReference, challengeStatus, businessCode]
+      properties:
+        paymentReference: { $ref: '#/components/schemas/PaymentReference' }
+        challengeReference: { type: string, minLength: 1, maxLength: 128 }
+        challengeStatus: { $ref: '#/components/schemas/BankChallengeStatus' }
+        businessCode: { $ref: '#/components/schemas/BankConfirmationBusinessCode' }
+        deliveryChannel: { $ref: '#/components/schemas/DeliveryChannel' }
+        sentAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        verifiedAt: { type: string, format: date-time }
+
+    PaymentConfirmationVerificationResult:
+      allOf:
+        - $ref: '#/components/schemas/PaymentConfirmationChallengeResult'
+      description: Positive or negative verification; success does not prove funds or posting.
+
+    ProblemDetail:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, correlationId]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string, minLength: 1, maxLength: 200 }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        detail: { type: string, maxLength: 1000 }
+        code:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Provider protocol/error code; vocabulary not frozen.
+        correlationId: { type: string, format: uuid }
+        retryAfter: { type: integer, minimum: 1 }
+
+  responses:
+    BadRequest: &problem
+      description: Request cannot be processed at the protocol boundary.
+      headers:
+        X-Correlation-ID: { $ref: '#/components/headers/CorrelationId' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetail' }
+    Unauthorized: *problem
+    Forbidden: *problem
+    ChallengeNotFound: *problem
+    OperationNotFound: *problem
+    IdempotencyConflict: *problem
+    UnprocessableEntity: *problem
+    TooManyRequests: *problem
+    InternalServerError: *problem
+    ServiceUnavailable: *problem
+
+x-sixpay-idempotency-policy:
+  create: { required: true }
+  verify:
+    required: true
+    duplicateReplayConsumesAdditionalOtpAttempt: false
+    otpPersistence: FORBIDDEN
+    secureRequestEquivalenceStrategy: HMAC_SHA_256_DEDICATED_EXTERNAL_KEY
+    rawOtpHashPersistence: FORBIDDEN
+    hmacKeySource: EXTERNAL_SECRET_MANAGER
+  replace: { required: true }
+  revoke:
+    required: true
+    sameKeySameRequest: RETURN_ORIGINAL_RESULT
+    sameKeyDifferentRequest: CONFLICT
+    conflictHttpStatus: 409
+  sameKeySameRequest:
+    result: RETURN_ORIGINAL_RESULT
+    duplicateBankAction: FORBIDDEN
+  sameKeyDifferentRequest:
+    result: CONFLICT
+    httpStatus: 409
+  unknownOutcome:
+    assumeSuccess: FORBIDDEN
+    assumeFailure: FORBIDDEN
+    lookupBeforeRetry: REQUIRED
+    lookupByOriginalIdempotencyKey: REQUIRED
+    retryWithNewKey: FORBIDDEN
+
+x-sixpay-resend-policy:
+  maximum: 3
+  cooldown: PT3M
+  cooldownConfigurable: true
+  owner: LA_REGIONALE
+  note: >-
+    LOT 0.4.7 fixes a maximum of three resend/replacement operations and a
+    three-minute cooldown. The cooldown may be changed by runtime configuration
+    when La Regionale policy requires it; changing the configured value does not
+    change the ownership of the policy.
+
+x-sixpay-post-otp-execution-window-policy:
+  maximumWindow: PT1M
+  configurable: true
+  onExceeded:
+    customerConfirmationValid: false
+    newOtpChallengeRequired: true
+  note: >-
+    LOT 0.4.7 closes P19: when the configured post-OTP execution window is
+    exceeded before the engaging financial operation, the customer confirmation
+    is invalidated and a new OTP challenge is mandatory. No additional
+    PaymentStatus or challenge status is invented by this contract decision.
+
+x-sixpay-hmac-key-rotation-policy:
+  previousKeysAvailableForReplayVerification: true
+  retentionDuration: NOT_DEFINED_BY_LOT_0_4_7
+  note: >-
+    Security approved keeping previous HMAC keys available for verification of
+    idempotency replays/fingerprints that still require them. LOT 0.4.7 does not
+    define an indefinite retention period, a secret path, key encoding, key
+    version persistence schema or rotation schedule.
+
+x-sixpay-approvals:
+  lot: "0.4.7"
+  laRegionaleCoreBankingContract: APPROVED
+  security: APPROVED
+  architecture: APPROVED
+
+x-sixpay-delivery-failure-policy:
+  confirmedFailure:
+    challengeStatus: REPLACED
+    businessCode: DELIVERY_FAILED
+    challengeUsable: false
+    resendOrReplacementAllowed: true
+    subjectToBankResendMaximumAndCooldown: true
+    previousChallengeReuse: FORBIDDEN
+    newOtpRequired: true
+    newChallengeReferenceRequired: true
+  uncertainOutcome:
+    classifyAsDeliveryFailed: false
+    recoveryState: OUTCOME_UNKNOWN
+    authoritativeLookupBeforeRetry: REQUIRED
+    retryWithNewIdempotencyKey: FORBIDDEN
+  note: >-
+    D046-04 distinguishes a confirmed delivery failure from an uncertain
+    transport outcome. A confirmed delivery failure invalidates the current
+    challenge as REPLACED with businessCode DELIVERY_FAILED and permits
+    resend/replacement subject to La Regionale resend limits and cooldown.
+    A timeout or uncertain delivery outcome never implies DELIVERY_FAILED and
+    follows the authoritative recovery semantics defined by P10/P11.
+
+x-sixpay-sensitive-data:
+  otp:
+    classification: SECRET_TRANSIENT
+    persistenceBySixpay: FORBIDDEN
+    response: FORBIDDEN
+    audit: FORBIDDEN
+    logging: FORBIDDEN
+    tracing: FORBIDDEN
+    metrics: FORBIDDEN
+    events: FORBIDDEN
+  destinationContact:
+    selectedBy: LA_REGIONALE
+    suppliedBySixpay: false
+
+x-sixpay-open-decisions: []
+
+x-sixpay-external-runtime-parameters:
+  owner: [OPERATIONS, SECURITY]
+  values:
+    - CONNECTION_TIMEOUT
+    - RESPONSE_TIMEOUT
+    - RATE_LIMIT_VALUES
+    - RETRY_BACKOFF_VALUES
+    - OAUTH2_ENDPOINTS
+    - CERTIFICATES_AND_TRUST_MATERIAL
+  contractApprovalBlocking: false

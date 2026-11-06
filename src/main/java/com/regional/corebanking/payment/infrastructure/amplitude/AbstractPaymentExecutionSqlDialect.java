@@ -50,6 +50,10 @@ abstract class AbstractPaymentExecutionSqlDialect implements PaymentExecutionSql
         return "SELECT COUNT(*) AS nbr FROM " + table(t) + " WHERE eve = ? AND ope = ?";
     }
 
+    public String findEventAccountingDate(String t) {
+        return "SELECT dco FROM " + table(t) + " WHERE eve = ? AND ope = ?";
+    }
+
     public String findHolidays() {
         return "select jourfer from bkfer where TO_CHAR(jourfer,'%Y')=? ";
     }

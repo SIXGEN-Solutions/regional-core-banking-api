@@ -1,0 +1,362 @@
+# REGIONAL CLASSIFICATION: SIXPAY_REFERENCE / REFERENCE_ONLY
+# sourceRepository: SIXGEN-Solutions/sixpay-connect
+# sourceRevision: main @ b6da7db33432cb81997cc293b21080dd46fdcc14
+# sourcePath: documentation/contracts/amplitude/amplitude-accounting-entries-api-v1.yaml
+# NOTE: any SIXPAY approval/code-generation metadata below applies only to SIXPAY.
+# It does NOT approve this material as a Regional canonical contract.
+
+openapi: 3.1.0
+
+info:
+  title: SIXPAY CONNECT - Amplitude Accounting Entries API
+  version: 1.0.0
+  summary: Batch submission of frozen SIXPAY T0 accounting entries to Amplitude for T1.
+  description: |
+    T1.4 physical Core Banking Accounting contract.
+
+    Accounting owns the T1 batch/submission lifecycle. Payment remains owner of
+    the finalized T0 financial snapshot facts from which Accounting candidates
+    and batch items were derived.
+
+    SIXPAY submits only the reduced accounting facts required by this contract.
+    It does not persist or expose the complete historical Amplitude `bkmvti`
+    entity schema.
+
+    Each submitted item is backed by a finalized T0 financial snapshot and
+    carries immutable ordered accounting entries. The physical provider mapping
+    translates canonical SIXPAY directions DEBIT/CREDIT to Core Banking D/C and
+    decomposes the canonical account reference into age/ncp/clc.
+
+    Item-level FAILED or UNKNOWN outcomes do not block successful items and do
+    not invalidate authoritative T0 completion. Unknown submission outcomes
+    require authoritative lookup before any retry. Blind financial replay is
+    forbidden.
+
+    Provider DTO/mapping/client implementation remains T1.5. Detailed
+    FAILED/UNKNOWN regularization and final TFJ reconciliation remain T1.6.
+
+  x-sixpay-contract:
+    registryId: "amplitude-accounting-entries-api-v1"
+    gate: "ACCOUNTING_T1"
+    phaseStep: "T1.4"
+    lifecycleStatus: "ACTIVE_MVP"
+    approvalStatus: "APPROVED"
+    generationPolicy: "ACTIVE"
+    codeGenerationAllowed: true
+    governanceDecision: "ACCOUNTING_T1_T1_4_APPROVED_DECISIONS"
+    domain: "integration"
+    businessOwner: "accounting"
+    deliveryOwner: "integration"
+    capability: "BANKING_ACCOUNTING_ENTRIES_SUBMISSION"
+    direction: "SIXPAY_TO_AMPLITUDE"
+    sourceSystem: "SIXPAY"
+    systemOfRecord: "AMPLITUDE"
+    mvpIncluded: true
+    approvedContractDesign:
+      submit: "POST /api/v1/accounting-entries"
+      lookupByBatchId: "GET /api/v1/accounting-entries/batches/{batchId}"
+      lookupByIdempotencyKey: "GET /api/v1/accounting-entries/idempotency/{idempotencyKey}"
+      correlationHeader: "X-Correlation-ID"
+      institutionHeader: "X-Financial-Institution-Code"
+      idempotencyHeader: "Idempotency-Key"
+      applicationSecurity:
+        - "OAUTH2_CLIENT_CREDENTIALS"
+        - "MUTUAL_TLS"
+      synchronousTerminalHttpStatus: 200
+      asynchronousAcceptedHttpStatus: 202
+    batchStatuses: ["ACCEPTED", "PROCESSING", "COMPLETED"]
+    itemResultStatuses: ["SUCCESS", "FAILED", "UNKNOWN"]
+    accountingDirectionMapping:
+      DEBIT: "D"
+      CREDIT: "C"
+    accountReferenceFormat: "age-ncp-clc"
+    limitations:
+      - "NO_COMPLETE_AMPLITUDE_BKMVTI_SCHEMA_IN_SIXPAY"
+      - "NO_RECOMPUTATION_OF_T0_FINANCIAL_ENTRIES"
+      - "NO_BLIND_FINANCIAL_REPLAY"
+      - "NO_T1_5_PROVIDER_ADAPTER_IMPLEMENTATION"
+      - "NO_T1_6_FAILED_UNKNOWN_REGULARIZATION_POLICY"
+      - "NO_T1_6_FINAL_TFJ_RECONCILIATION"
+
+servers:
+  - url: https://amplitude-api.example
+    description: Environment-specific placeholder.
+
+security:
+  - oauth2ClientCredentials:
+      - amplitude.accounting.read
+    mutualTLS: []
+
+tags:
+  - name: Accounting entries
+  - name: Accounting recovery
+
+paths:
+  /api/v1/accounting-entries:
+    post:
+      tags: [Accounting entries]
+      operationId: submitAmplitudeAccountingEntries
+      summary: Submit a T1 accounting batch
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.accounting.write
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountingEntriesBatchRequest'
+      responses:
+        '200':
+          description: Conclusive provider batch result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountingEntriesBatchResult'
+        '202':
+          description: Accepted for asynchronous processing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountingEntriesBatchResult'
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '409': { $ref: '#/components/responses/ProblemResponse' }
+        '422': { $ref: '#/components/responses/ProblemResponse' }
+        '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/accounting-entries/batches/{batchId}:
+    get:
+      tags: [Accounting recovery]
+      operationId: getAmplitudeAccountingBatchByBatchId
+      summary: Read authoritative T1 batch result
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.accounting.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/BatchId'
+      responses:
+        '200':
+          description: Current authoritative batch result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountingEntriesBatchResult'
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/accounting-entries/idempotency/{idempotencyKey}:
+    get:
+      tags: [Accounting recovery]
+      operationId: getAmplitudeAccountingBatchByIdempotencyKey
+      summary: Recover a T1 submission by original idempotency key
+      security:
+        - oauth2ClientCredentials:
+            - amplitude.accounting.read
+          mutualTLS: []
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - $ref: '#/components/parameters/FinancialInstitutionCode'
+        - $ref: '#/components/parameters/IdempotencyKeyPath'
+      responses:
+        '200':
+          description: Matching authoritative batch result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountingEntriesBatchResult'
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
+        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+components:
+  securitySchemes:
+    oauth2ClientCredentials:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://oauth.example/token
+          scopes:
+            amplitude.accounting.write: Submit T1 accounting batches.
+            amplitude.accounting.read: Read T1 accounting batch results.
+    mutualTLS:
+      type: mutualTLS
+
+  parameters:
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 128 }
+    FinancialInstitutionCode:
+      name: X-Financial-Institution-Code
+      in: header
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 50 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 255 }
+    BatchId:
+      name: batchId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    IdempotencyKeyPath:
+      name: idempotencyKey
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 255 }
+
+  schemas:
+    AccountingEntriesBatchRequest:
+      type: object
+      additionalProperties: false
+      required: [batchId, businessDate, items]
+      properties:
+        batchId:
+          type: string
+          format: uuid
+        businessDate:
+          type: string
+          format: date
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/AccountingEntriesPaymentItem'
+
+    AccountingEntriesPaymentItem:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, financialSnapshotId, t0BankReference, entries]
+      properties:
+        paymentReference:
+          type: string
+          minLength: 1
+          maxLength: 128
+        financialSnapshotId:
+          type: string
+          format: uuid
+        t0BankReference:
+          type: string
+          minLength: 1
+          maxLength: 128
+        entries:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/AccountingEntry'
+
+    AccountingEntry:
+      type: object
+      additionalProperties: false
+      required: [sequence, account, currency, amount, direction]
+      properties:
+        sequence:
+          type: integer
+          minimum: 1
+        account:
+          $ref: '#/components/schemas/CoreBankingAccountReference'
+        currency:
+          type: string
+          minLength: 1
+          maxLength: 3
+        amount:
+          type: number
+          exclusiveMinimum: 0
+        direction:
+          type: string
+          enum: [D, C]
+
+    CoreBankingAccountReference:
+      type: object
+      additionalProperties: false
+      required: [age, ncp, clc]
+      properties:
+        age: { type: string, minLength: 1, maxLength: 5 }
+        ncp: { type: string, minLength: 1, maxLength: 11 }
+        clc: { type: string, minLength: 1, maxLength: 2 }
+
+    AccountingEntriesBatchResult:
+      type: object
+      additionalProperties: false
+      required: [batchId, status, items]
+      properties:
+        batchId:
+          type: string
+          format: uuid
+        providerBatchReference:
+          type: [string, "null"]
+          maxLength: 128
+        status:
+          type: string
+          enum: [ACCEPTED, PROCESSING, COMPLETED]
+        processedAt:
+          type: [string, "null"]
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountingEntryItemResult'
+
+    AccountingEntryItemResult:
+      type: object
+      additionalProperties: false
+      required: [paymentReference, status]
+      properties:
+        paymentReference:
+          type: string
+          minLength: 1
+          maxLength: 128
+        status:
+          type: string
+          enum: [SUCCESS, FAILED, UNKNOWN]
+        providerItemReference:
+          type: [string, "null"]
+          maxLength: 128
+        rejectionCode:
+          type: [string, "null"]
+          enum:
+            - INVALID_ACCOUNT
+            - INVALID_ACCOUNTING_DATE
+            - INVALID_ENTRY
+            - UNBALANCED_ENTRIES
+            - DUPLICATE_BATCH
+            - ACCOUNTING_ENTRY_REJECTED
+            - null
+
+    Problem:
+      type: object
+      additionalProperties: true
+      required: [status, title]
+      properties:
+        status: { type: integer }
+        title: { type: string }
+        detail: { type: [string, "null"] }
+        code: { type: [string, "null"] }
+        correlationId: { type: [string, "null"] }
+
+  responses:
+    ProblemResponse:
+      description: Core Banking API error response.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
