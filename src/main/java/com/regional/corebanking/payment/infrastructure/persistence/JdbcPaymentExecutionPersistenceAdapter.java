@@ -42,7 +42,6 @@ public class JdbcPaymentExecutionPersistenceAdapter implements PaymentExecutionP
             PaymentExecutionCommand command,
             Supplier<PaymentExecutionResult> execution) {
 
-        System.out.println("Insert payment in database");
         Boolean claimed = transactions.execute(status -> jdbc.update("""
                 INSERT INTO regional_payment_execution
                   (institution_code, payment_reference, idempotency_key,
@@ -69,6 +68,7 @@ public class JdbcPaymentExecutionPersistenceAdapter implements PaymentExecutionP
 
         try {
             PaymentExecutionResult result = execution.get();
+            System.out.println("Payment execution result: " + result);
             transactions.executeWithoutResult(status -> storeResult(institution, key, result));
             return result;
         } catch (RuntimeException exception) {

@@ -80,7 +80,9 @@ final class JdbcPaymentExecutionBankingAdapter implements PaymentExecutionBankin
         institution(f);
         var e = c.providerEvent();
         var a = Parts.parse(e.debtorAccountReference());
+        System.out.println("debtorAccountReference: " + a);
         try (Connection x = open()) {
+            System.out.println("debtorAccountReference2: " + a);
             var ac = account(x, a);
             if (ac == null)
                 return reject(c.paymentReference(), fail(PaymentExecutionCheckType.ACCOUNT_VALID, "ACCOUNT_INVALID"), unk(PaymentExecutionCheckType.DEBIT_ALLOWED), unk(PaymentExecutionCheckType.AVAILABLE_FUNDS_SUFFICIENT), "ACCOUNT_INVALID");
