@@ -32,10 +32,16 @@ public class PaymentExecutionApiMapper {
                     "Completed payment has no authoritative accounting date (DCO)");
         }
 
+        if (source.outcome() == com.regional.corebanking.payment.domain.PaymentExecutionOutcome.COMPLETED
+                && (source.bankReference() == null || source.bankReference().isBlank())) {
+            throw new PaymentExecutionUnavailableException(
+                    "Completed payment has no authoritative bankReference");
+        }
+
         PaymentEventResult target = new PaymentEventResult(
                 source.paymentReference(),
                 PaymentEventResult.OutcomeEnum.fromValue(source.outcome().name()),
-                source.checks().stream().map(this::toApi).toList(),
+                historicalChecks(source),
                 source.dco(),
                 source.observedAt()
         );
@@ -44,6 +50,20 @@ public class PaymentExecutionApiMapper {
         target.setReasonCode(source.reasonCode());
 
         return target;
+    }
+
+    /** Do not recompute controls from the current bank state during recovery. */
+    private java.util.List<PaymentExecutionCheck> historicalChecks(
+            com.regional.corebanking.payment.domain.PaymentExecutionResult source) {
+        if (source.checks() == null) {
+            throw new PaymentExecutionUnavailableException("Stored payment checks are null");
+        }
+        int size = source.checks().size();
+        if (size != 0 && size != 3) {
+            throw new PaymentExecutionUnavailableException(
+                    "Incomplete historical execution checks; refusing to invent controls");
+        }
+        return source.checks().stream().map(this::toApi).toList();
     }
 
     private com.regional.corebanking.payment.domain.PaymentProviderEvent toDomain(PaymentProviderEvent source) {

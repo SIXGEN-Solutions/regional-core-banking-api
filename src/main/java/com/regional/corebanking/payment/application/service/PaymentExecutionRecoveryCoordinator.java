@@ -42,7 +42,7 @@ final class PaymentExecutionRecoveryCoordinator {
             throw new PaymentExecutionUnavailableException(
                 "Stored completed payment has no DCO; authoritative banking recovery required");
         return local.orElseThrow(() -> new PaymentExecutionNotFoundException(
-                "No authoritative payment execution result for paymentReference"));
+                "No authoritative payment execution result for paymentReference", reference));
     }
 
     PaymentExecutionResult byIdempotencyKey(String institution, String key) {
@@ -69,13 +69,20 @@ final class PaymentExecutionRecoveryCoordinator {
 
     private static boolean terminalWithValidDco(PaymentExecutionResult result) {
         return result.outcome() != PaymentExecutionOutcome.UNKNOWN
-                && (result.outcome() != PaymentExecutionOutcome.COMPLETED || result.dco() != null);
+                && (result.outcome() != PaymentExecutionOutcome.COMPLETED
+                    || (result.dco() != null
+                        && result.bankReference() != null
+                        && !result.bankReference().isBlank()));
     }
 
     private static PaymentExecutionResult validateBankOutcome(PaymentExecutionResult result) {
-        if (result.outcome() == null || result.outcome() == PaymentExecutionOutcome.UNKNOWN) {
-            // An unresolved bank lookup cannot upgrade a technical UNKNOWN.
-            throw new PaymentExecutionUnavailableException("Bank recovery outcome remains uncertain");
+        if (result.outcome() == null) {
+            throw new PaymentExecutionUnavailableException("Bank recovery has no outcome");
+        }
+        // UNKNOWN remains UNKNOWN: a bank query is not proof of completion or rejection.
+        // Never attempt a new financial execution in the lookup path.
+        if (result.outcome() == PaymentExecutionOutcome.UNKNOWN) {
+            return result;
         }
         if (result.outcome() == PaymentExecutionOutcome.COMPLETED && result.dco() == null) {
             throw new PaymentExecutionUnavailableException("Bank recovery completed event has no DCO");

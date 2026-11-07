@@ -6,6 +6,11 @@ import com.regional.corebanking.payment.application.exception.PaymentExecutionUn
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -13,9 +18,20 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class PaymentExecutionApiExceptionHandler {
 
     @ExceptionHandler(PaymentExecutionNotFoundException.class)
-    ProblemDetail notFound(PaymentExecutionNotFoundException exception, HttpServletRequest request) {
-        return problem(HttpStatus.NOT_FOUND, "Payment execution result not found",
-                exception.getMessage(), "PAYMENT_EXECUTION_NOT_FOUND", request);
+    ResponseEntity<Map<String, Object>> notFound(PaymentExecutionNotFoundException exception) {
+        // 404 is a negative lookup result, NOT a financial REJECTED outcome.
+        // A missing idempotency key cannot establish the original paymentReference.
+        Map<String, Object> result = new LinkedHashMap<>();
+        if (exception.paymentReference() != null) {
+            result.put("paymentReference", exception.paymentReference());
+        }
+        result.put("outcome", "UNKNOWN");
+        result.put("checks", java.util.List.of());
+        result.put("bankReference", null);
+        result.put("reasonCode", null);
+        result.put("dco", null);
+        result.put("observedAt", OffsetDateTime.now(ZoneOffset.UTC).toString());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
     }
 
     @ExceptionHandler(PaymentExecutionIdempotencyConflictException.class)

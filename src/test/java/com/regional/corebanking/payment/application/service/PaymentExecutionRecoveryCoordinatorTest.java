@@ -94,6 +94,39 @@ class PaymentExecutionRecoveryCoordinatorTest {
         verify(bank, never()).execute(anyString(), anyString(), any());
     }
 
+    @Test void bankUnknownRemainsUnknownAndNeverReplays() {
+        var local = mock(PaymentExecutionPersistencePort.class);
+        var bank = mock(PaymentExecutionBankingPort.class);
+        when(local.findByPaymentReference("REGIONAL", "P1"))
+                .thenReturn(Optional.of(result("P1", PaymentExecutionOutcome.UNKNOWN, null)));
+        when(bank.findByPaymentReference("REGIONAL", "P1"))
+                .thenReturn(Optional.of(result("P1", PaymentExecutionOutcome.UNKNOWN, null)));
+        var recovery = new PaymentExecutionRecoveryCoordinator(local, bank);
+        assertEquals(PaymentExecutionOutcome.UNKNOWN,
+                recovery.byPaymentReference("REGIONAL", "P1").outcome());
+        verify(bank, never()).execute(anyString(), anyString(), any());
+    }
+
+    @Test void unknownPaymentReferenceRetainsLookupReferenceInNotFoundException() {
+        var local = mock(PaymentExecutionPersistencePort.class);
+        var bank = mock(PaymentExecutionBankingPort.class);
+        var recovery = new PaymentExecutionRecoveryCoordinator(local, bank);
+        var exception = assertThrows(PaymentExecutionNotFoundException.class,
+                () -> recovery.byPaymentReference("REGIONAL", "PAY-MISSING"));
+        assertEquals("PAY-MISSING", exception.paymentReference());
+        verify(bank, never()).execute(anyString(), anyString(), any());
+    }
+
+    @Test void unknownIdempotencyKeyMustNotInventPaymentReference() {
+        var local = mock(PaymentExecutionPersistencePort.class);
+        var bank = mock(PaymentExecutionBankingPort.class);
+        var recovery = new PaymentExecutionRecoveryCoordinator(local, bank);
+        var exception = assertThrows(PaymentExecutionNotFoundException.class,
+                () -> recovery.byIdempotencyKey("REGIONAL", "IDEM-MISSING"));
+        assertNull(exception.paymentReference());
+        verify(bank, never()).execute(anyString(), anyString(), any());
+    }
+
     @Test void missingResultIsNotFoundWithoutExecution() {
         var local = mock(PaymentExecutionPersistencePort.class);
         var bank = mock(PaymentExecutionBankingPort.class);

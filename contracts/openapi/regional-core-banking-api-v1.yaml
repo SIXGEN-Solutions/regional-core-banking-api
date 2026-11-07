@@ -444,11 +444,17 @@ paths:
         - $ref: '#/components/parameters/PaymentReferencePath'
       responses:
         '200':
-          description: Authoritative payment execution result.
+          description: Payment execution result (COMPLETED, REJECTED or UNKNOWN); no financial replay.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PaymentEventResult' }
-        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '404':
+          description: |
+            No technical claim or authoritative bank evidence found for the lookup.
+            UNKNOWN is not evidence that the financial posting did not occur.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentEventLookupNotFound' }
         '503': { $ref: '#/components/responses/ProblemResponse' }
 
   /api/v1/payment-events/idempotency/{idempotencyKey}:
@@ -462,11 +468,17 @@ paths:
         - $ref: '#/components/parameters/IdempotencyKeyPath'
       responses:
         '200':
-          description: Authoritative payment execution result.
+          description: Payment execution result (COMPLETED, REJECTED or UNKNOWN); no financial replay.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PaymentEventResult' }
-        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '404':
+          description: |
+            No technical claim or authoritative bank evidence found for the lookup.
+            UNKNOWN is not evidence that the financial posting did not occur.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentEventLookupNotFound' }
         '503': { $ref: '#/components/responses/ProblemResponse' }
 
   /api/v1/accounting-entries:
@@ -1882,8 +1894,14 @@ components:
             paymentReference or idempotency-key lookup before any retry.
         checks:
           type: array
-          minItems: 3
+          minItems: 0
           maxItems: 3
+          description: |
+            When exactly three historical execution checks were persisted,
+            return those original checks unchanged. An empty array means the
+            original checks are unavailable during authoritative recovery; it
+            never means that the checks passed or were re-evaluated.
+            Do not reconstruct historical checks from current banking state.
           items: { $ref: '#/components/schemas/PaymentExecutionCheck' }
         bankReference:
           type: [string, 'null']
@@ -1898,6 +1916,36 @@ components:
             Required in every response. Non-null for COMPLETED; null is permitted
             only for REJECTED or UNKNOWN. Historic completed results missing
             DCO must be resolved from authoritative bank evidence or fail closed.
+        observedAt: { type: string, format: date-time }
+
+    PaymentEventLookupNotFound:
+      type: object
+      additionalProperties: false
+      description: |
+        An unrecognized lookup has HTTP 404 and outcome UNKNOWN, without
+        asserting financial rejection or non-execution. paymentReference is
+        included only if supplied by the paymentReference lookup; an unknown
+        idempotency key cannot provide a verified paymentReference.
+        No historical checks are available for a missing lookup.
+      required: [outcome, checks, bankReference, reasonCode, dco, observedAt]
+      properties:
+        paymentReference: { $ref: '#/components/schemas/PaymentReference' }
+        outcome: { type: string, enum: [UNKNOWN] }
+        checks:
+          type: array
+          minItems: 0
+          maxItems: 0
+          items: { $ref: '#/components/schemas/PaymentExecutionCheck' }
+        bankReference:
+          type: [string, 'null']
+          description: Always null for a missing lookup.
+        reasonCode:
+          type: [string, 'null']
+          description: Always null; REFERENCE_UNKNOWN is not a business code.
+        dco:
+          type: [string, 'null']
+          format: date
+          description: Always null without a confirmed banking event.
         observedAt: { type: string, format: date-time }
 
     AccountingEntriesBatchRequest:
