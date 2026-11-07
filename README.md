@@ -23,7 +23,7 @@ Current Regional V1 contract status:
 - `generationPolicy: ACTIVE`
 - `codeGenerationAllowed: true`
 
-SIXPAY contracts, DTOs and clients remain compatibility/reference evidence only.
+No copied SIXPAY API contracts are retained. Regional OpenAPI is authoritative; consumer compatibility is evaluated independently.
 
 ## OpenAPI generation boundary
 
@@ -154,7 +154,7 @@ Customer closure decisions:
 
 - the Regional canonical `CustomerVerificationRequest` signature remains unchanged;
 - SIXPAY must align with the Regional request contract where the SIXPAY
-  REFERENCE_ONLY contract differs;
+  consumer's observed wire behavior differs;
 - customers can be searched by NIU through `GET /api/v1/customers` and retrieved
   by canonical `customerReference` through
   `GET /api/v1/customers/{customerReference}`;

@@ -19,11 +19,11 @@ The Regional OpenAPI is the canonical V1 transport contract.
 
 | Capability | Regional path(s) | Evidence / decision basis | R1 status |
 |---|---|---|---|
-| Customer / Account verification | `/api/v1/customers`, `/api/v1/customers/{customerReference}`, `/api/v1/customers/{customerReference}/accounts`, `/api/v1/customer-verifications` | SIXPAY compatibility contract + explicit Regional approval | APPROVED |
-| Payment Confirmation / OTP | `/api/v1/payment-confirmation-challenges...` | SIXPAY compatibility contract + explicit Regional approval | APPROVED |
-| Payment execution / recovery | `/api/v1/payment-events...` | SIXPAY wire DTO baseline + explicit Regional Payment Event decisions | APPROVED |
-| Accounting T1 | `/api/v1/accounting-entries...` | SIXPAY compatibility contract + explicit Regional approval | APPROVED |
-| End-of-day / TFJ lookup | `/api/v1/end-of-day-confirmations` | SIXPAY compatibility contract + explicit Regional approval | APPROVED |
+| Customer / Account verification | `/api/v1/customers`, `/api/v1/customers/{customerReference}`, `/api/v1/customers/{customerReference}/accounts`, `/api/v1/customer-verifications` | Historical consumer compatibility assessment + explicit Regional approval | APPROVED |
+| Payment Confirmation / OTP | `/api/v1/payment-confirmation-challenges...` | Historical consumer compatibility assessment + explicit Regional approval | APPROVED |
+| Payment execution / recovery | `/api/v1/payment-events...` | Historical consumer interoperability assessment + explicit Regional Payment Event decisions | APPROVED |
+| Accounting T1 | `/api/v1/accounting-entries...` | Historical consumer compatibility assessment + explicit Regional approval | APPROVED |
+| End-of-day / TFJ lookup | `/api/v1/end-of-day-confirmations` | Historical consumer compatibility assessment + explicit Regional approval | APPROVED |
 
 ## Approved Regional Payment Event decisions
 

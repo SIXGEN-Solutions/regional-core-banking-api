@@ -38,7 +38,7 @@ public final class AccountLookupApiAdapter {
             @PathVariable("accountnumber") String accountNumber) {
         // Missing header selects the existing bank deployment configuration.
         // A supplied (even blank or incorrect) header is never silently replaced.
-        
+
         String effectiveInstitutionCode = institutionCode == null
                 ? configuredInstitutionCode : institutionCode;
         BankAccount account = useCase.findAccountByAgencyAndNumber(

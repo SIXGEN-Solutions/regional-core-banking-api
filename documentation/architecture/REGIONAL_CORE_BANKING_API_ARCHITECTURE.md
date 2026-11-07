@@ -17,7 +17,6 @@ regional-core-banking-api/
 ├─ .github/workflows/
 ├─ contracts/
 │  ├─ openapi/regional-core-banking-api-v1.yaml
-│  └─ reference/sixpay/
 ├─ documentation/
 │  ├─ architecture/
 │  ├─ adr/
@@ -69,7 +68,7 @@ Four models remain separate:
 SIXPAY Java models are a fifth, external consumer-side representation and must not be imported into the Regional server.
 
 ## OpenAPI ownership
-The Regional repository owns the canonical OpenAPI. SIXPAY reference contracts help bootstrap and test compatibility but are not copied as the canonical Regional contract unchanged.
+The Regional repository owns the canonical OpenAPI. No copied SIXPAY OpenAPI contracts are retained or used as implementation inputs. Consumer interoperability is validated independently against actual client behavior when needed.
 
 ## Compatibility
 For retained V1 operations, validate the Regional OpenAPI against the actual SIXPAY client wire behavior:

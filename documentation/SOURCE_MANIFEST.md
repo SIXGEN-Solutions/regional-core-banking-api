@@ -15,16 +15,11 @@
 - `REGIONAL_CORE_BANKING_API_STARTER_MANIFEST.txt`
 - `contracts/openapi/regional-core-banking-api-v1.yaml` — DRAFT / PENDING_APPROVAL / REFERENCE_ONLY / codeGenerationAllowed:false
 
-## SIXPAY compatibility references
+## Historical consumer context (no copied contracts)
 
 Source repository: `SIXGEN-Solutions/sixpay-connect`
 Starter reference revision: `main @ b6da7db33432cb81997cc293b21080dd46fdcc14`
-Classification: `SIXPAY_REFERENCE / REFERENCE_ONLY`
+Historical source classification: `SIXPAY_REFERENCE / REFERENCE_ONLY`. No SIXPAY contract files are retained in this repository.
 
-- `documentation/contracts/amplitude/amplitude-customer-verification-api-v1.yaml` -> `contracts/reference/sixpay/amplitude-customer-verification-api-v1.yaml`
-- `documentation/contracts/amplitude/amplitude-payment-confirmation-api-v1.yaml` -> `contracts/reference/sixpay/amplitude-payment-confirmation-api-v1.yaml`
-- `documentation/contracts/amplitude/amplitude-payment-posting-api-v1.yaml` -> `contracts/reference/sixpay/amplitude-payment-posting-api-v1.yaml`
-- `documentation/contracts/amplitude/amplitude-accounting-entries-api-v1.yaml` -> `contracts/reference/sixpay/amplitude-accounting-entries-api-v1.yaml`
-- `documentation/contracts/amplitude/amplitude-end-of-day-confirmation-api-v1.yaml` -> `contracts/reference/sixpay/amplitude-end-of-day-confirmation-api-v1.yaml`
 
 No SIXPAY Java DTO/model is imported as a Regional canonical model. Broader SIXPAY implementation evidence is not fabricated or copied by R0 unless explicitly selected later.

@@ -4,7 +4,7 @@
 Create the independent repository and load this starter pack. No server behavior yet.
 
 ## R1 — Regional contract baseline
-Build `regional-core-banking-api-v1.yaml` from approved Regional banking capabilities and bank evidence. Use SIXPAY contracts and clients as compatibility evidence, not as the Regional model source. Resolve all placeholder schemas before code generation.
+Build `regional-core-banking-api-v1.yaml` from approved Regional banking capabilities and bank evidence. Use approved Regional and bank evidence as the contract source; validate interoperability against actual authorized consumers separately when required. Resolve all placeholder schemas before code generation.
 
 ## R2 — Repository / Spring Boot bootstrap
 Create Maven Wrapper, Java 21 Spring Boot project, package boundaries, config profiles, health endpoints, test foundation, Dockerfile and Compose skeleton.
