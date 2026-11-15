@@ -102,9 +102,20 @@ To inspect only the non-generation bootstrap/tests while preparing the R3 patch:
 
 ## Container
 
-GitHub Actions runs the Maven verification/build and builds the Docker image.
-For branch pushes, the image is published to Docker Hub under
-`d22002/regional-core-banking-api`; `latest` is published only from `main`.
+GitHub Actions separates continuous integration from image publication:
+
+- `.github/workflows/ci.yml` runs verification, local Docker build validation
+  and Compose configuration validation on pull requests, pushes to `main` or
+  `feat/**`, and manual dispatch. It never publishes an image.
+- `.github/workflows/regional-image-publish.yml` is manual (`workflow_dispatch`).
+  It re-runs Maven verification, builds for `linux/amd64` and publishes to GHCR
+  as `ghcr.io/sixgen-solutions/regional-core-banking-api:sha-<full-commit-sha>`.
+  Its job summary records the immutable registry digest for deployment.
+
+GHCR publication and deployment access require an infrastructure decision and
+appropriate GitHub package permissions; this workflow does not deploy. The
+previous Docker Hub image remains the local Compose default for compatibility
+until an approved deployment migration is applied.
 
 Local Docker Compose consumes the published image and does not build the API image:
 
@@ -114,8 +125,10 @@ docker compose up -d
 docker compose ps
 ```
 
-To run a specific immutable CI image, set `REGIONAL_API_IMAGE` in the local `.env`
-to the required `d22002/regional-core-banking-api:<6-char-git-sha>` tag.
+To run a specifically published GHCR image, set `REGIONAL_API_IMAGE` in
+local `.env` to `ghcr.io/sixgen-solutions/regional-core-banking-api@sha256:<digest>`.
+Ensure that the deployment host has permission to pull the package. The digest
+must come from a successful publication; never substitute an unverified value.
 
 Environment-specific endpoints, credentials, certificates, private keys and trust material remain external configuration.
 

@@ -1,0 +1,88 @@
+name: Regional Core Banking API image publish (GHCR)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: regional-image-publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-and-publish:
+    name: Verify and publish immutable image
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout selected commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Approved Regional contract guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          CONTRACT=contracts/openapi/regional-core-banking-api-v1.yaml
+          grep -Eq '^[[:space:]]*approvalStatus:[[:space:]]*APPROVED[[:space:]]*$' "$CONTRACT"
+          grep -Eq '^[[:space:]]*codeGenerationAllowed:[[:space:]]*true[[:space:]]*$' "$CONTRACT"
+
+      - name: Maven verification gate
+        run: ./mvnw --batch-mode --no-transfer-progress clean verify
+
+      - name: Normalize GHCR image repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "IMAGE_REPOSITORY=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/regional-core-banking-api" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image (linux/amd64)
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: ${{ env.IMAGE_REPOSITORY }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=La Regionale Core Banking API
+
+      - name: Record immutable image reference
+        shell: bash
+        env:
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$IMAGE_DIGEST" =~ ^sha256:[[:xdigit:]]{64}$ ]]; then
+            echo "::error::Registry did not return a valid image digest"
+            exit 1
+          fi
+          {
+            echo '### Published image (deploy using immutable digest)'
+            printf '`%s@%s`\n' "$IMAGE_REPOSITORY" "$IMAGE_DIGEST"
+            printf 'Source commit: `%s`\n' "$GITHUB_SHA"
+          } >> "$GITHUB_STEP_SUMMARY"
