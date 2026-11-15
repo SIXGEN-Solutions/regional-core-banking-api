@@ -1,0 +1,79 @@
+# Regional-owned isolated MVP stack. Deploy separately from SIXPAY.
+name: regional-core-banking-mvp
+services:
+  postgres:
+    image: ${REGIONAL_POSTGRES_IMAGE:?pin PostgreSQL image}
+    environment:
+      POSTGRES_DB: regional_core_banking
+      POSTGRES_USER: regional_core_banking_app
+      POSTGRES_PASSWORD_FILE: /run/secrets/REGIONAL_TECHNICAL_DB_PASSWORD
+    secrets: [REGIONAL_TECHNICAL_DB_PASSWORD]
+    volumes:
+      - /var/lib/regional/postgres/data:/var/lib/postgresql/data:Z
+      - /opt/regional/bootstrap/postgres/001_create_core_banking_schema.sql:/docker-entrypoint-initdb.d/001_create_core_banking_schema.sql:ro,Z
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U regional_core_banking_app -d regional_core_banking"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [regional_private]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+  customer-oracle:
+    image: ${REGIONAL_ORACLE_IMAGE:?pin Oracle image}
+    environment:
+      ORACLE_RANDOM_PASSWORD: "true"
+      APP_USER: ${ORACLE_APP_USERNAME:?Oracle mock schema user required}
+      APP_USER_PASSWORD_FILE: /run/secrets/ORACLE_APP_PASSWORD
+    secrets: [ORACLE_APP_PASSWORD]
+    volumes:
+      - /var/lib/regional/oracle/data:/opt/oracle/oradata:Z
+      - /opt/regional/bootstrap/oracle/001_customer_schema.sql:/container-entrypoint-initdb.d/001_customer_schema.sql:ro,Z
+      - /opt/regional/bootstrap/oracle/002_payment_schema.sql:/container-entrypoint-initdb.d/002_payment_schema.sql:ro,Z
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 15s
+      timeout: 10s
+      retries: 40
+      start_period: 60s
+    networks: [regional_private]
+    restart: unless-stopped
+  regional-core-banking-api:
+    image: ${REGIONAL_API_IMAGE:?pin API digest}
+    ports:
+      - "127.0.0.1:${REGIONAL_API_LOOPBACK_PORT:-9093}:${SERVER_PORT:-9092}"
+    # SPRING_CONFIG_LOCATION replaces the packaged application.yml completely.
+    # Secrets are consumed via Spring Boot configtree (no secret env interpolation).
+    env_file: /opt/regional/config/.env
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      SPRING_CONFIG_LOCATION: file:/etc/regional/application-production.yml
+    secrets:
+      - REGIONAL_TECHNICAL_DB_PASSWORD
+      - ORACLE_APP_PASSWORD
+      - REGIONAL_OTP_HMAC_KEYS
+      - REGIONAL_OTP_EMAIL_USERNAME
+      - REGIONAL_OTP_EMAIL_PASSWORD
+      - REGIONAL_OTP_SMS_USERNAME
+      - REGIONAL_OTP_SMS_PASSWORD
+    volumes:
+      - /opt/regional/config/application-production.yml:/etc/regional/application-production.yml:ro,Z
+    depends_on:
+      postgres: {condition: service_healthy}
+      customer-oracle: {condition: service_healthy}
+    networks: [regional_private, regional_access]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+networks:
+  regional_private:
+    internal: true
+  regional_access:
+    internal: false
+secrets:
+  REGIONAL_TECHNICAL_DB_PASSWORD: {file: /opt/regional/secrets/REGIONAL_TECHNICAL_DB_PASSWORD}
+  ORACLE_APP_PASSWORD: {file: /opt/regional/secrets/ORACLE_APP_PASSWORD}
+  REGIONAL_OTP_HMAC_KEYS: {file: /opt/regional/secrets/REGIONAL_OTP_HMAC_KEYS}
+  REGIONAL_OTP_EMAIL_USERNAME: {file: /opt/regional/secrets/REGIONAL_OTP_EMAIL_USERNAME}
+  REGIONAL_OTP_EMAIL_PASSWORD: {file: /opt/regional/secrets/REGIONAL_OTP_EMAIL_PASSWORD}
+  REGIONAL_OTP_SMS_USERNAME: {file: /opt/regional/secrets/REGIONAL_OTP_SMS_USERNAME}
+  REGIONAL_OTP_SMS_PASSWORD: {file: /opt/regional/secrets/REGIONAL_OTP_SMS_PASSWORD}

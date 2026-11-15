@@ -37,9 +37,11 @@ public class CustomerApiAdapter implements CustomersApi {
         // contract for legacy compatibility but are intentionally not wired yet.
         // The existing application use case remains based on NIU/customer number
         // until the corresponding banking behavior is explicitly implemented.
-        return ResponseEntity.ok(mapper.toSearchResult(
+        CustomerSearchResult result = mapper.toSearchResult(
                 useCase.searchCustomers(financialInstitutionCode, niu, customerNumber)
-        ));
+        );
+        System.out.println("searchCustomers: " + result);
+        return ResponseEntity.ok(result);
     }
 
     @Override
@@ -62,13 +64,17 @@ public class CustomerApiAdapter implements CustomersApi {
             String iban
     ) {
         // Endpoint remains wired but is explicitly reserved for the future Account coverage.
+        var laccounts =  useCase.getCustomerAccounts(
+                xFinancialInstitutionCode,
+                customerReference,
+                rib,
+                iban
+        );
+        System.out.println("getCustomerAccounts: " + laccounts.size());
+        System.out.println("getCustomerAccounts: " + laccounts);
+
         return ResponseEntity.ok(mapper.toAccountSearchResult(
-                useCase.getCustomerAccounts(
-                        xFinancialInstitutionCode,
-                        customerReference,
-                        rib,
-                        iban
-                )
+                laccounts
         ));
     }
 

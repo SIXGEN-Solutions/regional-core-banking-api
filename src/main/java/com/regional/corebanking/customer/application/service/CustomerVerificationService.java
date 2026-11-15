@@ -49,7 +49,6 @@ public final class CustomerVerificationService implements CustomerVerificationUs
                 required(financialInstitutionCode, "financialInstitutionCode"),
                 required(customerReference, "customerReference")
         );
-
         if (identity == null) {
             throw new CustomerNotFoundException(customerReference);
         }

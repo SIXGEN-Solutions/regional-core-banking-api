@@ -396,3 +396,11 @@ preserves `UNKNOWN` if either channel is indeterminate; per-channel result
 representation remains an unresolved contract decision. No OpenAPI changes.
 
 See `documentation/architecture/KANNEL_SMS_INTEGRATION.md`.
+
+
+## Contabo Regional MVP — preparation only
+
+A separate, non-deployed Oracle MOCK + Regional PostgreSQL + Spring Boot Compose
+proposal is in `deploy/contabo/` with full operating procedure in
+`documentation/runbooks/REGIONAL_CONTABO_MVP_DEPLOYMENT.md`.
+It does not authorize public banking access or modify SIXPAY infrastructure.

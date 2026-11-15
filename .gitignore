@@ -42,3 +42,8 @@ venv/
 
 # Local developer secrets - never commit
 /config/application-local-secrets.yml
+
+# Deployment runtime values and locally staged host secrets
+/deploy/contabo/.env
+/deploy/contabo/secrets/
+/deploy/contabo/private/
