@@ -17,7 +17,6 @@ regional-core-banking-api/
 ├─ .github/workflows/
 ├─ contracts/
 │  ├─ openapi/regional-core-banking-api-v1.yaml
-│  └─ reference/sixpay/
 ├─ documentation/
 │  ├─ architecture/
 │  ├─ adr/
@@ -69,7 +68,7 @@ Four models remain separate:
 SIXPAY Java models are a fifth, external consumer-side representation and must not be imported into the Regional server.
 
 ## OpenAPI ownership
-The Regional repository owns the canonical OpenAPI. SIXPAY reference contracts help bootstrap and test compatibility but are not copied as the canonical Regional contract unchanged.
+The Regional repository owns the canonical OpenAPI. No copied SIXPAY OpenAPI contracts are retained or used as implementation inputs. Consumer interoperability is validated independently against actual client behavior when needed.
 
 ## Compatibility
 For retained V1 operations, validate the Regional OpenAPI against the actual SIXPAY client wire behavior:
@@ -89,7 +88,32 @@ A Regional internal Java name may differ freely from SIXPAY if the wire contract
 One Spring Boot application on the Core Banking API VM. It accesses Informix only through dedicated infrastructure adapters. No controller or domain object accesses JDBC directly.
 
 ## Persistence
-Do not assume technical persistence is stored in Amplitude/Informix. If idempotency/audit/recovery need a separate store, make it an explicit architecture/infrastructure decision.
+Amplitude/Informix remains authoritative for banking facts and banking execution
+outcomes, but R5.2 Payment Confirmation technical state is separated from Amplitude.
+
+The validated R5.2 architecture uses a dedicated PostgreSQL technical persistence
+store owned by Regional Core Banking API for durable challenge state,
+idempotency/recovery and delivery technical state. Plaintext OTP, HMAC secret keys
+and SMTP credentials must never be persisted there.
+
+Multi-instance correctness relies primarily on PostgreSQL transactions and database
+uniqueness/concurrency guarantees, not JVM-local locks as production source of truth.
+Physical schema/migrations are defined by R5.2.1.
+
+## Payment Confirmation delivery
+Regional Core Banking API is authoritative for OTP generation, challenge lifecycle,
+verification and delivery orchestration. Delivery channels are selected by Regional
+deployment configuration, never by consumers; SMS, EMAIL or both may be enabled.
+
+EMAIL uses a Regional-owned outbound mail adapter with environment-provided
+SMTP/relay and secret configuration. SMS uses the confirmed bank chain
+`Amplitude -> SMS database -> Kannel -> M-Target (SMPP) -> operators -> customer`;
+Regional does not implement direct SMPP. Its physical database adapter awaits exact
+La Régionale mapping/write/status evidence.
+
+The approved OpenAPI currently exposes singular `deliveryChannel`; simultaneous
+SMS+EMAIL is a known contract divergence. No wire change occurs until an explicitly
+approved Regional contract evolution defines its representation and compatibility.
 
 ## Observability
 Log correlation, caller/client identity, operation, result, duration and timestamp. Never log OTP, credentials, tokens, secrets or unmasked sensitive banking data.

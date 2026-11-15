@@ -1,0 +1,83 @@
+package com.regional.corebanking.payment.application.service;
+
+import com.regional.corebanking.payment.application.port.in.PaymentExecutionUseCase;
+import com.regional.corebanking.payment.application.port.out.PaymentExecutionBankingPort;
+import com.regional.corebanking.payment.application.port.out.PaymentExecutionPersistencePort;
+import com.regional.corebanking.payment.domain.PaymentExecutionCommand;
+import com.regional.corebanking.payment.domain.PaymentExecutionResult;
+import org.springframework.stereotype.Service;
+
+@Service
+public class PaymentExecutionService implements PaymentExecutionUseCase {
+
+    private final PaymentExecutionBankingPort bankingPort;
+    private final PaymentExecutionPersistencePort persistencePort;
+    private final PaymentExecutionRecoveryCoordinator recovery;
+
+    public PaymentExecutionService(
+            PaymentExecutionBankingPort bankingPort,
+            PaymentExecutionPersistencePort persistencePort) {
+        this.bankingPort = bankingPort;
+        this.persistencePort = persistencePort;
+        this.recovery = new PaymentExecutionRecoveryCoordinator(persistencePort, bankingPort);
+    }
+
+    @Override
+    public PaymentExecutionResult execute(
+            String financialInstitutionCode,
+            String idempotencyKey,
+            PaymentExecutionCommand command) {
+        requireText(financialInstitutionCode, "financialInstitutionCode");
+        requireText(idempotencyKey, "idempotencyKey");
+        validate(command);
+
+        String fingerprint = PaymentExecutionFingerprint.sha256(command);
+        System.out.println("Posting FingerPrint: " + fingerprint);
+        return persistencePort.executeIdempotent(
+                financialInstitutionCode,
+                idempotencyKey,
+                fingerprint,
+                command,
+                () -> bankingPort.execute(financialInstitutionCode, idempotencyKey, command));
+    }
+
+    @Override
+    public PaymentExecutionResult recoverByPaymentReference(
+            String financialInstitutionCode,
+            String paymentReference) {
+        requireText(financialInstitutionCode, "financialInstitutionCode");
+        requireText(paymentReference, "paymentReference");
+
+        return recovery.byPaymentReference(financialInstitutionCode, paymentReference);
+    }
+
+    @Override
+    public PaymentExecutionResult recoverByIdempotencyKey(
+            String financialInstitutionCode,
+            String idempotencyKey) {
+        requireText(financialInstitutionCode, "financialInstitutionCode");
+        requireText(idempotencyKey, "idempotencyKey");
+
+        return recovery.byIdempotencyKey(financialInstitutionCode, idempotencyKey);
+    }
+
+    private static void validate(PaymentExecutionCommand command) {
+        if (command == null) {
+            throw new IllegalArgumentException("payment execution command is required");
+        }
+        requireText(command.paymentReference(), "paymentReference");
+        requireText(command.snapshotVersion(), "snapshotVersion");
+        if (command.providerEvent() == null) {
+            throw new IllegalArgumentException("providerEvent is required");
+        }
+        if (!command.paymentReference().equals(command.providerEvent().paymentReference())) {
+            throw new IllegalArgumentException("providerEvent.paymentReference must match envelope paymentReference");
+        }
+    }
+
+    private static void requireText(String value, String field) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(field + " is required");
+        }
+    }
+}

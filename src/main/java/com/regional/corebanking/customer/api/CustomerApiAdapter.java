@@ -1,0 +1,91 @@
+package com.regional.corebanking.customer.api;
+
+import com.regional.corebanking.customer.application.port.in.CustomerVerificationUseCase;
+import com.regional.corebanking.generated.api.CustomersApi;
+import com.regional.corebanking.generated.model.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
+
+@RestController
+public class CustomerApiAdapter implements CustomersApi {
+
+    private final CustomerVerificationUseCase useCase;
+    private final CustomerApiMapper mapper;
+
+    public CustomerApiAdapter(
+            CustomerVerificationUseCase useCase,
+            CustomerApiMapper mapper
+    ) {
+        this.useCase = useCase;
+        this.mapper = mapper;
+    }
+
+    @Override
+    public ResponseEntity<CustomerSearchResult> searchCustomers(
+            UUID xCorrelationID,
+            String financialInstitutionCode,
+            String niu,
+            String customerNumber,
+            String accountNo,
+            String age,
+            String accountTypes,
+            String chapitre
+    ) {
+        // accountNo, age, accountTypes and chapitre are exposed by the Regional
+        // contract for legacy compatibility but are intentionally not wired yet.
+        // The existing application use case remains based on NIU/customer number
+        // until the corresponding banking behavior is explicitly implemented.
+        CustomerSearchResult result = mapper.toSearchResult(
+                useCase.searchCustomers(financialInstitutionCode, niu, customerNumber)
+        );
+        System.out.println("searchCustomers: " + result);
+        return ResponseEntity.ok(result);
+    }
+
+    @Override
+    public ResponseEntity<CustomerIdentity> getCustomer(
+            UUID xCorrelationID,
+            String customerReference,
+            String xFinancialInstitutionCode
+    ) {
+        return ResponseEntity.ok(mapper.toIdentity(
+                useCase.getCustomer(xFinancialInstitutionCode, customerReference)
+        ));
+    }
+
+    @Override
+    public ResponseEntity<AccountSearchResult> getCustomerAccounts(
+            UUID xCorrelationID,
+            String customerReference,
+            String xFinancialInstitutionCode,
+            String rib,
+            String iban
+    ) {
+        // Endpoint remains wired but is explicitly reserved for the future Account coverage.
+        var laccounts =  useCase.getCustomerAccounts(
+                xFinancialInstitutionCode,
+                customerReference,
+                rib,
+                iban
+        );
+        System.out.println("getCustomerAccounts: " + laccounts.size());
+        System.out.println("getCustomerAccounts: " + laccounts);
+
+        return ResponseEntity.ok(mapper.toAccountSearchResult(
+                laccounts
+        ));
+    }
+
+    @Override
+    public ResponseEntity<CustomerVerificationResult> verifyCustomer(
+            UUID xCorrelationID,
+            CustomerVerificationRequest customerVerificationRequest
+    ) {
+        System.out.println("customerVerificationRequest: " + customerVerificationRequest);
+        return ResponseEntity.ok(mapper.toVerificationResult(
+                useCase.verifyCustomer(mapper.toDomain(customerVerificationRequest))
+        ));
+    }
+}

@@ -5,7 +5,7 @@ Develop `SIXGEN-Solutions/regional-core-banking-api` as an autonomous banking AP
 
 ## Source ownership
 1. The canonical API contract is `contracts/openapi/regional-core-banking-api-v1.yaml` in the new repository.
-2. SIXPAY contracts and code copied into `reference/sixpay/` are reference/compatibility evidence only.
+2. Historical consumer documentation in `reference/sixpay/` is non-authoritative context only; copied SIXPAY contracts are not retained.
 3. Existing SIXPAY Java DTOs/models are NOT the source model of the Regional API.
 4. The initial Regional V1 must preserve protocol compatibility with the requests/responses actually used by the current SIXPAY Core Banking clients where those operations are retained.
 5. Compatibility means HTTP method/path, headers, JSON field semantics/types, response/status/error/recovery expectations — not Java class/package identity.

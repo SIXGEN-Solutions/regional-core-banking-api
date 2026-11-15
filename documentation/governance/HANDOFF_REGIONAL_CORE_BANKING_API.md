@@ -10,8 +10,8 @@ En revanche, les clients Core Banking déjà présents dans SIXPAY constituent u
 La compatibilité ne signifie pas que les noms de classes Java, packages, modèles de domaine ou structures internes du serveur Regional doivent reproduire ceux de SIXPAY.
 # 2. Principes contractuels
 Le nouveau contrat canonique sera contracts/openapi/regional-core-banking-api-v1.yaml.
-Les cinq contrats Amplitude existants de SIXPAY sont copiés comme REFERENCE_ONLY pour préserver les décisions et interfaces déjà approuvées côté consommateur.
-Le registre SIXPAY reste autoritatif uniquement pour le statut des contrats du repository SIXPAY. Le nouveau repository devra définir sa propre gouvernance contractuelle.
+Les copies des contrats Amplitude de SIXPAY ont été retirées du repository Regional ; elles ne constituent ni dépendance de build ni source contractuelle Regional.
+La gouvernance contractuelle est propre au repository Regional ; aucun registre de contrats SIXPAY n'est conservé ici.
 Aucun DTO/model/port/adapter/client SIXPAY n'est modifié par ce chantier.
 Aucun endpoint ou schéma Regional n'est généré tant que le contrat Regional correspondant n'est pas approuvé.
 Les placeholders actuels, notamment les payloads fournisseur encore ouverts dans le contrat Payment Event, doivent être résolus à partir de preuves bancaires approuvées avant génération serveur.
@@ -37,7 +37,6 @@ REGIONAL_CORE_BANKING_API_ARCHITECTURE.md ;
 REGIONAL_CORE_BANKING_API_IMPLEMENTATION_PLAN.md ;
 le draft contracts/openapi/regional-core-banking-api-v1.yaml ;
 REGIONAL_CORE_BANKING_API_STARTER_MANIFEST.txt ;
-les cinq contrats Amplitude SIXPAY et le CONTRACT_REGISTRY.yaml en reference/sixpay/ ;
 les documents d'architecture et runbooks listés dans le manifest ;
 un export ciblé des clients/DTO/mappers/tests SIXPAY utilisés pour les tests de compatibilité, sans copier tout le codebase.
 # 6. Règle de classification des documents copiés
@@ -53,7 +52,7 @@ Chaque fichier copié doit conserver son chemin source et le SHA SIXPAY d'origin
 Un workspace regional-core-banking-api-v1.yaml est préparé avec :
 identité Regional propre ;
 statut DRAFT / PENDING_APPROVAL / REFERENCE_ONLY / codeGenerationAllowed: false ;
-chemins fonctionnels déjà supportés par les contrats SIXPAY actifs comme points de travail ;
+chemins fonctionnels soumis à la validation du contrat Regional ;
 schémas volontairement non figés (PendingRegionalSchema) afin d'éviter de prétendre que les modèles SIXPAY constituent les modèles du serveur ;
 mention explicite que la compatibilité SIXPAY doit être vérifiée avant validation V1.
 Ce draft n'est pas prêt pour génération.
@@ -72,9 +71,11 @@ R9 : sandbox, sécurité, Informix et déploiement.
 outil/version OpenAPI Generator et périmètre généré ;
 accès Informix exact : JDBC/procédures/services, comptes techniques et transactions ;
 mappings bancaires exacts et champs provider ;
-mécanisme réel d'OTP/SMS derrière La Régionale ;
+mapping physique et sémantique d'écriture/statut de la base SMS utilisée par Kannel ;
+paramètres d'environnement SMTP/relay et sécurité du compte de service EMAIL ;
 OAuth2 issuer/token endpoint, scopes Regional, mTLS, certificats/trust stores et allowlists ;
-éventuelle base technique propre pour idempotence/audit/recovery ;
+schéma/migrations physiques de la base technique PostgreSQL dédiée validée pour R5.2 ;
+évolution contractuelle explicite de `deliveryChannel` singulier pour représenter SMS+EMAIL simultanés, avec validation de compatibilité consommateur ;
 stratégie de versionnement et release du nouveau repository ;
 statut final de chaque endpoint/contexte avant approbation V1.
 # 10. Prompt de démarrage du nouveau projet ChatGPT

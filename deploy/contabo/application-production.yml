@@ -1,0 +1,69 @@
+# Complete runtime configuration: deliberately does NOT import application.yml.
+# Deployment profile: production = Contabo MVP with SYNTHETIC Oracle banking mock.
+# NOT an authorization to perform real banking operations.
+spring:
+  application:
+    name: regional-core-banking-api
+  config:
+    import: "configtree:/run/secrets/"
+  mail:
+    host: ${REGIONAL_OTP_EMAIL_HOST:}
+    port: ${REGIONAL_OTP_EMAIL_PORT:25}
+    username: ${REGIONAL_OTP_EMAIL_USERNAME:}
+    password: ${REGIONAL_OTP_EMAIL_PASSWORD:}
+    properties:
+      mail.smtp.starttls.enable: ${REGIONAL_OTP_EMAIL_TLS:true}
+      mail.smtp.connectiontimeout: ${REGIONAL_OTP_EMAIL_CONNECTION_TIMEOUT_MS:5000}
+      mail.smtp.timeout: ${REGIONAL_OTP_EMAIL_READ_TIMEOUT_MS:5000}
+      mail.smtp.writetimeout: ${REGIONAL_OTP_EMAIL_WRITE_TIMEOUT_MS:5000}
+server:
+  port: ${SERVER_PORT:9092}
+  shutdown: graceful
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    url: /openapi/regional-core-banking-api-v1.yaml
+    disable-swagger-default-url: true
+    display-request-duration: true
+  api-docs:
+    path: /v3/api-docs
+regional:
+  technical-datasource:
+    url: ${REGIONAL_TECHNICAL_DB_URL}
+    username: ${REGIONAL_TECHNICAL_DB_USERNAME}
+    password: ${REGIONAL_TECHNICAL_DB_PASSWORD}
+  banking:
+    database:
+      vendor: oracle  # MOCK only: DO NOT change to Informix without approval
+    financial-institution-code: ${REGIONAL_FINANCIAL_INSTITUTION_CODE}
+    datasource:
+      url: ${ORACLE_JDBC_URL}
+      username: ${ORACLE_APP_USERNAME}
+      password: ${ORACLE_APP_PASSWORD}
+      driver-class-name: oracle.jdbc.OracleDriver
+  confirmation:
+    persistence: jdbc
+    hmac:
+      active-key-version: ${REGIONAL_OTP_HMAC_ACTIVE_KEY_VERSION}
+      keys: ${REGIONAL_OTP_HMAC_KEYS}
+    email:
+      enabled: ${REGIONAL_OTP_EMAIL_ENABLED:false}
+      sender: ${REGIONAL_OTP_EMAIL_SENDER:}
+    sms:
+      enabled: ${REGIONAL_OTP_SMS_ENABLED:false}
+      base-url: ${REGIONAL_OTP_SMS_BASE_URL:}
+      username: ${REGIONAL_OTP_SMS_USERNAME:}
+      password: ${REGIONAL_OTP_SMS_PASSWORD:}
+      sender: ${REGIONAL_OTP_SMS_SENDER:LAREGIONALE}
+      connect-timeout-ms: ${REGIONAL_OTP_SMS_CONNECT_TIMEOUT_MS:5000}
+      read-timeout-ms: ${REGIONAL_OTP_SMS_READ_TIMEOUT_MS:5000}

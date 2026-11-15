@@ -2,7 +2,7 @@
 
 Autonomous Core Banking integration API of **La Régionale**, reusable by SIXPAY CONNECT and other explicitly authorized Regional applications.
 
-## Current lot
+## Previous foundation
 
 **R3 — Contract Generation & CI**
 
@@ -23,7 +23,7 @@ Current Regional V1 contract status:
 - `generationPolicy: ACTIVE`
 - `codeGenerationAllowed: true`
 
-SIXPAY contracts, DTOs and clients remain compatibility/reference evidence only.
+No copied SIXPAY API contracts are retained. Regional OpenAPI is authoritative; consumer compatibility is evaluated independently.
 
 ## OpenAPI generation boundary
 
@@ -102,11 +102,33 @@ To inspect only the non-generation bootstrap/tests while preparing the R3 patch:
 
 ## Container
 
+GitHub Actions separates continuous integration from image publication:
+
+- `.github/workflows/ci.yml` runs verification, local Docker build validation
+  and Compose configuration validation on pull requests, pushes to `main` or
+  `feat/**`, and manual dispatch. It never publishes an image.
+- `.github/workflows/regional-image-publish.yml` is manual (`workflow_dispatch`).
+  It re-runs Maven verification, builds for `linux/amd64` and publishes to GHCR
+  as `ghcr.io/sixgen-solutions/regional-core-banking-api:sha-<full-commit-sha>`.
+  Its job summary records the immutable registry digest for deployment.
+
+GHCR publication and deployment access require an infrastructure decision and
+appropriate GitHub package permissions; this workflow does not deploy. The
+previous Docker Hub image remains the local Compose default for compatibility
+until an approved deployment migration is applied.
+
+Local Docker Compose consumes the published image and does not build the API image:
+
 ```bash
-./mvnw package
-docker build .
-docker compose config
+docker compose pull regional-core-banking-api
+docker compose up -d
+docker compose ps
 ```
+
+To run a specifically published GHCR image, set `REGIONAL_API_IMAGE` in
+local `.env` to `ghcr.io/sixgen-solutions/regional-core-banking-api@sha256:<digest>`.
+Ensure that the deployment host has permission to pull the package. The digest
+must come from a successful publication; never substitute an unverified value.
 
 Environment-specific endpoints, credentials, certificates, private keys and trust material remain external configuration.
 
@@ -114,3 +136,284 @@ Environment-specific endpoints, credentials, certificates, private keys and trus
 
 - Regional R3 starting revision: `feat/contract-generation-ci @ bf886255254724dd857301274cb2942b98e7044a`
 - SIXPAY compatibility starter baseline: `main @ b6da7db33432cb81997cc293b21080dd46fdcc14`
+
+## Current lot — R4
+
+**R4 — Customer / Account Verification**
+
+R4 implements the Regional Customer capability behind the approved V1 contract:
+
+- `GET /api/v1/customers`;
+- `GET /api/v1/customers/{customerReference}`;
+- `POST /api/v1/customer-verifications`.
+
+`GET /api/v1/customers/{customerReference}/accounts` remains wired but is
+explicitly reserved for the future Account coverage, especially RIB/IBAN behavior.
+
+The HTTP boundary implements the R3-generated `CustomersApi`; generated transport
+models remain separate from Regional domain/application models.
+
+Bank access uses the approved legacy evidence through a JDBC anti-corruption
+adapter with Informix and Oracle SQL dialect isolation. Customer lookup supports
+`customerNumber`, `niu` (`bkcli.nid`) or both. The existing bank filter
+`bkcom.ife='N' AND bkcom.cfe='N' AND bkcom.dev='001'` is the accepted active-account
+filter for this Customer lot.
+
+The R4 patch itself does not invoke OpenAPI generation. The
+`r3-no-openapi-generation` profile now correctly wires the generator `skip`
+parameter.
+
+Customer closure decisions:
+
+- the Regional canonical `CustomerVerificationRequest` signature remains unchanged;
+- SIXPAY must align with the Regional request contract where the SIXPAY
+  consumer's observed wire behavior differs;
+- customers can be searched by NIU through `GET /api/v1/customers` and retrieved
+  by canonical `customerReference` through
+  `GET /api/v1/customers/{customerReference}`;
+- the existing active-account filter is sufficient for this Customer increment;
+  no additional blocked/opposed mapping is required for closure;
+- `KycField.verified` and `verifiedAt` remain authoritative banking facts. Until
+  La Régionale supplies their authoritative source/mapping, verification that
+  requires those facts remains safely `INDETERMINATE`.
+
+No Regional OpenAPI signature is changed by this closure increment.
+
+R4 implementation revision audited before this patch:
+
+`feat/customer-account-verification @ 7e4c99f0827f8eb4b0603d9e25ba44ddd0244f72`
+
+## Customer Oracle integration mock
+
+Start the database:
+
+```bash
+set ORACLE_APP_PASSWORD=local-test-password
+docker compose -f compose.customer-oracle.yml up -d
+```
+
+Run the real JDBC/HTTP integration test:
+
+```bash
+set RUN_CUSTOMER_ORACLE_IT=true
+set ORACLE_APP_PASSWORD=local-test-password
+mvn -Pcustomer-oracle-mock -Dtest=CustomerOracleIT test
+```
+
+Run the application against the Oracle mock:
+
+```bash
+set ORACLE_APP_PASSWORD=local-test-password
+mvn -Pcustomer-oracle-mock spring-boot:run -Dspring-boot.run.profiles=customer-oracle-mock
+```
+
+Customer OpenAPI group:
+
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- Customer OpenAPI JSON: `http://localhost:8080/v3/api-docs/customer`
+
+The Oracle mock is test infrastructure only. It does not establish new production
+Amplitude mappings or replace La Régionale banking evidence.
+
+
+
+## R5.1 — Payment Confirmation / OTP
+
+R5.1 introduces the provider-independent challenge/OTP domain, secure OTP verification,
+idempotency/recovery ports and lifecycle tests behind the six approved Regional operations.
+It does not implement BKSMS SQL or physical email transport; those require approved Regional
+infrastructure evidence. No OpenAPI generation is performed by this patch.
+
+See `documentation/architecture/README.md`.
+
+
+### R5.1 closure increment
+
+R5.1 now wires the six approved Payment Confirmation operations through the generated
+HTTP boundary and adds HTTP contract tests, Spring wiring, atomic in-process idempotency,
+concurrency characterization, recovery tests and explicit delivery outcome semantics.
+
+R5.2 has validated the target infrastructure direction:
+- Regional Core Banking API is authoritative for OTP generation/lifecycle and delivery orchestration;
+- delivery channels are Regional server configuration and may enable SMS, EMAIL or both;
+- consumers do not select channels or destination contacts;
+- durable challenge/idempotency/recovery state uses dedicated PostgreSQL, separate from Amplitude;
+- multi-instance correctness relies primarily on PostgreSQL transactions and database uniqueness/concurrency guarantees;
+- HMAC and SMTP secrets remain external to source control and PostgreSQL;
+- EMAIL uses a Regional-owned outbound mail adapter with environment configuration;
+- SMS OTP uses the bank-confirmed direct HTTP `sendsms` call to Kannel; Kannel then forwards to M-Target over SMPP. Amplitude and BKSMS/BKMSMS are not part of the OTP SMS path.
+
+The approved OpenAPI still exposes singular `deliveryChannel`, while Regional
+configuration may enable SMS and EMAIL simultaneously. R5.2.0 records this known
+contract divergence without modifying the canonical OpenAPI; a separately approved
+contract evolution and compatibility review are required first.
+
+See `documentation/architecture/PAYMENT_CONFIRMATION_BANK_INTEGRATION_DECISIONS.md`.
+
+### R5.2.1 — Durable PostgreSQL persistence
+
+Payment Confirmation runtime persistence now targets the dedicated Regional PostgreSQL technical store.
+Challenge and idempotency access is scoped by financial institution. Same-key concurrency is arbitrated by PostgreSQL transactions and the `(institution_code, idempotency_key)` primary key.
+
+The schema artifact is `src/main/resources/db/r5_2_1/confirmation-postgresql.sql`. R5.2.1 does not introduce a migration product; applying that schema is an explicit deployment step until migration tooling is separately approved.
+
+Runtime datasource values are external: `REGIONAL_TECHNICAL_DB_URL`, `REGIONAL_TECHNICAL_DB_USERNAME`, `REGIONAL_TECHNICAL_DB_PASSWORD`.
+
+Optional PostgreSQL integration tests run when `REGIONAL_CONFIRMATION_IT_DB_URL`, `REGIONAL_CONFIRMATION_IT_DB_USERNAME` and `REGIONAL_CONFIRMATION_IT_DB_PASSWORD` are supplied.
+
+### R5.2.2 — Versioned external OTP HMAC keys
+
+OTP HMAC material is no longer generated at startup. Runtime requires `REGIONAL_OTP_HMAC_ACTIVE_KEY_VERSION` and `REGIONAL_OTP_HMAC_KEYS`, supplied by the deployment secret-injection mechanism. The key ring uses comma-separated `<version>:<base64-secret>` entries. New challenges use the active version; existing challenges retain `otpKeyVersion` and remain verifiable while that previous key is retained. Secrets are never committed or stored in PostgreSQL. Old versions must not be retired while challenges or idempotent verification replays can still require them.
+
+
+### R5.2.3 — EMAIL OTP adapter
+
+R5.2.3 adds the SMTP/relay `EmailConfirmationDeliveryAdapter`, external EMAIL configuration,
+and focused SMTP-client mock tests. The consumer never supplies the recipient address.
+
+Production EMAIL recipient resolution is wired through the existing Customer banking
+capability. `CustomerBankingPort.getCustomer(...)` exposes `CustomerIdentity.email()`, backed
+by the first `bkemacli.email` row for `cli = customerReference`. Customer/KYC data quality is
+owned by the Core Banking system; Payment Confirmation does not duplicate KYC validation.
+
+No SMTP credential is committed and the adapter contains no OTP logging.
+
+
+### R5.2.4 — Delivery semantics
+
+Payment Confirmation keeps an internal delivery lifecycle distinct from the approved OpenAPI challenge status: CREATED, REQUESTED, ACCEPTED, FAILED and UNKNOWN. `sentAt` is populated only after adapter acceptance and is no longer derived from `createdAt`. A Noop adapter never reports successful delivery. No endpoint or OpenAPI schema/status is changed.
+
+
+### R5.2.6 — Robustness and closure
+
+R5.2.6 strengthens Payment Confirmation robustness tests for restart/recovery, concurrency, idempotency conflicts, OTP-attempt, replacement and expiration races, HMAC rotation, EMAIL outcomes, unknown delivery outcomes, OTP leakage and contract characterization. PostgreSQL integration tests remain environment-backed through `REGIONAL_CONFIRMATION_IT_DB_*`; skipped integration tests do not prove the multi-instance gate. SMS/BKSMS remains deferred pending authoritative La Régionale mapping evidence. No OpenAPI/Spring generation is executed in this lot.
+\n\n### Technical PostgreSQL datasource\n\nThe Regional-owned technical store uses PostgreSQL database `regional_core_banking`, schema `core_banking`. Local Docker uses application user `regional_core_banking_app`; the local-only default password is `regional_core_banking_dev`. Runtime credentials remain external configuration. Flyway owns technical schema migrations. Customer/Amplitude banking access uses the separate `regional.banking.datasource` namespace and must never reuse the technical PostgreSQL datasource.\n\nFor R5.2.6 PostgreSQL integration tests:\n- `REGIONAL_CONFIRMATION_IT_DB_URL=jdbc:postgresql://localhost:5432/regional_core_banking?currentSchema=core_banking`\n- `REGIONAL_CONFIRMATION_IT_DB_USERNAME=regional_core_banking_app`\n- `REGIONAL_CONFIRMATION_IT_DB_PASSWORD=regional_core_banking_dev` (local only)\n
+
+## Local Payment Confirmation / SMTP profile
+
+R5.2.3b validated the EMAIL OTP path with a real SMTP connection against a Mailtrap Email Sandbox. The observed end-to-end result was: challenge creation -> EMAIL delivery accepted -> message captured by Mailtrap -> OTP submitted to the verification endpoint -> `VERIFIED` / `OTP_VERIFIED`. A separate test submitted after the five-minute TTL returned `EXPIRED` / `CHALLENGE_EXPIRED`, confirming expiry enforcement.
+
+This validation proves the Regional SMTP adapter and OTP EMAIL flow against test SMTP infrastructure. Production recipient resolution is now wired through the existing Customer banking capability, which exposes the first `bkemacli.email` row for the customer reference. It does not establish La Régionale production SMTP/relay, network or security parameters. R5.2.5 SMS evidence is now bank-confirmed: direct HTTP `sendsms` to Kannel, authenticated with `user`/`password`, sender `LAREGIONALE`, destination format `2376XXXXXXXX`, `0: Accepted for delivery` mapped as accepted, and timeout/no-response treated as indeterminate without automatic replay.
+
+For local development, activate only the `local` profile. It contains the dedicated PostgreSQL technical datasource and Mailtrap Sandbox connection and also selects the real EMAIL delivery adapter used for local SMTP testing.
+
+Secrets are intentionally excluded from committed profiles. Copy `config/application-local-secrets.example.yml` to `config/application-local-secrets.yml`, then fill the Mailtrap username/password and a local 32-byte Base64 HMAC key once. The real local secrets file is gitignored and imported automatically by `application-local.yml`.
+
+Start without re-entering environment variables:
+
+```bash
+mvn -Pr3-no-openapi-generation spring-boot:run "-Dspring-boot.run.profiles=local"
+```
+
+The local secrets file is developer-machine configuration only. HMAC and SMTP production secrets remain external deployment secrets and must never be committed or stored in PostgreSQL.
+
+
+### Production EMAIL OTP wiring
+
+Payment Confirmation resolves the production EMAIL recipient through the existing Customer
+banking capability: `ConfirmationRecipientPort` delegates to
+`CustomerBankingPort.getCustomer(...)` and uses `CustomerIdentity.email()`. The Customer JDBC
+adapter already returns the first `bkemacli.email` row for the customer reference.
+
+The Noop delivery adapter is removed. Outside `local`, the real
+`EmailConfirmationDeliveryAdapter` is used with externally supplied SMTP configuration.
+The `local` profile keeps its fixed test recipient only for Mailtrap developer testing.
+
+Production activation therefore remains conditional on La Régionale supplying the real
+SMTP/relay/security/network parameters and secrets. No production SMTP credentials are committed.
+
+Operational activation steps and the exact production configuration inventory are documented in `documentation/runbooks/REGIONAL_PRODUCTION_EMAIL_OTP_ACTIVATION.md`.
+
+## Local Docker stack — R5
+
+The local Docker stack runs the Regional Core Banking API, its Regional-owned
+PostgreSQL technical persistence, and the existing Oracle Customer/Account mock.
+
+The Oracle service remains test infrastructure only. It does not establish or
+replace production Amplitude/Informix mappings.
+
+### Image prerequisite
+
+The API image is built by GitHub Actions after Maven verification and published to
+Docker Hub as `d22002/regional-core-banking-api`. Local Compose pulls that image;
+it does not build the API container from the local workspace.
+
+### Start
+
+Optionally copy `.env.example` to `.env`, then pull and start:
+
+    docker compose pull regional-core-banking-api
+    docker compose up -d
+
+Application: `http://localhost:8080`
+
+Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+Actuator health: `http://localhost:8080/actuator/health`
+
+PostgreSQL is exposed on host port `15432` by default and Oracle mock on `1521`.
+
+### Stop
+
+    docker compose down
+
+To also remove local database volumes:
+
+    docker compose down -v
+
+The example passwords and HMAC material are local-development values only.
+Production database, HMAC, SMTP, OAuth2, mTLS and banking connectivity parameters
+remain external deployment configuration.
+
+## Payment Execution / Recovery — T0
+
+Le chemin applicatif T0 est décrit dans
+[`Payment Execution and Recovery`](documentation/architecture/PAYMENT_EXECUTION_AND_RECOVERY.md).
+Les décisions et preuves, avec leurs statuts d'approbation, sont distinguées dans
+[`Payment Execution — décisions et preuves`](documentation/architecture/PAYMENT_EXECUTION_DECISIONS_AND_EVIDENCE.md).
+La procédure de validation/activation bancaire contrôlée reste
+[`Controlled Activation`](documentation/runbooks/PAYMENT_EXECUTION_CONTROLLED_ACTIVATION.md).
+
+La persistance technique PostgreSQL ne constitue pas la preuve d'une écriture bancaire.
+Les résultats `UNKNOWN` ne doivent jamais être rejoués aveuglément.
+Le schéma Oracle Docker est synthétique ; aucune activation financière réelle n'est
+autorisée par la seule présence du code ou des tests.
+
+## Dedicated PostgreSQL integration-test datasource
+
+Destructive JDBC confirmation persistence tests use a database that is
+physically separate from the local/runtime technical datasource.
+
+See
+`documentation/testing/POSTGRESQL_INTEGRATION_TEST_DATASOURCE.md` and
+`.env.test.example`.
+
+The dedicated test container is started with:
+
+```bash
+docker compose -f compose.test-postgres.yml up -d
+```
+
+The runtime `regional_core_banking` database must not be used by
+`JdbcConfirmationPersistenceTest`.
+
+
+
+## R5.2.5.1 — Kannel SMS hardening (pending local validation)
+
+A dedicated RestClient transport now configures Kannel HTTP connect/read timeouts
+and refuses redirects, with no automatic SMS retry. Ambiguous transport/HTTP
+outcomes are fail-safe `UNKNOWN`. In-memory mock HTTP tests cover request fields,
+acceptance, rejection and timeout uncertainty. The two-channel aggregate
+preserves `UNKNOWN` if either channel is indeterminate; per-channel result
+representation remains an unresolved contract decision. No OpenAPI changes.
+
+See `documentation/architecture/KANNEL_SMS_INTEGRATION.md`.
+
+
+## Contabo Regional MVP — preparation only
+
+A separate, non-deployed Oracle MOCK + Regional PostgreSQL + Spring Boot Compose
+proposal is in `deploy/contabo/` with full operating procedure in
+`documentation/runbooks/REGIONAL_CONTABO_MVP_DEPLOYMENT.md`.
+It does not authorize public banking access or modify SIXPAY infrastructure.

@@ -10,10 +10,10 @@ info:
     This contract is owned by the Regional repository. SIXPAY is one consumer
     among others and its contracts/clients are compatibility evidence only.
 
-    R1 consolidated the operation surfaces already present in the Regional
-    draft against available SIXPAY compatibility references and explicit
-    Regional decisions. The V1 contract has received explicit human approval.
-    No Spring/OpenAPI generation is executed by R1 itself.
+    The Regional V1 contract includes the explicitly human-approved R6.1 Payment
+    Event revision based on validated Regional decisions and La Régionale
+    implementation evidence. OpenAPI/Spring regeneration may use this approved
+    canonical contract subject to the normal repository validation gates.
 
   x-regional-contract:
     lifecycleStatus: APPROVED
@@ -25,13 +25,18 @@ info:
     sixpayRole: COMPATIBILITY_CONSUMER
     sixpayModelsAreSourceOfTruth: false
     r1Status: APPROVED
+    r6PaymentEventRevisionStatus: APPROVED
+    r6PaymentEventRevisionBasis:
+      - REGIONAL_R6_0_VALIDATED_DECISIONS
+      - BANK_IMPLEMENTATION_EVIDENCE
     approvalBasis:
       - EXPLICIT_REGIONAL_HUMAN_APPROVAL
       - SIXPAY_WIRE_COMPATIBILITY_EVIDENCE
       - REGIONAL_PAYMENT_EVENT_MAPPING_DECISIONS
+      - LEGACY_CUSTOMER_DETAIL_FUNCTIONAL_EVIDENCE
 
 servers:
-  - url: https://regional-core-banking-api.example
+  - url: /
     description: Environment-specific placeholder. Runtime endpoint is external configuration.
 
 security:
@@ -40,6 +45,7 @@ security:
 
 tags:
   - name: Customers
+  - name: Accounts
   - name: Payment confirmation
   - name: Payment execution
   - name: Accounting
@@ -63,6 +69,26 @@ paths:
           in: query
           required: false
           schema: { type: string, minLength: 1, maxLength: 50 }
+        - name: accountNo
+          in: query
+          required: false
+          description: Legacy-compatible account number filter.
+          schema: { type: string, minLength: 1, maxLength: 100 }
+        - name: age
+          in: query
+          required: false
+          description: Legacy-compatible agency filter used with accountNo when applicable.
+          schema: { type: string, minLength: 1, maxLength: 20 }
+        - name: accountTypes
+          in: query
+          required: false
+          description: Legacy-compatible account type filter; may remain unused initially.
+          schema: { type: string, minLength: 1, maxLength: 200 }
+        - name: chapitre
+          in: query
+          required: false
+          description: Legacy-compatible chapter exclusion filter; may remain unused initially.
+          schema: { type: string, minLength: 1, maxLength: 200 }
       responses:
         '200':
           description: Matching customers, possibly empty.
@@ -133,6 +159,51 @@ paths:
         '403': { $ref: '#/components/responses/ProblemResponse' }
         '404': { $ref: '#/components/responses/ProblemResponse' }
         '429': { $ref: '#/components/responses/ProblemResponse' }
+        '500': { $ref: '#/components/responses/ProblemResponse' }
+        '503': { $ref: '#/components/responses/ProblemResponse' }
+
+  /api/v1/getaccountinfo/{branchid}/{accountnumber}:
+    get:
+      tags: [Accounts]
+      operationId: getAccountByBranchAndNumber
+      summary: Consulter un compte admissible BKCOM par agence et NCP
+      description: |
+        Consultation bancaire en lecture seule, fondée sur la méthode legacy
+        /getaccountinfo/{branchid}/{accountnumber}. Le résultat métier est explicite :
+        SUCCESS avec un unique BankAccount, ou COMPTE_INEXISTANT et data null.
+        Une absence de compte est un résultat métier normal (HTTP 200), jamais
+        une erreur d'accès bancaire. sin réutilise le calcul bancaire existant.
+        Cette opération a son propre statut de validation; elle n'altère pas
+        les décisions contractuelles des autres opérations.
+      x-regional-review-status: APPROVED
+      x-regional-approval-basis: EXPLICIT_HUMAN_DECISION_2026-11-04
+      parameters:
+        - $ref: '#/components/parameters/CorrelationId'
+        - name: X-Financial-Institution-Code
+          in: header
+          required: false
+          description: |
+            Optional for this account lookup operation only. When absent, the
+            existing regional.banking.financial-institution-code deployment
+            configuration is used. Supplied values are still validated.
+          schema: { $ref: '#/components/schemas/FinancialInstitutionCode' }
+        - name: branchid
+          in: path
+          required: true
+          schema: { type: string, minLength: 1 }
+        - name: accountnumber
+          in: path
+          required: true
+          schema: { type: string, minLength: 1 }
+      responses:
+        '200':
+          description: Consultation effectuée, que le compte existe ou non.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccountLookupResult' }
+        '400': { $ref: '#/components/responses/ProblemResponse' }
+        '401': { $ref: '#/components/responses/ProblemResponse' }
+        '403': { $ref: '#/components/responses/ProblemResponse' }
         '500': { $ref: '#/components/responses/ProblemResponse' }
         '503': { $ref: '#/components/responses/ProblemResponse' }
 
@@ -373,11 +444,17 @@ paths:
         - $ref: '#/components/parameters/PaymentReferencePath'
       responses:
         '200':
-          description: Authoritative payment execution result.
+          description: Payment execution result (COMPLETED, REJECTED or UNKNOWN); no financial replay.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PaymentEventResult' }
-        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '404':
+          description: |
+            No technical claim or authoritative bank evidence found for the lookup.
+            UNKNOWN is not evidence that the financial posting did not occur.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentEventLookupNotFound' }
         '503': { $ref: '#/components/responses/ProblemResponse' }
 
   /api/v1/payment-events/idempotency/{idempotencyKey}:
@@ -391,11 +468,17 @@ paths:
         - $ref: '#/components/parameters/IdempotencyKeyPath'
       responses:
         '200':
-          description: Authoritative payment execution result.
+          description: Payment execution result (COMPLETED, REJECTED or UNKNOWN); no financial replay.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/PaymentEventResult' }
-        '404': { $ref: '#/components/responses/ProblemResponse' }
+        '404':
+          description: |
+            No technical claim or authoritative bank evidence found for the lookup.
+            UNKNOWN is not evidence that the financial posting did not occur.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentEventLookupNotFound' }
         '503': { $ref: '#/components/responses/ProblemResponse' }
 
   /api/v1/accounting-entries:
@@ -600,6 +683,9 @@ components:
     CustomerSummary:
       type: object
       additionalProperties: false
+      description: |
+        Regional customer summary preserving the existing wire-compatible fields
+        while additively retaining the complete supplied legacy CustomerDetail field set.
       required: [customerReference, customerNumber, financialInstitutionCode, niu, legalName]
       properties:
         customerReference: { type: string, minLength: 1, maxLength: 100 }
@@ -607,10 +693,49 @@ components:
         financialInstitutionCode: { $ref: '#/components/schemas/FinancialInstitutionCode' }
         niu: { type: string, minLength: 1, maxLength: 50 }
         legalName: { type: string, minLength: 1, maxLength: 200 }
+        matricule: { type: string, maxLength: 100 }
+        accountNo:
+          type: string
+          maxLength: 100
+          description: Legacy account reference represented as `age-ncp-clc`.
+        accountName: { type: string, maxLength: 200 }
+        customerName: { type: string, maxLength: 200 }
+        sexe: { type: string, maxLength: 20 }
+        adresse: { type: string, maxLength: 500 }
+        dataNaissance:
+          type: string
+          maxLength: 50
+          description: Preserved as String to match the supplied legacy CustomerDetail.
+        lieuNaissance: { type: string, maxLength: 200 }
+        departNaissance: { type: string, maxLength: 200 }
+        situation: { type: string, maxLength: 100 }
+        typePiece: { type: string, maxLength: 100 }
+        numCNI: { type: string, maxLength: 100 }
+        dateDelivrance: { type: string, format: date }
+        lieuDelivrance: { type: string, maxLength: 200 }
+        dateExpiration: { type: string, format: date }
+        ville: { type: string, maxLength: 200 }
+        codeGestionnaire: { type: string, maxLength: 100 }
+        loginGestionnaire: { type: string, maxLength: 100 }
+        comptes:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 100 }
+        telephones:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 50 }
+        adresseMails:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 254 }
 
     CustomerIdentity:
       type: object
       additionalProperties: false
+      description: |
+        Regional customer identity preserving the existing wire-compatible fields
+        while additively retaining the complete supplied legacy CustomerDetail field set.
       required:
         [customerReference, customerNumber, financialInstitutionCode, niu, legalName, kycStatus, source, retrievedAt]
       properties:
@@ -626,6 +751,42 @@ components:
           enum: [COMPLETE, INCOMPLETE, EXPIRED, NOT_VERIFIED, UNKNOWN]
         source: { type: string, const: AMPLITUDE }
         retrievedAt: { type: string, format: date-time }
+        matricule: { type: string, maxLength: 100 }
+        accountNo:
+          type: string
+          maxLength: 100
+          description: Legacy account reference represented as `age-ncp-clc`.
+        accountName: { type: string, maxLength: 200 }
+        customerName: { type: string, maxLength: 200 }
+        sexe: { type: string, maxLength: 20 }
+        adresse: { type: string, maxLength: 500 }
+        dataNaissance:
+          type: string
+          maxLength: 50
+          description: Preserved as String to match the supplied legacy CustomerDetail.
+        lieuNaissance: { type: string, maxLength: 200 }
+        departNaissance: { type: string, maxLength: 200 }
+        situation: { type: string, maxLength: 100 }
+        typePiece: { type: string, maxLength: 100 }
+        numCNI: { type: string, maxLength: 100 }
+        dateDelivrance: { type: string, format: date }
+        lieuDelivrance: { type: string, maxLength: 200 }
+        dateExpiration: { type: string, format: date }
+        ville: { type: string, maxLength: 200 }
+        codeGestionnaire: { type: string, maxLength: 100 }
+        loginGestionnaire: { type: string, maxLength: 100 }
+        comptes:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 100 }
+        telephones:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 50 }
+        adresseMails:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 254 }
 
     AccountSearchResult:
       type: object
@@ -635,25 +796,53 @@ components:
         accounts:
           type: array
           maxItems: 100
-          items: { $ref: '#/components/schemas/AccountSummary' }
+          items: { $ref: '#/components/schemas/BankAccount' }
         resultCount: { type: integer, minimum: 0, maximum: 100 }
 
-    AccountSummary:
+    BankAccount:
       type: object
       additionalProperties: false
-      required: [accountReference, customerReference, status, currency]
+      description: Amplitude BKCOM account data; numeric balances are financial information.
+      required: [ncp, age, dev, cha, clc, cli, inti, ife, cfe, sin, typ, sde, suf, status]
       properties:
-        accountReference: { type: string, minLength: 1, maxLength: 100 }
-        customerReference: { type: string, minLength: 1, maxLength: 100 }
+        ncp: { type: string }
+        age: { type: string }
+        dev: { type: string }
+        cha: { type: string }
+        clc: { type: string }
+        cli: { type: string }
+        inti: { type: string }
+        ife: { type: string }
+        cfe: { type: string }
+        dou: { type: [string, 'null'], format: date, description: Date d'ouverture du compte }
+        sin: { type: number, description: Solde disponible calculé selon la règle bancaire historique }
+        typ: { type: string }
+        sde: { type: number }
+        suf: { type: string }
         status:
           type: string
           enum: [ACTIVE, INACTIVE, BLOCKED, CLOSED, UNKNOWN]
-        currency: { type: string, minLength: 3, maxLength: 3 }
 
+    AccountLookupResult:
+      type: object
+      additionalProperties: false
+      description: Resultat metier de la consultation par agence et NCP.
+      required: [code, message, data]
+      properties:
+        code:
+          type: string
+          enum: [SUCCESS, COMPTE_INEXISTANT]
+        message:
+          type: string
+          description: Libelle informatif du resultat metier.
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/BankAccount'
+            - type: 'null'
     CustomerVerificationRequest:
       type: object
       additionalProperties: false
-      required: [accountReference, expectedNiu, expectedAccountHolder, requestedAt]
+      required: [accountReference, expectedNiu, requestedAt]
       properties:
         accountReference: { type: string, minLength: 1, maxLength: 100 }
         expectedNiu: { type: string, minLength: 1, maxLength: 50 }
@@ -734,7 +923,7 @@ components:
             - type: 'null'
         account:
           oneOf:
-            - $ref: '#/components/schemas/AccountSummary'
+            - $ref: '#/components/schemas/BankAccount'
             - type: 'null'
 
     CustomerReference:
@@ -877,23 +1066,13 @@ components:
       type: object
       additionalProperties: false
       description: |
-        Minimum Regional provider-event payload required to create the Core Banking
-        event. These fields are based on the currently consumed SIXPAY wire shape
-        and explicit Regional approval. Additional provider fields may be introduced
-        only through a future approved contract evolution.
+        Données de l'événement bancaire BKEVE préparé par l'application cliente
+        pour le postage T0. Le montant métier de la transaction de paiement
+        n'est pas un champ de ce schéma. MVP mono-agence, sans comptes de liaison.
+        Regional preserves the supplied BKEVE values and enriches only server-owned fields.
+        Les écritures BKMVTI restent conservées chez le client jusqu'à T1.
       required:
         - paymentReference
-        - operationCode
-        - eventNumber
-        - currency
-        - nature
-        - accountingDate
-        - technicalUser
-        - debtorAccountReference
-        - creditorAccountReference
-        - amount
-        - label
-        - nightMode
       properties:
         paymentReference:
           $ref: '#/components/schemas/PaymentReference'
@@ -901,23 +1080,17 @@ components:
           type: string
           minLength: 1
           maxLength: 3
-          description: |
-            Value supplied/configured by the calling application. Core Banking
-            validates it against the Amplitude reference table.
-        eventNumber:
-          type: integer
-          format: int64
+          description: Code fourni par le client et validé contre la référence bancaire.
         currency:
           type: string
           minLength: 1
           maxLength: 3
+          description: |
+            Code déclaré par le client; la devise autoritative est celle du compte.
+            L'équivalence éventuelle entre codes ISO et codes bancaires reste à valider.
         nature:
           type: string
           minLength: 1
-          description: Value supplied/configured by the calling application.
-        accountingDate:
-          type: string
-          format: date
         technicalUser:
           type: string
           minLength: 1
@@ -925,53 +1098,755 @@ components:
           $ref: '#/components/schemas/CoreBankingAccountReferenceString'
         creditorAccountReference:
           $ref: '#/components/schemas/CoreBankingAccountReferenceString'
-        amount:
+        debitAmount:
           type: number
           exclusiveMinimum: 0
+          description: |
+            Montant transmis par le client pour débiter son compte.
+            Mapping BKEVE confirmé: MON1 = MHT1 = debitAmount.
+            Ne se déduit pas du montant métier du paiement.
+        creditAmount:
+          type: number
+          exclusiveMinimum: 0
+          description: |
+            Montant transmis par le client pour créditer le bénéficiaire.
+            Mapping BKEVE confirmé: MON2 = MHT2 = creditAmount.
+            Peut être différent de debitAmount.
         label:
           type: string
           minLength: 1
-        nightMode:
-          type: boolean
-
-    PaymentProviderEntry:
-      type: object
-      additionalProperties: false
-      description: |
-        Minimum Regional `bkmvti`-equivalent entry. A Payment Event contains
-        exactly two entries and they are persisted atomically with the event.
-      required: [sequence, direction, accountReference, amount, currency, paymentReference]
-      properties:
-        sequence:
-          type: integer
-          minimum: 1
-        direction:
-          type: string
-          enum: [D, C]
-          description: D means debit; C means credit.
-        accountReference:
-          $ref: '#/components/schemas/CoreBankingAccountReferenceString'
-        amount:
-          type: number
-          exclusiveMinimum: 0
-        currency:
+        agsa:
           type: string
           minLength: 1
-          maxLength: 3
-        paymentReference:
-          $ref: '#/components/schemas/PaymentReference'
+          description: |
+            Valeur explicitement fournie par le client; 00001 observé pour le cas
+            décrit, sans présumer d'une valeur universelle ni d'une longueur validée.
+        age:
+          type: string
+          minLength: 1
+          description: |
+            Valeur explicitement fournie par le client; 00001 observé pour le cas
+            décrit. Ne pas confondre avec l'agence du compte sans validation bancaire.
+        csp1:
+          type: string
+          minLength: 1
+          description: |
+            Valeur explicitement fournie par le client; VSixpay est spécifique
+            au consommateur SIXPAY et n'est pas un défaut global.
+        ope:
+          type: string
+          description: BKEVE field OPE (historical String).
+        eve:
+          type: string
+          description: BKEVE field EVE (historical String).
+        typ:
+          type: string
+          description: BKEVE field TYP (historical String).
+        ndos:
+          type: string
+          description: BKEVE field NDOS (historical String).
+        age1:
+          type: string
+          description: BKEVE field AGE1 (historical String).
+        dev1:
+          type: string
+          description: BKEVE field DEV1 (historical String).
+        ncp1:
+          type: string
+          description: BKEVE field NCP1 (historical String).
+        suf1:
+          type: string
+          description: BKEVE field SUF1 (historical String).
+        clc1:
+          type: string
+          description: BKEVE field CLC1 (historical String).
+        cli1:
+          type: string
+          description: BKEVE field CLI1 (historical String).
+        nom1:
+          type: string
+          description: BKEVE field NOM1 (historical String).
+        ges1:
+          type: string
+          description: BKEVE field GES1 (historical String).
+        sen1:
+          type: string
+          description: BKEVE field SEN1 (historical String).
+        mht1:
+          type: number
+          description: BKEVE field MHT1 (historical Double).
+        mon1:
+          type: number
+          description: BKEVE field MON1 (historical Double).
+        dva1:
+          type: string
+          format: date
+          description: BKEVE field DVA1 (historical Date).
+        exo1:
+          type: string
+          description: BKEVE field EXO1 (historical String).
+        sol1:
+          type: number
+          description: BKEVE field SOL1 (historical Double).
+        indh1:
+          type: number
+          description: BKEVE field INDH1 (historical Double).
+        inds1:
+          type: number
+          description: BKEVE field INDS1 (historical Double).
+        desa1:
+          type: string
+          description: BKEVE field DESA1 (historical String).
+        desa2:
+          type: string
+          description: BKEVE field DESA2 (historical String).
+        desa3:
+          type: string
+          description: BKEVE field DESA3 (historical String).
+        desa4:
+          type: string
+          description: BKEVE field DESA4 (historical String).
+        desa5:
+          type: string
+          description: BKEVE field DESA5 (historical String).
+        age2:
+          type: string
+          description: BKEVE field AGE2 (historical String).
+        dev2:
+          type: string
+          description: BKEVE field DEV2 (historical String).
+        ncp2:
+          type: string
+          description: BKEVE field NCP2 (historical String).
+        suf2:
+          type: string
+          description: BKEVE field SUF2 (historical String).
+        clc2:
+          type: string
+          description: BKEVE field CLC2 (historical String).
+        cli2:
+          type: string
+          description: BKEVE field CLI2 (historical String).
+        nom2:
+          type: string
+          description: BKEVE field NOM2 (historical String).
+        ges2:
+          type: string
+          description: BKEVE field GES2 (historical String).
+        sen2:
+          type: string
+          description: BKEVE field SEN2 (historical String).
+        mht2:
+          type: number
+          description: BKEVE field MHT2 (historical Double).
+        mon2:
+          type: number
+          description: BKEVE field MON2 (historical Double).
+        dva2:
+          type: string
+          format: date
+          description: BKEVE field DVA2 (historical Date).
+        din:
+          type: string
+          format: date
+          description: BKEVE field DIN (historical Date).
+        exo2:
+          type: string
+          description: BKEVE field EXO2 (historical String).
+        sol2:
+          type: number
+          description: BKEVE field SOL2 (historical Double).
+        indh2:
+          type: number
+          description: BKEVE field INDH2 (historical Double).
+        inds2:
+          type: number
+          description: BKEVE field INDS2 (historical Double).
+        desc1:
+          type: string
+          description: BKEVE field DESC1 (historical String).
+        desc2:
+          type: string
+          description: BKEVE field DESC2 (historical String).
+        desc3:
+          type: string
+          description: BKEVE field DESC3 (historical String).
+        desc4:
+          type: string
+          description: BKEVE field DESC4 (historical String).
+        desc5:
+          type: string
+          description: BKEVE field DESC5 (historical String).
+        etab:
+          type: string
+          description: BKEVE field ETAB (historical String).
+        guib:
+          type: string
+          description: BKEVE field GUIB (historical String).
+        nome:
+          type: string
+          description: BKEVE field NOME (historical String).
+        domi:
+          type: string
+          description: BKEVE field DOMI (historical String).
+        adb1:
+          type: string
+          description: BKEVE field ADB1 (historical String).
+        adb2:
+          type: string
+          description: BKEVE field ADB2 (historical String).
+        adb3:
+          type: string
+          description: BKEVE field ADB3 (historical String).
+        vilb:
+          type: string
+          description: BKEVE field VILB (historical String).
+        cpob:
+          type: string
+          description: BKEVE field CPOB (historical String).
+        cpay:
+          type: string
+          description: BKEVE field CPAY (historical String).
+        etabr:
+          type: string
+          description: BKEVE field ETABR (historical String).
+        guibr:
+          type: string
+          description: BKEVE field GUIBR (historical String).
+        comb:
+          type: string
+          description: BKEVE field COMB (historical String).
+        cleb:
+          type: string
+          description: BKEVE field CLEB (historical String).
+        nomb:
+          type: string
+          description: BKEVE field NOMB (historical String).
+        mban:
+          type: number
+          description: BKEVE field MBAN (historical Double).
+        dvab:
+          type: string
+          format: date
+          description: BKEVE field DVAB (historical Date).
+        cai1:
+          type: string
+          description: BKEVE field CAI1 (historical String).
+        tyc1:
+          type: string
+          description: BKEVE field TYC1 (historical String).
+        dcai1:
+          type: string
+          description: BKEVE field DCAI1 (historical String).
+        scai1:
+          type: string
+          description: BKEVE field SCAI1 (historical String).
+        mcai1:
+          type: number
+          description: BKEVE field MCAI1 (historical Double).
+        arrc1:
+          type: number
+          description: BKEVE field ARRC1 (historical Double).
+        cai2:
+          type: string
+          description: BKEVE field CAI2 (historical String).
+        tyc2:
+          type: string
+          description: BKEVE field TYC2 (historical String).
+        dcai2:
+          type: string
+          description: BKEVE field DCAI2 (historical String).
+        scai2:
+          type: string
+          description: BKEVE field SCAI2 (historical String).
+        mcai2:
+          type: number
+          description: BKEVE field MCAI2 (historical Double).
+        arrc2:
+          type: number
+          description: BKEVE field ARRC2 (historical Double).
+        dev:
+          type: string
+          description: BKEVE field DEV (historical String).
+        mht:
+          type: number
+          description: BKEVE field MHT (historical Double).
+        mnat:
+          type: number
+          description: BKEVE field MNAT (historical Double).
+        mbor:
+          type: number
+          description: BKEVE field MBOR (historical Double).
+        nbor:
+          type: string
+          description: BKEVE field NBOR (historical String).
+        nblig:
+          type: integer
+          description: BKEVE field NBLIG (historical Integer).
+        tcai2:
+          type: number
+          description: BKEVE field TCAI2 (historical Double).
+        tcai3:
+          type: number
+          description: BKEVE field TCAI3 (historical Double).
+        nat:
+          type: string
+          description: BKEVE field NAT (historical String).
+        nato:
+          type: string
+          description: BKEVE field NATO (historical String).
+        opeo:
+          type: string
+          description: BKEVE field OPEO (historical String).
+        eveo:
+          type: string
+          description: BKEVE field EVEO (historical String).
+        pieo:
+          type: string
+          description: BKEVE field PIEO (historical String).
+        dou:
+          type: string
+          format: date
+          description: BKEVE field DOU (historical Date).
+        dco:
+          type: string
+          format: date
+          description: BKEVE field DCO (historical Date).
+        eta:
+          type: string
+          description: BKEVE field ETA (historical String).
+        etap:
+          type: string
+          description: BKEVE field ETAP (historical String).
+        nbv:
+          type: integer
+          description: BKEVE field NBV (historical Integer).
+        nval:
+          type: integer
+          description: BKEVE field NVAL (historical Integer).
+        uti:
+          type: string
+          description: BKEVE field UTI (historical String).
+        utf:
+          type: string
+          description: BKEVE field UTF (historical String).
+        uta:
+          type: string
+          description: BKEVE field UTA (historical String).
+        moa:
+          type: number
+          description: BKEVE field MOA (historical Double).
+        mof:
+          type: number
+          description: BKEVE field MOF (historical Double).
+        lib1:
+          type: string
+          description: BKEVE field LIB1 (historical String).
+        lib2:
+          type: string
+          description: BKEVE field LIB2 (historical String).
+        lib3:
+          type: string
+          description: BKEVE field LIB3 (historical String).
+        lib4:
+          type: string
+          description: BKEVE field LIB4 (historical String).
+        lib5:
+          type: string
+          description: BKEVE field LIB5 (historical String).
+        lib6:
+          type: string
+          description: BKEVE field LIB6 (historical String).
+        lib7:
+          type: string
+          description: BKEVE field LIB7 (historical String).
+        lib8:
+          type: string
+          description: BKEVE field LIB8 (historical String).
+        lib9:
+          type: string
+          description: BKEVE field LIB9 (historical String).
+        lib10:
+          type: string
+          description: BKEVE field LIB10 (historical String).
+        agec:
+          type: string
+          description: BKEVE field AGEC (historical String).
+        agep:
+          type: string
+          description: BKEVE field AGEP (historical String).
+        intr:
+          type: string
+          description: BKEVE field INTR (historical String).
+        orig:
+          type: string
+          description: BKEVE field ORIG (historical String).
+        rlet:
+          type: string
+          description: BKEVE field RLET (historical String).
+        catr:
+          type: string
+          description: BKEVE field CATR (historical String).
+        ceb:
+          type: string
+          description: BKEVE field CEB (historical String).
+        plb:
+          type: string
+          description: BKEVE field PLB (historical String).
+        cco:
+          type: string
+          description: BKEVE field CCO (historical String).
+        dret:
+          type: string
+          format: date
+          description: BKEVE field DRET (historical Date).
+        natp:
+          type: string
+          description: BKEVE field NATP (historical String).
+        nump:
+          type: string
+          description: BKEVE field NUMP (historical String).
+        datp:
+          type: string
+          description: BKEVE field DATP (historical String).
+        nomp:
+          type: string
+          description: BKEVE field NOMP (historical String).
+        ad1p:
+          type: string
+          description: BKEVE field AD1P (historical String).
+        ad2p:
+          type: string
+          description: BKEVE field AD2P (historical String).
+        delp:
+          type: string
+          description: BKEVE field DELP (historical String).
+        serie:
+          type: string
+          description: BKEVE field SERIE (historical String).
+        nche:
+          type: string
+          description: BKEVE field NCHE (historical String).
+        chql:
+          type: string
+          description: BKEVE field CHQL (historical String).
+        chqc:
+          type: string
+          description: BKEVE field CHQC (historical String).
+        cab:
+          type: string
+          description: BKEVE field CAB (historical String).
+        ncff:
+          type: string
+          description: BKEVE field NCFF (historical String).
+        csa:
+          type: string
+          description: BKEVE field CSA (historical String).
+        dech:
+          type: string
+          format: date
+          description: BKEVE field DECH (historical Date).
+        tire:
+          type: string
+          description: BKEVE field TIRE (historical String).
+        agti:
+          type: string
+          description: BKEVE field AGTI (historical String).
+        agre:
+          type: string
+          description: BKEVE field AGRE (historical String).
+        nbji:
+          type: integer
+          description: BKEVE field NBJI (historical Integer).
+        ptfc:
+          type: string
+          description: BKEVE field PTFC (historical String).
+        efav:
+          type: string
+          description: BKEVE field EFAV (historical String).
+        navl:
+          type: string
+          description: BKEVE field NAVL (historical String).
+        edom:
+          type: string
+          description: BKEVE field EDOM (historical String).
+        eopp:
+          type: string
+          description: BKEVE field EOPP (historical String).
+        efac:
+          type: string
+          description: BKEVE field EFAC (historical String).
+        moti:
+          type: string
+          description: BKEVE field MOTI (historical String).
+        envacc:
+          type: string
+          description: BKEVE field ENVACC (historical String).
+        enom:
+          type: string
+          description: BKEVE field ENOM (historical String).
+        vicl:
+          type: string
+          description: BKEVE field VICL (historical String).
+        teco:
+          type: string
+          description: BKEVE field TECO (historical String).
+        tenv:
+          type: string
+          description: BKEVE field TENV (historical String).
+        exjo:
+          type: string
+          description: BKEVE field EXJO (historical String).
+        org:
+          type: string
+          description: BKEVE field ORG (historical String).
+        cai3:
+          type: string
+          description: BKEVE field CAI3 (historical String).
+        mcai3:
+          type: number
+          description: BKEVE field MCAI3 (historical Double).
+        forc:
+          type: string
+          description: BKEVE field FORC (historical String).
+        ocai3:
+          type: string
+          description: BKEVE field OCAI3 (historical String).
+        ncai3:
+          type: integer
+          description: BKEVE field NCAI3 (historical Integer).
+        csp2:
+          type: string
+          description: BKEVE field CSP2 (historical String).
+        csp3:
+          type: string
+          description: BKEVE field CSP3 (historical String).
+        csp4:
+          type: string
+          description: BKEVE field CSP4 (historical String).
+        csp5:
+          type: string
+          description: BKEVE field CSP5 (historical String).
+        ndom:
+          type: string
+          description: BKEVE field NDOM (historical String).
+        cmod:
+          type: string
+          description: BKEVE field CMOD (historical String).
+        devf:
+          type: string
+          description: BKEVE field DEVF (historical String).
+        ncpf:
+          type: string
+          description: BKEVE field NCPF (historical String).
+        suff:
+          type: string
+          description: BKEVE field SUFF (historical String).
+        monf:
+          type: number
+          description: BKEVE field MONF (historical Double).
+        dvaf:
+          type: string
+          format: date
+          description: BKEVE field DVAF (historical Date).
+        exof:
+          type: string
+          description: BKEVE field EXOF (historical String).
+        agee:
+          type: string
+          description: BKEVE field AGEE (historical String).
+        deve:
+          type: string
+          description: BKEVE field DEVE (historical String).
+        ncpe:
+          type: string
+          description: BKEVE field NCPE (historical String).
+        sufe:
+          type: string
+          description: BKEVE field SUFE (historical String).
+        clce:
+          type: string
+          description: BKEVE field CLCE (historical String).
+        ncpi:
+          type: string
+          description: BKEVE field NCPI (historical String).
+        sufi:
+          type: string
+          description: BKEVE field SUFI (historical String).
+        mimp:
+          type: number
+          description: BKEVE field MIMP (historical Double).
+        dvai:
+          type: string
+          format: date
+          description: BKEVE field DVAI (historical Date).
+        ncpp:
+          type: string
+          description: BKEVE field NCPP (historical String).
+        sufp:
+          type: string
+          description: BKEVE field SUFP (historical String).
+        prga:
+          type: number
+          description: BKEVE field PRGA (historical Double).
+        mrga:
+          type: number
+          description: BKEVE field MRGA (historical Double).
+        term:
+          type: string
+          description: BKEVE field TERM (historical String).
+        tvar:
+          type: string
+          description: BKEVE field TVAR (historical String).
+        intp:
+          type: string
+          description: BKEVE field INTP (historical String).
+        cap:
+          type: string
+          description: BKEVE field CAP (historical String).
+        prll:
+          type: string
+          description: BKEVE field PRLL (historical String).
+        ano:
+          type: string
+          description: BKEVE field ANO (historical String).
+        etab1:
+          type: string
+          description: BKEVE field ETAB1 (historical String).
+        guib1:
+          type: string
+          description: BKEVE field GUIB1 (historical String).
+        com1b:
+          type: string
+          description: BKEVE field COM1B (historical String).
+        etab2:
+          type: string
+          description: BKEVE field ETAB2 (historical String).
+        guib2:
+          type: string
+          description: BKEVE field GUIB2 (historical String).
+        com2b:
+          type: string
+          description: BKEVE field COM2B (historical String).
+        tcom1:
+          type: number
+          description: BKEVE field TCOM1 (historical Double).
+        mcom1:
+          type: number
+          description: BKEVE field MCOM1 (historical Double).
+        tcom2:
+          type: number
+          description: BKEVE field TCOM2 (historical Double).
+        mcom2:
+          type: number
+          description: BKEVE field MCOM2 (historical Double).
+        tcom3:
+          type: number
+          description: BKEVE field TCOM3 (historical Double).
+        mcom3:
+          type: number
+          description: BKEVE field MCOM3 (historical Double).
+        frai1:
+          type: number
+          description: BKEVE field FRAI1 (historical Double).
+        frai2:
+          type: number
+          description: BKEVE field FRAI2 (historical Double).
+        frai3:
+          type: number
+          description: BKEVE field FRAI3 (historical Double).
+        ttax1:
+          type: number
+          description: BKEVE field TTAX1 (historical Double).
+        mtax1:
+          type: number
+          description: BKEVE field MTAX1 (historical Double).
+        ttax2:
+          type: number
+          description: BKEVE field TTAX2 (historical Double).
+        mtax2:
+          type: number
+          description: BKEVE field MTAX2 (historical Double).
+        ttax3:
+          type: number
+          description: BKEVE field TTAX3 (historical Double).
+        mtax3:
+          type: number
+          description: BKEVE field MTAX3 (historical Double).
+        mnt1:
+          type: number
+          description: BKEVE field MNT1 (historical Double).
+        mnt2:
+          type: number
+          description: BKEVE field MNT2 (historical Double).
+        mnt3:
+          type: number
+          description: BKEVE field MNT3 (historical Double).
+        mnt4:
+          type: number
+          description: BKEVE field MNT4 (historical Double).
+        mnt5:
+          type: number
+          description: BKEVE field MNT5 (historical Double).
+        tyc3:
+          type: string
+          description: BKEVE field TYC3 (historical String).
+        dcai3:
+          type: string
+          description: BKEVE field DCAI3 (historical String).
+        scai3:
+          type: string
+          description: BKEVE field SCAI3 (historical String).
+        arrc3:
+          type: number
+          description: BKEVE field ARRC3 (historical Double).
+        mhtd:
+          type: number
+          description: BKEVE field MHTD (historical Double).
+        tcai4:
+          type: number
+          description: BKEVE field TCAI4 (historical Double).
+        tope:
+          type: string
+          description: BKEVE field TOPE (historical String).
+        img:
+          type: string
+          description: BKEVE field IMG (historical String).
+        dsai:
+          type: string
+          format: date
+          description: BKEVE field DSAI (historical Date).
+        hsai:
+          type: string
+          description: BKEVE field HSAI (historical String).
+        paysp:
+          type: string
+          description: BKEVE field PAYSP (historical String).
+        pdelp:
+          type: string
+          description: BKEVE field PDELP (historical String).
+        manda:
+          type: string
+          description: BKEVE field MANDA (historical String).
+        refdos:
+          type: string
+          description: BKEVE field REFDOS (historical String).
+        tchfr:
+          type: number
+          description: BKEVE field TCHFR (historical Double).
 
     PaymentEventEnvelope:
       type: object
       additionalProperties: false
-      required: [paymentReference, snapshotVersion, providerEvent, providerEntries, requestedAt]
+      required: [paymentReference, snapshotVersion, providerEvent, requestedAt]
       description: |
-        Receipt of this request directly triggers Core Banking execution.
-        Core Banking performs the applicable execution-time controls before write,
-        then writes the `bkeve`-equivalent event and exactly two `bkmvti`-equivalent
-        entries atomically. A bank reference is returned only after successful
-        execution. An uncertain transport/execution outcome must never be blindly
-        replayed; the authoritative lookup endpoints are used before any retry.
+        Receipt of this request directly triggers the R6 T0 Core Banking
+        execution. Core Banking performs the applicable execution-time controls
+        and persists the BKEVE banking event. BKMVTI entries are not part of this
+        T0 request/execution; they belong to the separate T1 accounting flow.
+        A bank reference is returned only after successful Core Banking execution.
+        An uncertain transport/execution outcome must never be blindly replayed;
+        the authoritative lookup endpoints are used before any retry.
       properties:
         paymentReference:
           $ref: '#/components/schemas/PaymentReference'
@@ -981,12 +1856,6 @@ components:
           maxLength: 32
         providerEvent:
           $ref: '#/components/schemas/PaymentProviderEvent'
-        providerEntries:
-          type: array
-          minItems: 2
-          maxItems: 2
-          items:
-            $ref: '#/components/schemas/PaymentProviderEntry'
         requestedAt:
           type: string
           format: date-time
@@ -998,9 +1867,13 @@ components:
       properties:
         type:
           type: string
-          enum:
-            [ACCOUNT_EXISTS, ACCOUNT_ACTIVE, DEBIT_ALLOWED, CURRENCY_SUPPORTED, AVAILABLE_FUNDS_SUFFICIENT,
-             PER_TRANSACTION_LIMIT_NOT_EXCEEDED, DAILY_LIMIT_NOT_EXCEEDED, OTHER_APPLICABLE_LIMITS_NOT_EXCEEDED]
+          enum: [ACCOUNT_VALID, DEBIT_ALLOWED, AVAILABLE_FUNDS_SUFFICIENT]
+          description: |
+            ACCOUNT_VALID represents the combined account existence/open/active
+            observation supported by the validated Core Banking evidence.
+            Application transaction/daily/other limits are outside R6 Core Banking
+            controls. Currency is Core-Banking-authoritative for the current XAF
+            scope and is not exposed as an independent execution check.
         result:
           type: string
           enum: [PASS, FAIL, UNKNOWN]
@@ -1009,7 +1882,7 @@ components:
     PaymentEventResult:
       type: object
       additionalProperties: false
-      required: [paymentReference, outcome, checks, observedAt]
+      required: [paymentReference, outcome, checks, dco, observedAt]
       properties:
         paymentReference: { $ref: '#/components/schemas/PaymentReference' }
         outcome:
@@ -1021,14 +1894,58 @@ components:
             paymentReference or idempotency-key lookup before any retry.
         checks:
           type: array
-          minItems: 8
-          maxItems: 8
+          minItems: 0
+          maxItems: 3
+          description: |
+            When exactly three historical execution checks were persisted,
+            return those original checks unchanged. An empty array means the
+            original checks are unavailable during authoritative recovery; it
+            never means that the checks passed or were re-evaluated.
+            Do not reconstruct historical checks from current banking state.
           items: { $ref: '#/components/schemas/PaymentExecutionCheck' }
         bankReference:
           type: [string, 'null']
           maxLength: 128
           description: Present only after successful Core Banking execution.
         reasonCode: { type: [string, 'null'], maxLength: 64 }
+        dco:
+          type: [string, 'null']
+          format: date
+          description: |
+            Banking accounting date recorded for the successfully posted event.
+            Required in every response. Non-null for COMPLETED; null is permitted
+            only for REJECTED or UNKNOWN. Historic completed results missing
+            DCO must be resolved from authoritative bank evidence or fail closed.
+        observedAt: { type: string, format: date-time }
+
+    PaymentEventLookupNotFound:
+      type: object
+      additionalProperties: false
+      description: |
+        An unrecognized lookup has HTTP 404 and outcome UNKNOWN, without
+        asserting financial rejection or non-execution. paymentReference is
+        included only if supplied by the paymentReference lookup; an unknown
+        idempotency key cannot provide a verified paymentReference.
+        No historical checks are available for a missing lookup.
+      required: [outcome, checks, bankReference, reasonCode, dco, observedAt]
+      properties:
+        paymentReference: { $ref: '#/components/schemas/PaymentReference' }
+        outcome: { type: string, enum: [UNKNOWN] }
+        checks:
+          type: array
+          minItems: 0
+          maxItems: 0
+          items: { $ref: '#/components/schemas/PaymentExecutionCheck' }
+        bankReference:
+          type: [string, 'null']
+          description: Always null for a missing lookup.
+        reasonCode:
+          type: [string, 'null']
+          description: Always null; REFERENCE_UNKNOWN is not a business code.
+        dco:
+          type: [string, 'null']
+          format: date
+          description: Always null without a confirmed banking event.
         observedAt: { type: string, format: date-time }
 
     AccountingEntriesBatchRequest:

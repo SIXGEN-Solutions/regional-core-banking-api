@@ -1,0 +1,106 @@
+package com.regional.corebanking.payment.application.service;
+
+import com.regional.corebanking.payment.application.exception.PaymentExecutionNotFoundException;
+import com.regional.corebanking.payment.application.exception.PaymentExecutionUnavailableException;
+import com.regional.corebanking.payment.application.port.out.PaymentExecutionBankingPort;
+import com.regional.corebanking.payment.application.port.out.PaymentExecutionPersistencePort;
+import com.regional.corebanking.payment.domain.PaymentExecutionOutcome;
+import com.regional.corebanking.payment.domain.PaymentExecutionResult;
+
+import java.util.Objects;
+import java.util.Optional;
+
+/**
+ * Read-only financial recovery coordination. Never invokes financial execution.
+ * BankingPort lookups MUST be authoritative before they can resolve UNKNOWN.
+ * A missing bank row does not prove that no financial posting occurred.
+ */
+final class PaymentExecutionRecoveryCoordinator {
+    private final PaymentExecutionPersistencePort technical;
+    private final PaymentExecutionBankingPort banking;
+
+    PaymentExecutionRecoveryCoordinator(PaymentExecutionPersistencePort technical,
+                                        PaymentExecutionBankingPort banking) {
+        this.technical = Objects.requireNonNull(technical, "technical");
+        this.banking = Objects.requireNonNull(banking, "banking");
+    }
+
+    PaymentExecutionResult byPaymentReference(String institution, String reference) {
+        require(institution, "financialInstitutionCode");
+        require(reference, "paymentReference");
+        Optional<PaymentExecutionResult> local = technical.findByPaymentReference(institution, reference);
+        if (local.isPresent() && terminalWithValidDco(local.get())) {
+            validateReference(local.get(), reference);
+            return local.get();
+        }
+        Optional<PaymentExecutionResult> bank = banking.findByPaymentReference(institution, reference);
+        if (bank.isPresent()) {
+            validateReference(bank.get(), reference);
+            return validateBankOutcome(bank.get());
+        }
+        if (local.isPresent() && local.get().outcome() == PaymentExecutionOutcome.COMPLETED)
+            throw new PaymentExecutionUnavailableException(
+                "Stored completed payment has no DCO; authoritative banking recovery required");
+        return local.orElseThrow(() -> new PaymentExecutionNotFoundException(
+                "No authoritative payment execution result for paymentReference", reference));
+    }
+
+    PaymentExecutionResult byIdempotencyKey(String institution, String key) {
+        require(institution, "financialInstitutionCode");
+        require(key, "idempotencyKey");
+        Optional<PaymentExecutionResult> local = technical.findByIdempotencyKey(institution, key);
+        if (local.isPresent() && terminalWithValidDco(local.get())) {
+            return local.get();
+        }
+        Optional<PaymentExecutionResult> bank = banking.findByIdempotencyKey(institution, key);
+        if (bank.isPresent()) {
+            PaymentExecutionResult candidate = validateBankOutcome(bank.get());
+            if (local.isPresent() && !Objects.equals(local.get().paymentReference(), candidate.paymentReference())) {
+                throw new PaymentExecutionUnavailableException("Bank recovery payment reference does not match technical claim");
+            }
+            return candidate;
+        }
+        if (local.isPresent() && local.get().outcome() == PaymentExecutionOutcome.COMPLETED)
+            throw new PaymentExecutionUnavailableException(
+                "Stored completed payment has no DCO; authoritative banking recovery required");
+        return local.orElseThrow(() -> new PaymentExecutionNotFoundException(
+                "No authoritative payment execution result for idempotencyKey"));
+    }
+
+    private static boolean terminalWithValidDco(PaymentExecutionResult result) {
+        return result.outcome() != PaymentExecutionOutcome.UNKNOWN
+                && (result.outcome() != PaymentExecutionOutcome.COMPLETED
+                    || (result.dco() != null
+                        && result.bankReference() != null
+                        && !result.bankReference().isBlank()));
+    }
+
+    private static PaymentExecutionResult validateBankOutcome(PaymentExecutionResult result) {
+        if (result.outcome() == null) {
+            throw new PaymentExecutionUnavailableException("Bank recovery has no outcome");
+        }
+        // UNKNOWN remains UNKNOWN: a bank query is not proof of completion or rejection.
+        // Never attempt a new financial execution in the lookup path.
+        if (result.outcome() == PaymentExecutionOutcome.UNKNOWN) {
+            return result;
+        }
+        if (result.outcome() == PaymentExecutionOutcome.COMPLETED && result.dco() == null) {
+            throw new PaymentExecutionUnavailableException("Bank recovery completed event has no DCO");
+        }
+        if (result.outcome() == PaymentExecutionOutcome.COMPLETED &&
+                (result.bankReference() == null || result.bankReference().isBlank())) {
+            throw new PaymentExecutionUnavailableException("Completed bank recovery lacks bank reference");
+        }
+        return result;
+    }
+
+    private static void validateReference(PaymentExecutionResult result, String reference) {
+        if (!reference.equals(result.paymentReference())) {
+            throw new PaymentExecutionUnavailableException("Bank recovery payment reference mismatch");
+        }
+    }
+
+    private static void require(String text, String field) {
+        if (text == null || text.isBlank()) throw new IllegalArgumentException(field + " is required");
+    }
+}
