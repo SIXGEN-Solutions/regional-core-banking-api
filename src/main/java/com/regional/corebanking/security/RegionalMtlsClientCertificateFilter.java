@@ -21,7 +21,7 @@ import java.util.HexFormat;
 import java.util.List;
 
 /**
- * Admission control for the explicitly enabled regional-mtls profile.
+ * Admission control when regional.security.mtls.enabled is true.
  * The servlet container first validates the X.509 chain against the configured
  * truststore and requires proof of possession during the TLS handshake.
  * This filter further limits API access to explicitly approved certificates.

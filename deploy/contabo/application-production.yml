@@ -7,7 +7,6 @@ spring:
   config:
     import:
       - "configtree:/run/secrets/"
-      - "optional:classpath:application-regional-mtls.yml"
   mail:
     host: ${REGIONAL_OTP_EMAIL_HOST:}
     port: ${REGIONAL_OTP_EMAIL_PORT:25}
@@ -21,6 +20,17 @@ spring:
 server:
   port: ${SERVER_PORT:9092}
   shutdown: graceful
+  ssl:
+    # No eagerly created spring.ssl.bundle. Both toggles use ENABLE_MTLS.
+    enabled: ${ENABLE_MTLS:false}
+    key-store: ${REGIONAL_MTLS_KEYSTORE_LOCATION:}
+    key-store-password: ${REGIONAL_MTLS_KEYSTORE_PASSWORD:}
+    key-store-type: PKCS12
+    trust-store: ${REGIONAL_MTLS_TRUSTSTORE_LOCATION:}
+    trust-store-password: ${REGIONAL_MTLS_TRUSTSTORE_PASSWORD:}
+    trust-store-type: PKCS12
+    client-auth: need
+    enabled-protocols: TLSv1.3
 management:
   endpoints:
     web:
@@ -40,6 +50,11 @@ springdoc:
   api-docs:
     path: /v3/api-docs
 regional:
+  security:
+    mtls:
+      enabled: ${ENABLE_MTLS:false}
+      allowed-client-cert-sha256: ${SECURITY_MTLS_ALLOWED_CLI_CERT:}
+      required: ${REGIONAL_MTLS_REQUIRED:false}
   technical-datasource:
     url: ${REGIONAL_TECHNICAL_DB_URL}
     username: ${REGIONAL_TECHNICAL_DB_USERNAME}

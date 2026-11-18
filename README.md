@@ -418,6 +418,6 @@ proposal is in `deploy/contabo/` with full operating procedure in
 `documentation/runbooks/REGIONAL_CONTABO_MVP_DEPLOYMENT.md`.
 It does not authorize public banking access or modify SIXPAY infrastructure.
 
-## Regional inbound HTTPS/mTLS — opt-in security lot 1
+## Regional inbound HTTPS/mTLS — environment-local configuration
 
-Local HTTP remains available in the existing `local`/`docker` profiles. The secure `regional-mtls` profile requires TLS 1.3, client certificates and an explicit SHA-256 client-certificate allowlist; it is never enabled by the default local deployment. The Contabo overlay `deploy/contabo/compose.mtls.yml` is opt-in and requires externally provisioned PKI secrets and an approved private VM-03 bind address. See `documentation/runbooks/REGIONAL_MTLS_ACTIVATION.md`. This lot does not alter the approved OAuth2+mTLS OpenAPI contract, which needs a separately reviewed security-profile update.
+All mTLS Spring settings live directly in `src/main/resources/application-docker.yml` and `deploy/contabo/application-production.yml`. The redundant `application-regional-mtls.yml` and the extra `regional-mtls` Spring profile are removed. `ENABLE_MTLS=true` switches on TLS 1.3, required client certificates and the X.509 fingerprint admission filter; `SECURITY_MTLS_ALLOWED_CLI_CERT` supplies approved fingerprints. For bank-facing deployments also enforce `REGIONAL_MTLS_REQUIRED=true` to prevent accidental HTTP downgrade. Local Docker and the synthetic Contabo mock still default to HTTP. The optional `deploy/contabo/compose.mtls.yml` retains only private port publishing and read-only certificate/secret mounts. See `documentation/runbooks/REGIONAL_MTLS_ACTIVATION.md`. No change is made to the approved OAuth2+mTLS OpenAPI contract.

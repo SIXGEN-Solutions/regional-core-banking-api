@@ -1,107 +1,112 @@
-# Regional Core Banking API — HTTPS/mTLS (lot 1)
+# Regional Core Banking API — HTTPS/mTLS (lot 1, consolidated)
 
 ## Scope
 
-This lot secures the **Regional inbound API** only. It does not modify banking
-operations, implement SIXPAY outbound mTLS, authorize production banking, or
-change the approved OpenAPI contract. Regional OpenAPI V1 still describes
-OAuth2 + mTLS until its separate security-contract approval/evolution.
+Regional inbound HTTPS/mTLS only. Banking business rules and external API schemas
+remain untouched. The **approved Regional OpenAPI still declares OAuth2 + mTLS**;
+a separate bank/security approval is required before a contract change.
+Current Contabo is an Oracle SYNTHETIC mock, not approval for live banking.
 
-## Profiles
+## Single application YAML per environment
 
-- `local` or `docker`, without `regional-mtls`: current HTTP development mode.
-  **Never expose these profiles as a trusted private banking endpoint.**
-- `regional-mtls`: TLS 1.3, server key material and truststore, required client
-  certificate, plus application allowlist of SHA-256 certificate fingerprints.
-- Deployment overlay `compose.mtls.yml` explicitly opts into the secure profile;
-  the base `compose.yml` remains unchanged and retains its loopback port.
+- Docker: `src/main/resources/application-docker.yml`.
+- Contabo: `deploy/contabo/application-production.yml` (external file).
+- No `application-regional-mtls.yml` and no `regional-mtls` Spring profile.
+- No `spring.ssl.bundle`: `server.ssl.*` configures the server directly.
 
-A trusted CA alone is insufficient: the application also requires an explicitly
-approved end-entity client certificate fingerprint. For certificate rotation,
-add both old/new SHA-256 fingerprints to the comma-separated allowlist during
-an approved overlap window, then retire the old fingerprint.
+The SAME `ENABLE_MTLS` controls both `server.ssl.enabled` and the
+`RegionalMtlsClientCertificateFilter`. A separately configured
+`REGIONAL_MTLS_REQUIRED=true` blocks startup if `ENABLE_MTLS=false`.
 
-## Bank PKI prerequisites
+| Environment | ENABLE_MTLS | REGIONAL_MTLS_REQUIRED | Transport |
+| --- | --- | --- | --- |
+| Local Docker | false | false | HTTP |
+| Existing Contabo Oracle mock (loopback only) | false | false | HTTP |
+| Private secured bank-facing installation | true | true | HTTPS/TLS 1.3 and client certificate |
 
-Provision externally (NEVER commit):
+Do not expose HTTP local/mock to untrusted networks. An environment requiring
+banking-grade security must enforce `REGIONAL_MTLS_REQUIRED=true` in its
+protected deployment policy (not merely in a developer-editable file).
 
-- `/opt/regional/mtls/regional-server.p12`: PKCS12 server private key and chain;
-  server certificate SAN must match the private hostname used by SIXPAY.
-- `/opt/regional/mtls/regional-client-truststore.p12`: PKCS12 trust anchors for
-  allowed bank-issued client certificates.
-- `/opt/regional/secrets/REGIONAL_MTLS_KEYSTORE_PASSWORD`: keystore password.
-- `/opt/regional/secrets/REGIONAL_MTLS_TRUSTSTORE_PASSWORD`: truststore password.
-- `REGIONAL_MTLS_ALLOWED_CLIENT_CERT_SHA256`: SHA-256 of the approved leaf SIXPAY
-  certificate (or comma-separated values for controlled rotation).
+## Configuration values
 
-The host paths and SELinux labels must permit **read-only** container access.
-Certificate passwords are Spring configtree secrets, not committed YAML values.
-The host operator owns permissions, issuance, revocation and renewal controls.
-Revocation-status checking beyond the default TLS trust validation requires a
-separate bank policy and implementation assessment.
+- `SECURITY_MTLS_ALLOWED_CLI_CERT`: approved SHA-256 fingerprint(s) of SIXPAY's
+  **leaf** certificate, 64 hexadecimal characters each, separated by commas.
+- `REGIONAL_MTLS_KEYSTORE_LOCATION`: server PKCS12 resource, for example
+  `file:/run/mtls/regional-server.p12`.
+- `REGIONAL_MTLS_TRUSTSTORE_LOCATION`: client trust roots PKCS12 resource, for
+  example `file:/run/mtls/regional-client-truststore.p12`.
+- `REGIONAL_MTLS_KEYSTORE_PASSWORD`, `REGIONAL_MTLS_TRUSTSTORE_PASSWORD`:
+  external passwords loaded from existing Compose secrets/configtree.
 
-## Local developer mode (no mTLS)
+Never commit real keys, truststores or passwords. The server certificate SAN
+must match the private hostname used by SIXPAY. TLS establishes certificate
+chain trust; the filter additionally checks the authorized leaf fingerprint.
+Approved rotation may temporarily allow more than one fingerprint.
 
-Keep using the existing local profile or base local Docker Compose. Do not add
-`regional-mtls` to `SPRING_PROFILES_ACTIVE`; HTTPS credentials are not required.
+## Contabo private deployment (not executed by this patch)
 
-## Secure Contabo mode (NOT executed by this lot)
+With bank PKI, network and release approval, set in `/opt/regional/config/.env`:
 
-Review `deploy/contabo/.env.example` and prepare the host env file with approved
-`REGIONAL_PRIVATE_BIND_IP` and `REGIONAL_MTLS_ALLOWED_CLIENT_CERT_SHA256`.
-Use an immutable published API image containing this implementation.
+```dotenv
+ENABLE_MTLS=true
+REGIONAL_MTLS_REQUIRED=true
+SECURITY_MTLS_ALLOWED_CLI_CERT=<approved-leaf-SHA256>
+REGIONAL_MTLS_KEYSTORE_LOCATION=file:/run/mtls/regional-server.p12
+REGIONAL_MTLS_TRUSTSTORE_LOCATION=file:/run/mtls/regional-client-truststore.p12
+REGIONAL_PRIVATE_BIND_IP=<private-VM03-IP>
+```
+
+Provision read-only PKCS12 files under `/opt/regional/mtls/` and password
+secrets under `/opt/regional/secrets/`. Use the optional
+`deploy/contabo/compose.mtls.yml` overlay **only** for Docker port, mounts and
+secrets: the overlay no longer selects a Spring mTLS profile. The base Compose
+publishes only loopback; the overlay adds a private interface. Restrict the
+private port to VM-01 using firewalld. Confirm SELinux labels, permissions and
+certificate issuance/revocation/rotation under Regional bank policy.
 
 ```bash
+# Configuration rendering only (does not deploy)
 docker compose --env-file /opt/regional/config/.env \
   -f deploy/contabo/compose.yml -f deploy/contabo/compose.mtls.yml config
 
+# Only after separate operational deployment authorization:
 docker compose --env-file /opt/regional/config/.env \
   -f deploy/contabo/compose.yml -f deploy/contabo/compose.mtls.yml up -d
 ```
 
-The production configuration explicitly imports the secure profile document
-when `regional-mtls` is active, because `SPRING_CONFIG_LOCATION` replaces the
-packaged application configuration. Never activate the overlay before PKI,
-network/SELinux, host mounts and image are approved. Ensure VM-03 firewalld
-allows the private service port **only from VM-01**, with no public forwarding.
+For local testing keep both flags false and do not use the private overlay.
+If ENABLE_MTLS=true without required certificates, startup must fail; no
+fallback to HTTP is acceptable. If REGIONAL_MTLS_REQUIRED=true but ENABLE_MTLS
+is false, the startup guard also fails closed.
 
-The overlay adds a private-interface mapping while retaining the base loopback
-mapping, which becomes HTTPS in this mode. Health probes and Swagger on that
-listener must still pass the client certificate admission filter.
-
-## Validation commands for the operator (NOT executed by this lot)
+## Operator-run validation (not executed by patch)
 
 ```bash
-# Focused filter test
-./mvnw -Dtest=RegionalMtlsClientCertificateFilterTest test
-
-# Full project gates
+./mvnw -Dtest=RegionalMtlsClientCertificateFilterTest,RegionalMtlsStartupGuardTest test
 ./mvnw verify
 
-# Offline configuration review (no container deployment)
 docker compose --env-file /opt/regional/config/.env \
   -f deploy/contabo/compose.yml -f deploy/contabo/compose.mtls.yml config
 
-# Negative: no client certificate must not access the secured API
-openssl s_client -connect REGIONAL_PRIVATE_HOST:9092 \
+# No client certificate: API request must fail.
+openssl s_client -connect REGIONAL_PRIVATE_DNS:9092 \
   -servername REGIONAL_PRIVATE_DNS -tls1_3 </dev/null
 
-# Positive: supply bank-issued client certificate/key and trusted server CA
+# With valid, approved SIXPAY client certificate:
 curl --fail-with-body --cacert SERVER_CA.pem \
   --cert SIXPAY_CLIENT.pem --key SIXPAY_CLIENT.key \
   https://REGIONAL_PRIVATE_DNS:9092/actuator/health
 ```
 
-TLS handshake success, response codes and service availability are distinct
-checks. A valid client certificate signed by the trusted CA but **not** on the
-approved fingerprint allowlist must get HTTP 403. A missing certificate must
-be rejected at handshake with `server.ssl.client-auth: need`.
+Also check a valid CA-signed but unapproved client cert -> HTTP 403;
+untrusted/expired cert -> rejected; plain HTTP -> rejected; and
+REGIONAL_MTLS_REQUIRED=true + ENABLE_MTLS=false -> startup rejected.
+Unit tests and Docker config validation do **not** establish a real mTLS
+handshake or bank network-policy compliance.
 
-## Residual risks and decisions
+## Residual decisions
 
-- Regional V1 OpenAPI security and SIXPAY consumers are not updated in this lot.
-- Public/private address, CA inventory, naming, revocation and certificate
-  rotation require bank operational approval.
-- The current Contabo stack is a synthetic banking mock, not live-bank approval.
-- No production security assertion is made until TLS, application authorization,
-  firewall and negative acceptance tests have been executed successfully.
+- Bank-approved Regional OpenAPI and corresponding SIXPAY contract change.
+- PKI chain, trust roots, revocation, private DNS, firewalld and renewal.
+- No SIXPAY outbound client is changed by this lot.

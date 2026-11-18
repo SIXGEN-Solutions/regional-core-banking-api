@@ -37,8 +37,8 @@ regional:
     mtls:
       enabled: ${ENABLE_MTLS:false}
       # One or more comma-separated SHA-256 fingerprints, for planned rotation.
-      # NO default: missing allowlist makes secure startup fail.
-      allowed-client-cert-sha256: ${REGIONAL_MTLS_ALLOWED_CLIENT_CERT_SHA256:}
+      allowed-client-cert-sha256: ${SECURITY_MTLS_ALLOWED_CLI_CERT:}
+      required: ${REGIONAL_MTLS_REQUIRED:false}
 
 springdoc:
   swagger-ui:
@@ -46,3 +46,16 @@ springdoc:
     display-request-duration: true
   api-docs:
     path: /v3/api-docs
+# Docker-only HTTP is the default; provide certificates when ENABLE_MTLS=true.
+server:
+  ssl:
+    # No eagerly created spring.ssl.bundle. Both toggles use ENABLE_MTLS.
+    enabled: ${ENABLE_MTLS:false}
+    key-store: ${REGIONAL_MTLS_KEYSTORE_LOCATION:}
+    key-store-password: ${REGIONAL_MTLS_KEYSTORE_PASSWORD:}
+    key-store-type: PKCS12
+    trust-store: ${REGIONAL_MTLS_TRUSTSTORE_LOCATION:}
+    trust-store-password: ${REGIONAL_MTLS_TRUSTSTORE_PASSWORD:}
+    trust-store-type: PKCS12
+    client-auth: need
+    enabled-protocols: TLSv1.3
