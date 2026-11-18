@@ -1,0 +1,23 @@
+# EXPLICIT secure overlay: use together with deploy/contabo/compose.yml.
+# This file is NOT automatically loaded by docker compose.
+services:
+  regional-core-banking-api:
+    environment:
+      SPRING_PROFILES_ACTIVE: production,regional-mtls
+      REGIONAL_MTLS_KEYSTORE_LOCATION: file:/run/mtls/regional-server.p12
+      REGIONAL_MTLS_TRUSTSTORE_LOCATION: file:/run/mtls/regional-client-truststore.p12
+      REGIONAL_MTLS_ALLOWED_CLIENT_CERT_SHA256: ${REGIONAL_MTLS_ALLOWED_CLIENT_CERT_SHA256:?approved client certificate fingerprint required}
+    volumes:
+      - /opt/regional/mtls:/run/mtls:ro,Z
+    ports:
+      # The original loopback mapping from the base Compose file is preserved.
+      # This additional port is bound ONLY to the approved private interface.
+      - "${REGIONAL_PRIVATE_BIND_IP:?approved private VM-03 address required}:${REGIONAL_API_MTLS_PORT:-9092}:${SERVER_PORT:-9092}"
+    secrets:
+      - REGIONAL_MTLS_KEYSTORE_PASSWORD
+      - REGIONAL_MTLS_TRUSTSTORE_PASSWORD
+secrets:
+  REGIONAL_MTLS_KEYSTORE_PASSWORD:
+    file: /opt/regional/secrets/REGIONAL_MTLS_KEYSTORE_PASSWORD
+  REGIONAL_MTLS_TRUSTSTORE_PASSWORD:
+    file: /opt/regional/secrets/REGIONAL_MTLS_TRUSTSTORE_PASSWORD

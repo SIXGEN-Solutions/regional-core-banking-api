@@ -417,3 +417,7 @@ A separate, non-deployed Oracle MOCK + Regional PostgreSQL + Spring Boot Compose
 proposal is in `deploy/contabo/` with full operating procedure in
 `documentation/runbooks/REGIONAL_CONTABO_MVP_DEPLOYMENT.md`.
 It does not authorize public banking access or modify SIXPAY infrastructure.
+
+## Regional inbound HTTPS/mTLS — opt-in security lot 1
+
+Local HTTP remains available in the existing `local`/`docker` profiles. The secure `regional-mtls` profile requires TLS 1.3, client certificates and an explicit SHA-256 client-certificate allowlist; it is never enabled by the default local deployment. The Contabo overlay `deploy/contabo/compose.mtls.yml` is opt-in and requires externally provisioned PKI secrets and an approved private VM-03 bind address. See `documentation/runbooks/REGIONAL_MTLS_ACTIVATION.md`. This lot does not alter the approved OAuth2+mTLS OpenAPI contract, which needs a separately reviewed security-profile update.

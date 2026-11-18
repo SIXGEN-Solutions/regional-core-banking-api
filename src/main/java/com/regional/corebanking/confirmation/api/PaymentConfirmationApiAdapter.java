@@ -22,10 +22,6 @@ public class PaymentConfirmationApiAdapter implements PaymentConfirmationApi {
     public ResponseEntity<PaymentConfirmationChallengeResult> createPaymentConfirmationChallenge(
             UUID xCorrelationID, String xFinancialInstitutionCode, String idempotencyKey,
             CreatePaymentConfirmationChallengeRequest request) {
-        System.out.println("---------> createPaymentConfirmationChallenge");
-        System.out.println("xFinancialInstitutionCode: " + xFinancialInstitutionCode);
-        System.out.println("idempotencyKey: " + idempotencyKey);
-        System.out.println("request: " + request);
         return ResponseEntity.ok(mapper.toChallengeResult(
                 useCase.create(xFinancialInstitutionCode, idempotencyKey, mapper.toDomain(request))));
     }
@@ -34,11 +30,6 @@ public class PaymentConfirmationApiAdapter implements PaymentConfirmationApi {
     public ResponseEntity<PaymentConfirmationVerificationResult> verifyPaymentConfirmationChallenge(
             UUID xCorrelationID, String xFinancialInstitutionCode, String idempotencyKey,
             String challengeReference, VerifyPaymentConfirmationChallengeRequest request) {
-        System.out.println("---------> verifyPaymentConfirmationChallenge");
-        System.out.println("challengeReference: " + challengeReference);
-        System.out.println("xFinancialInstitutionCode: " + xFinancialInstitutionCode);
-        System.out.println("idempotencyKey: " + idempotencyKey);
-        System.out.println("request: " + request);
         return ResponseEntity.ok(mapper.toVerificationResult(
                 useCase.verify(xFinancialInstitutionCode, idempotencyKey, challengeReference, mapper.toDomain(request))));
     }

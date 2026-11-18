@@ -54,7 +54,7 @@ public class JdbcPaymentExecutionPersistenceAdapter implements PaymentExecutionP
                 key,
                 fingerprint,
                 command.providerEvent().operationCode()) == 1);
-        System.out.println("Claimed: " + claimed);
+
         if (!Boolean.TRUE.equals(claimed)) {
             StoredExecution existing = findStoredByIdempotencyKey(institution, key)
                     .orElseThrow(() -> new IllegalStateException("Idempotency claim disappeared"));
@@ -67,13 +67,11 @@ public class JdbcPaymentExecutionPersistenceAdapter implements PaymentExecutionP
                 }
                 return existing.result();
             }
-            System.out.println("Unresolved payment execution");
             throw unresolved();
         }
 
         try {
             PaymentExecutionResult result = execution.get();
-            System.out.println("Payment execution result: " + result);
             transactions.executeWithoutResult(status -> storeResult(institution, key, result));
             return result;
         } catch (RuntimeException exception) {

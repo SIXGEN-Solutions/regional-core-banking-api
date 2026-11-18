@@ -1,6 +1,6 @@
 services:
   customer-oracle:
-    image: gvenzl/oracle-free:23.26.1-slim-faststart
+    image: gvenzl/oracle-free:23.26.1-slim
     container_name: regional-customer-oracle
     ports:
       - "${ORACLE_PORT:-1521}:1521"
@@ -17,6 +17,7 @@ services:
     volumes:
       - ./docker/customer-oracle/001_customer_schema.sql:/container-entrypoint-initdb.d/001_customer_schema.sql:ro
       - ./docker/customer-oracle/002_payment_schema.sql:/container-entrypoint-initdb.d/002_payment_schema.sql:ro
+      - ./docker/customer-oracle/003_customer_multi_account_seed.sql:/container-entrypoint-initdb.d/003_customer_multi_account_seed.sql:ro
       - customer-oracle-data:/opt/oracle/oradata
 
 volumes:

@@ -5,7 +5,9 @@ spring:
   application:
     name: regional-core-banking-api
   config:
-    import: "configtree:/run/secrets/"
+    import:
+      - "configtree:/run/secrets/"
+      - "optional:classpath:application-regional-mtls.yml"
   mail:
     host: ${REGIONAL_OTP_EMAIL_HOST:}
     port: ${REGIONAL_OTP_EMAIL_PORT:25}
