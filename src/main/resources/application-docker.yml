@@ -33,6 +33,12 @@ regional:
       username: ${REGIONAL_OTP_EMAIL_USERNAME}
       password: ${REGIONAL_OTP_EMAIL_PASSWORD}
       tls: ${REGIONAL_OTP_EMAIL_TLS:true}
+  security:
+    mtls:
+      enabled: ${ENABLE_MTLS:true}
+      # One or more comma-separated SHA-256 fingerprints, for planned rotation.
+      # NO default: missing allowlist makes secure startup fail.
+      allowed-client-cert-sha256: ${REGIONAL_MTLS_ALLOWED_CLIENT_CERT_SHA256}
 
 springdoc:
   swagger-ui:

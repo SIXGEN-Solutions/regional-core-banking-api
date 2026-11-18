@@ -5,7 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -28,7 +28,12 @@ import java.util.List;
  * It does not replace business-level authorization decisions.
  */
 @Component
-@Profile("regional-mtls")
+@ConditionalOnProperty(
+        prefix = "regional.security.mtls",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = false
+)
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public final class RegionalMtlsClientCertificateFilter extends OncePerRequestFilter {
 
