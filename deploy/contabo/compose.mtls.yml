@@ -3,7 +3,7 @@
 services:
   regional-core-banking-api:
     environment:
-      SPRING_PROFILES_ACTIVE: production,regional-mtls
+      SPRING_PROFILES_ACTIVE: production
       REGIONAL_MTLS_KEYSTORE_LOCATION: file:/run/mtls/regional-server.p12
       REGIONAL_MTLS_TRUSTSTORE_LOCATION: file:/run/mtls/regional-client-truststore.p12
       REGIONAL_MTLS_ALLOWED_CLIENT_CERT_SHA256: ${REGIONAL_MTLS_ALLOWED_CLIENT_CERT_SHA256:?approved client certificate fingerprint required}

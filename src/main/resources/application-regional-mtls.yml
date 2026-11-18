@@ -1,9 +1,6 @@
 # Activated only with the explicit regional-mtls Spring profile.
 # TLS terminates in Spring Boot; the client certificate is mandatory.
 spring:
-  config:
-    activate:
-      on-profile: regional-mtls
   ssl:
     bundle:
       jks:
