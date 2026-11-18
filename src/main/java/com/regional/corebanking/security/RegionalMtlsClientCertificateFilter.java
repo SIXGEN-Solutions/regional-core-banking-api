@@ -42,6 +42,7 @@ public final class RegionalMtlsClientCertificateFilter extends OncePerRequestFil
 
     public RegionalMtlsClientCertificateFilter(
             @Value("${regional.security.mtls.allowed-client-cert-sha256}") String allowlist) {
+        System.out.println("Regional mTLS allowlist: " + allowlist);
         if (allowlist == null || allowlist.isBlank()) {
             throw new IllegalArgumentException("Regional mTLS certificate allowlist must not be empty");
         }
