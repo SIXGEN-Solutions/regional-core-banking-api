@@ -62,8 +62,8 @@ It is not committed to the repository.
 OpenAPI Generator `7.15.0` currently reports `Unknown type mutualTLS` while
 processing the approved OpenAPI 3.1 mTLS security scheme.
 
-This does **not** change the Regional contract. OAuth2 Client Credentials + mTLS
-remain governed by the canonical OpenAPI contract and approved security decisions.
+This does **not** change the Regional contract. mTLS without OAuth2 Bearer for SIXPAY-to-Regional calls is declared in the
+canonical OpenAPI. The security amendment requires separate bank/security ratification.
 
 ## Architecture
 
@@ -362,7 +362,7 @@ To also remove local database volumes:
     docker compose down -v
 
 The example passwords and HMAC material are local-development values only.
-Production database, HMAC, SMTP, OAuth2, mTLS and banking connectivity parameters
+Production database, HMAC, SMTP, mTLS and banking connectivity parameters
 remain external deployment configuration.
 
 ## Payment Execution / Recovery — T0
@@ -420,4 +420,4 @@ It does not authorize public banking access or modify SIXPAY infrastructure.
 
 ## Regional inbound HTTPS/mTLS — environment-local configuration
 
-All mTLS Spring settings live directly in `src/main/resources/application-docker.yml` and `deploy/contabo/application-production.yml`. The redundant `application-regional-mtls.yml` and the extra `regional-mtls` Spring profile are removed. `ENABLE_MTLS=true` switches on TLS 1.3, required client certificates and the X.509 fingerprint admission filter; `SECURITY_MTLS_ALLOWED_CLI_CERT` supplies approved fingerprints. For bank-facing deployments also enforce `REGIONAL_MTLS_REQUIRED=true` to prevent accidental HTTP downgrade. Local Docker and the synthetic Contabo mock still default to HTTP. The optional `deploy/contabo/compose.mtls.yml` retains only private port publishing and read-only certificate/secret mounts. See `documentation/runbooks/REGIONAL_MTLS_ACTIVATION.md`. No change is made to the approved OAuth2+mTLS OpenAPI contract.
+All mTLS Spring settings live directly in `src/main/resources/application-docker.yml` and `deploy/contabo/application-production.yml`. The redundant `application-regional-mtls.yml` and the extra `regional-mtls` Spring profile are removed. `ENABLE_MTLS=true` switches on TLS 1.3, required client certificates and the X.509 fingerprint admission filter; `SECURITY_MTLS_ALLOWED_CLI_CERT` supplies approved fingerprints. For bank-facing deployments also enforce `REGIONAL_MTLS_REQUIRED=true` to prevent accidental HTTP downgrade. Local Docker and the synthetic Contabo mock still default to HTTP. The optional `deploy/contabo/compose.mtls.yml` retains only private port publishing and read-only certificate/secret mounts. See `documentation/runbooks/REGIONAL_MTLS_ACTIVATION.md`. The Regional OpenAPI security requirements have been aligned to mTLS without Bearer; bank/security ratification of this amendment remains pending.

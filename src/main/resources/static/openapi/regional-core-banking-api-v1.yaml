@@ -40,8 +40,7 @@ servers:
     description: Environment-specific placeholder. Runtime endpoint is external configuration.
 
 security:
-  - oauth2ClientCredentials: []
-    mutualTLS: []
+  - mutualTLS: []
 
 tags:
   - name: Customers
@@ -582,12 +581,6 @@ paths:
 
 components:
   securitySchemes:
-    oauth2ClientCredentials:
-      type: oauth2
-      flows:
-        clientCredentials:
-          tokenUrl: https://identity.regional.example/oauth2/token
-          scopes: {}
     mutualTLS:
       type: mutualTLS
 

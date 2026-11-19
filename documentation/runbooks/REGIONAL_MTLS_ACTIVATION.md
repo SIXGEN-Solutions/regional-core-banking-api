@@ -3,8 +3,9 @@
 ## Scope
 
 Regional inbound HTTPS/mTLS only. Banking business rules and external API schemas
-remain untouched. The **approved Regional OpenAPI still declares OAuth2 + mTLS**;
-a separate bank/security approval is required before a contract change.
+remain untouched. The Regional OpenAPI now describes **mTLS without OAuth2 Bearer** for
+SIXPAY-to-Regional calls. This security amendment requires bank/security
+ratification before its approval status can be considered renewed.
 Current Contabo is an Oracle SYNTHETIC mock, not approval for live banking.
 
 ## Single application YAML per environment
@@ -107,6 +108,6 @@ handshake or bank network-policy compliance.
 
 ## Residual decisions
 
-- Bank-approved Regional OpenAPI and corresponding SIXPAY contract change.
+- Bank/security ratification of the aligned Regional OpenAPI and SIXPAY contracts.
 - PKI chain, trust roots, revocation, private DNS, firewalld and renewal.
 - No SIXPAY outbound client is changed by this lot.
