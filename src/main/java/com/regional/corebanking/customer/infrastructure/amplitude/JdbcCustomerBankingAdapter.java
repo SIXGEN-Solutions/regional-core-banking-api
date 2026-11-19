@@ -149,7 +149,6 @@ public final class JdbcCustomerBankingAdapter implements CustomerBankingPort {
                 while (rs.next()) {
                     accounts.add(mapAccount(rs));
                 }
-                System.out.println("Found " + accounts.size() + " accounts for customer " + customerReference);
                 return List.copyOf(accounts);
             }
         } catch (SQLException exception) {

@@ -41,8 +41,11 @@ jobs:
           grep -Eq '^[[:space:]]*approvalStatus:[[:space:]]*APPROVED[[:space:]]*$' "$CONTRACT"
           grep -Eq '^[[:space:]]*codeGenerationAllowed:[[:space:]]*true[[:space:]]*$' "$CONTRACT"
 
+      - name: Maven version
+        run: mvn --version
+
       - name: Maven verify
-        run: ./mvnw --batch-mode --no-transfer-progress clean verify
+        run: mvn --batch-mode --no-transfer-progress clean verify
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

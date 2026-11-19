@@ -47,3 +47,6 @@ venv/
 /deploy/contabo/.env
 /deploy/contabo/secrets/
 /deploy/contabo/private/
+
+tests_certificates
+/tests_certificates/

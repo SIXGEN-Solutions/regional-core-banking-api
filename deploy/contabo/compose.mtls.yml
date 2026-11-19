@@ -1,0 +1,19 @@
+# Optional private listener and certificate mounts only.
+# All Spring security settings belong to application-production.yml.
+services:
+  regional-core-banking-api:
+    # Runtime flags come from the existing /opt/regional/config/.env.
+    volumes:
+      - /opt/regional/mtls:/run/mtls:ro,Z
+    ports:
+      # The original loopback mapping from the base Compose file is preserved.
+      # This additional port is bound ONLY to the approved private interface.
+      - "${REGIONAL_PRIVATE_BIND_IP:?approved private VM-03 address required}:${REGIONAL_API_MTLS_PORT:-9092}:${SERVER_PORT:-9092}"
+    secrets:
+      - REGIONAL_MTLS_KEYSTORE_PASSWORD
+      - REGIONAL_MTLS_TRUSTSTORE_PASSWORD
+secrets:
+  REGIONAL_MTLS_KEYSTORE_PASSWORD:
+    file: /opt/regional/secrets/REGIONAL_MTLS_KEYSTORE_PASSWORD
+  REGIONAL_MTLS_TRUSTSTORE_PASSWORD:
+    file: /opt/regional/secrets/REGIONAL_MTLS_TRUSTSTORE_PASSWORD

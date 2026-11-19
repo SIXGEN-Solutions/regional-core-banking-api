@@ -40,7 +40,6 @@ public class CustomerApiAdapter implements CustomersApi {
         CustomerSearchResult result = mapper.toSearchResult(
                 useCase.searchCustomers(financialInstitutionCode, niu, customerNumber)
         );
-        System.out.println("searchCustomers: " + result);
         return ResponseEntity.ok(result);
     }
 
@@ -70,8 +69,6 @@ public class CustomerApiAdapter implements CustomersApi {
                 rib,
                 iban
         );
-        System.out.println("getCustomerAccounts: " + laccounts.size());
-        System.out.println("getCustomerAccounts: " + laccounts);
 
         return ResponseEntity.ok(mapper.toAccountSearchResult(
                 laccounts
@@ -83,7 +80,6 @@ public class CustomerApiAdapter implements CustomersApi {
             UUID xCorrelationID,
             CustomerVerificationRequest customerVerificationRequest
     ) {
-        System.out.println("customerVerificationRequest: " + customerVerificationRequest);
         return ResponseEntity.ok(mapper.toVerificationResult(
                 useCase.verifyCustomer(mapper.toDomain(customerVerificationRequest))
         ));
